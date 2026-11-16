@@ -1,9 +1,10 @@
 <resources>
-    <color name="bg">#FFC400</color>
-    <color name="card">#FFE066</color>
-    <color name="ink">#1A1400</color>
+    <color name="bg">#FFC800</color>
+    <color name="card">#FFFFFF</color>
+    <color name="card_selected">#FFF1A6</color>
+    <color name="ink">#161100</color>
     <color name="ink_soft">#5C4A00</color>
-    <color name="ic_bg">#FFC400</color>
+    <color name="ic_bg">#FFC800</color>
 
     <style name="Theme.Takvpn" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/ink</item>
