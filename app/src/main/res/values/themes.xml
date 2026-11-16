@@ -1,0 +1,15 @@
+<resources>
+    <color name="yellow">#FFC107</color>
+    <color name="yellow_dark">#FFA000</color>
+    <color name="bg">#16130A</color>
+    <color name="card">#2A2410</color>
+
+    <style name="Theme.Takvpn" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/yellow</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorSecondary">@color/yellow_dark</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+    </style>
+</resources>
