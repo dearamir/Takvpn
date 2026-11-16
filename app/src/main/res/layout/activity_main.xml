@@ -4,81 +4,97 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="14dp">
 
-    <TextView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="Takvpn"
-        android:textColor="@color/ink"
-        android:textSize="30sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="8dp"
+        app:cardBackgroundColor="@color/ink"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="6dp">
 
-    <TextView
-        android:id="@+id/versionText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textColor="@color/ink_soft"
-        android:textSize="12sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:gravity="center"
-        android:text="قطع"
-        android:textColor="@color/ink_soft"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Takvpn"
+                android:textColor="#FFD400"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/versionText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#FFE680"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="قطع"
+                android:textColor="#BBBBBB"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/pasteButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:layout_weight="1"
+            android:minHeight="48dp"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
             android:text="کلیپ‌بورد"
-            android:textSize="12sp"
-            app:strokeColor="@color/ink" />
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/qrButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:layout_weight="1"
+            android:minHeight="48dp"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
             android:text="اسکن QR"
-            android:textSize="12sp"
-            app:strokeColor="@color/ink" />
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/pingAllButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:layout_weight="1"
+            android:minHeight="48dp"
             android:paddingStart="4dp"
             android:paddingEnd="4dp"
             android:text="پینگ همه"
-            android:textSize="12sp"
-            app:strokeColor="@color/ink" />
+            android:textSize="13sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp" />
     </LinearLayout>
 
     <ScrollView
@@ -110,13 +126,49 @@
         </LinearLayout>
     </ScrollView>
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/connectButton"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="8dp"
-        android:text="اتصال"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/testBar"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:focusable="true"
+            app:cardBackgroundColor="@color/ink"
+            app:cardCornerRadius="32dp"
+            app:cardElevation="6dp">
+
+            <TextView
+                android:id="@+id/testText"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="2"
+                android:paddingStart="22dp"
+                android:paddingEnd="22dp"
+                android:text="قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+                android:textColor="#FFE680"
+                android:textSize="14sp" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/connectFab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:contentDescription="اتصال"
+            app:backgroundTint="@color/ink"
+            app:elevation="6dp"
+            app:fabCustomSize="64dp"
+            app:maxImageSize="32dp"
+            app:srcCompat="@drawable/ic_play"
+            app:tint="#FFD400" />
+    </LinearLayout>
 </LinearLayout>
