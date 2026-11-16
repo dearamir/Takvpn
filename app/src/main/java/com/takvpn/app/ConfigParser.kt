@@ -38,7 +38,8 @@ object ConfigParser {
         link.startsWith("vless://") -> vless(link)
         link.startsWith("vmess://") -> vmess(link)
         link.startsWith("trojan://") -> trojan(link)
-        else -> throw IllegalArgumentException("فقط vless، vmess و trojan پشتیبانی می‌شه")
+        link.startsWith("hysteria2://") || link.startsWith("hy2://") -> hysteria2(link)
+        else -> throw IllegalArgumentException("این پروتکل پشتیبانی نمی‌شه")
     }
 
     private fun vless(link: String): JSONObject {
@@ -56,7 +57,12 @@ object ConfigParser {
     }
 
     private fun vmess(link: String): JSONObject {
-        val j = JSONObject(decodeBase64(link.removePrefix("vmess://").substringBefore("#")))
+        val body = link.removePrefix("vmess://").substringBefore("#")
+        val j = try {
+            JSONObject(decodeBase64(body))
+        } catch (e: Exception) {
+            return vmessUri(link)
+        }
         val host = j.getString("add")
         val port = j.optString("port", "443").toInt()
         val net = j.optString("net", "tcp").ifEmpty { "tcp" }
@@ -80,6 +86,22 @@ object ConfigParser {
         return outbound("vmess", JSONObject().put("vnext", JSONArray().put(server)), stream(q, host))
     }
 
+    private fun vmessUri(link: String): JSONObject {
+        val u = Uri.parse(link)
+        val host = cleanHost(u)
+        val port = if (u.port > 0) u.port else 443
+        val id = u.userInfo ?: throw IllegalArgumentException("UUID پیدا نشد")
+        val q = query(u)
+        val user = JSONObject()
+            .put("id", id)
+            .put("alterId", 0)
+            .put("security", q["encryption"] ?: q["scy"] ?: "auto")
+        val server = JSONObject()
+            .put("address", host).put("port", port)
+            .put("users", JSONArray().put(user))
+        return outbound("vmess", JSONObject().put("vnext", JSONArray().put(server)), stream(q, host))
+    }
+
     private fun trojan(link: String): JSONObject {
         val u = Uri.parse(link)
         val host = cleanHost(u)
@@ -90,6 +112,35 @@ object ConfigParser {
         val server = JSONObject()
             .put("address", host).put("port", port).put("password", password)
         return outbound("trojan", JSONObject().put("servers", JSONArray().put(server)), stream(q, host))
+    }
+
+    private fun hysteria2(link: String): JSONObject {
+        val u = Uri.parse(link.replaceFirst("hy2://", "hysteria2://"))
+        val host = cleanHost(u)
+        val port = if (u.port > 0) u.port else 443
+        val auth = u.userInfo ?: throw IllegalArgumentException("رمز Hysteria پیدا نشد")
+        val q = query(u)
+        if (!q["obfs"].isNullOrEmpty()) {
+            throw IllegalArgumentException("obfs هنوز پشتیبانی نمی‌شه")
+        }
+        val insecure = q["insecure"] == "1" || q["insecure"] == "true"
+        val sni = q["sni"].orEmpty().ifEmpty { host }
+        val tls = JSONObject()
+            .put("serverName", sni)
+            .put("alpn", JSONArray(listOf("h3")))
+            .put("allowInsecure", insecure)
+        val stream = JSONObject()
+            .put("network", "hysteria")
+            .put("method", "hysteria")
+            .put("hysteriaSettings", JSONObject().put("version", 2).put("auth", auth))
+            .put("security", "tls")
+            .put("tlsSettings", tls)
+        val settings = JSONObject().put("version", 2).put("address", host).put("port", port)
+        return JSONObject()
+            .put("tag", "proxy")
+            .put("protocol", "hysteria")
+            .put("settings", settings)
+            .put("streamSettings", stream)
     }
 
     private fun outbound(protocol: String, settings: JSONObject, stream: JSONObject) =
@@ -114,10 +165,20 @@ object ConfigParser {
             }
             "grpc" -> s.put("grpcSettings", JSONObject().put("serviceName", q["serviceName"].orEmpty()))
             "httpupgrade" -> s.put("httpupgradeSettings", JSONObject().put("path", path).put("host", host))
-            "xhttp" -> s.put(
-                "xhttpSettings",
-                JSONObject().put("path", path).put("host", host).put("mode", q["mode"] ?: "auto")
-            )
+            "xhttp" -> {
+                val xs = JSONObject()
+                    .put("path", path)
+                    .put("host", host)
+                    .put("mode", q["mode"] ?: "auto")
+                val extra = q["extra"].orEmpty()
+                if (extra.isNotBlank()) {
+                    try {
+                        xs.put("extra", JSONObject(extra))
+                    } catch (e: Exception) {
+                    }
+                }
+                s.put("xhttpSettings", xs)
+            }
         }
 
         val security = q["security"] ?: "none"
@@ -132,6 +193,9 @@ object ConfigParser {
                     .put("fingerprint", fp)
                 val alpn = q["alpn"].orEmpty()
                 if (alpn.isNotEmpty()) tls.put("alpn", JSONArray(alpn.split(",")))
+                val insecure = q["allowInsecure"] == "1" || q["allowInsecure"] == "true" ||
+                    q["insecure"] == "1" || q["insecure"] == "true"
+                if (insecure) tls.put("allowInsecure", true)
                 s.put("tlsSettings", tls)
             }
             "reality" -> s.put(
