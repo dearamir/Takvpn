@@ -3,11 +3,18 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,14 +31,40 @@ jobs:
           gh release download --repo 2dust/AndroidLibXrayLite --pattern "libv2ray.aar" --dir app/libs
           ls -la app/libs
 
+      - name: Prepare signing key
+        run: |
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "KEYSTORE_PASSWORD not set, using a temporary key"
+            exit 0
+          fi
+          if [ -f release.keystore.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -md sha256 -in release.keystore.enc -out release.keystore -pass env:KEYSTORE_PASSWORD
+          else
+            keytool -genkeypair -keystore release.keystore -alias takvpn -keyalg RSA -keysize 2048 -validity 36500 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -dname "CN=Takvpn"
+            openssl enc -aes-256-cbc -pbkdf2 -md sha256 -salt -in release.keystore -out release.keystore.enc -pass env:KEYSTORE_PASSWORD
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add release.keystore.enc
+            git commit -m "Add encrypted signing key"
+            git push
+          fi
+
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
 
       - name: Build
-        run: gradle :app:assembleDebug --no-daemon
+        run: gradle :app:assembleRelease --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }}
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="1.${{ github.run_number }}"
+          cp app/build/outputs/apk/release/app-release.apk "Takvpn-v$V.apk"
+          gh release create "v$V" "Takvpn-v$V.apk" --title "Takvpn $V" --notes "Takvpn version $V" --latest
 
       - uses: actions/upload-artifact@v4
         with:
           name: Takvpn-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/release/app-release.apk
