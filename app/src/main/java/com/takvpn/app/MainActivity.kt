@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.VpnService
 import android.os.Bundle
@@ -19,6 +20,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import libv2ray.Libv2ray
@@ -30,11 +32,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var store: ConfigStore
     private lateinit var statusText: TextView
     private lateinit var emptyText: TextView
+    private lateinit var testText: TextView
     private lateinit var listContainer: LinearLayout
-    private lateinit var connectButton: MaterialButton
+    private lateinit var fab: FloatingActionButton
     private val pings = mutableMapOf<String, Long>()
+    private val errors = mutableMapOf<String, String>()
     private val pool = Executors.newFixedThreadPool(3)
     private var pendingConfig: String? = null
+    private var lastRunning = false
+
+    private val supported = listOf("vless://", "vmess://", "trojan://", "hysteria2://", "hy2://")
 
     private val vpnPermission = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -58,8 +65,9 @@ class MainActivity : AppCompatActivity() {
         store = ConfigStore(this)
         statusText = findViewById(R.id.statusText)
         emptyText = findViewById(R.id.emptyText)
+        testText = findViewById(R.id.testText)
         listContainer = findViewById(R.id.listContainer)
-        connectButton = findViewById(R.id.connectButton)
+        fab = findViewById(R.id.connectFab)
 
         val ver = try {
             packageManager.getPackageInfo(packageName, 0).versionName
@@ -82,7 +90,10 @@ class MainActivity : AppCompatActivity() {
             )
         }
         findViewById<MaterialButton>(R.id.pingAllButton).setOnClickListener { pingAll() }
-        connectButton.setOnClickListener { onConnectClicked() }
+        findViewById<View>(R.id.testBar).setOnClickListener {
+            if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
+        }
+        fab.setOnClickListener { onConnectClicked() }
 
         render()
     }
@@ -107,23 +118,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun addFromText(text: String) {
         var added = 0
-        text.split(Regex("(?=(?:vless|vmess|trojan)://)"))
+        var unsupported = 0
+        var invalid = 0
+        text.split(Regex("(?=\\b(?:vless|vmess|trojan|hysteria2|hysteria|hy2|ss|tuic)://)"))
             .map { it.trim() }
             .filter { it.contains("://") }
-            .forEach {
-                try {
-                    ConfigParser.buildConfig(it)
-                    store.add(it)
-                    added++
-                } catch (e: Exception) {
+            .forEach { item ->
+                if (supported.any { item.startsWith(it) }) {
+                    try {
+                        ConfigParser.buildConfig(item)
+                        store.add(item)
+                        added++
+                    } catch (e: Exception) {
+                        invalid++
+                    }
+                } else {
+                    unsupported++
                 }
             }
-        if (added > 0) {
-            toast("$added کانفیگ اضافه شد")
-            render()
-        } else {
-            toast("کانفیگ معتبری پیدا نشد")
-        }
+        var msg = if (added > 0) "$added کانفیگ اضافه شد" else "کانفیگ معتبری اضافه نشد"
+        if (unsupported > 0) msg += "\n$unsupported مورد پروتکل پشتیبانی‌نشده"
+        if (invalid > 0) msg += "\n$invalid مورد نامعتبر (مثلاً obfs)"
+        toast(msg)
+        if (added > 0) render()
     }
 
     private fun render() {
@@ -137,7 +154,9 @@ class MainActivity : AppCompatActivity() {
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
             ping.setTextColor(color)
-            card.strokeWidth = if (cfg.id == store.selectedId) dp(3) else 0
+            val selected = cfg.id == store.selectedId
+            card.strokeWidth = if (selected) dp(3) else 0
+            card.setCardBackgroundColor(Color.parseColor(if (selected) "#FFF1A6" else "#FFFFFF"))
             card.setOnClickListener {
                 store.select(cfg.id)
                 render()
@@ -155,8 +174,23 @@ class MainActivity : AppCompatActivity() {
         return when (val p = pings[id]) {
             null -> "پینگ: برای تست اینجا بزنید" to soft
             -2L -> "در حال تست..." to soft
-            -1L -> "ناموفق" to Color.parseColor("#B00020")
+            -1L -> {
+                val e = errors[id].orEmpty()
+                (if (e.isBlank()) "ناموفق" else "ناموفق: $e") to Color.parseColor("#B00020")
+            }
             else -> "$p ms" to Color.parseColor(if ((p ?: 0L) < 400L) "#1B5E20" else "#BF360C")
+        }
+    }
+
+    private fun measure(cfg: Cfg): Pair<Long, String> {
+        return try {
+            CoreEnv.init(applicationContext)
+            val j = JSONObject(ConfigParser.buildConfig(cfg.link))
+            j.remove("inbounds")
+            val ms = Libv2ray.measureOutboundDelay(j.toString(), PING_URL)
+            if (ms > 0) ms to "" else -1L to "بدون پاسخ"
+        } catch (e: Throwable) {
+            -1L to (e.message ?: e.toString()).replace("\n", " ").take(90)
         }
     }
 
@@ -178,18 +212,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPing(cfg: Cfg) {
         pool.execute {
-            val ms = try {
-                CoreEnv.init(applicationContext)
-                val j = JSONObject(ConfigParser.buildConfig(cfg.link))
-                j.remove("inbounds")
-                Libv2ray.measureOutboundDelay(j.toString(), PING_URL)
-            } catch (e: Throwable) {
-                -1L
-            }
+            val (ms, err) = measure(cfg)
             runOnUiThread {
                 if (!isDestroyed) {
-                    pings[cfg.id] = if (ms > 0) ms else -1L
+                    errors[cfg.id] = err
+                    pings[cfg.id] = ms
                     render()
+                }
+            }
+        }
+    }
+
+    private fun runConnectionTest() {
+        val cfg = store.selected() ?: return
+        testText.text = "در حال تست اتصال..."
+        pool.execute {
+            val (ms, err) = measure(cfg)
+            runOnUiThread {
+                if (!isDestroyed) {
+                    testText.text = if (ms > 0) {
+                        "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد"
+                    } else {
+                        "تست ناموفق" + (if (err.isNotEmpty()) ": $err" else "")
+                    }
                 }
             }
         }
@@ -233,6 +278,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("حذف") { _, _ ->
                 store.remove(cfg.id)
                 pings.remove(cfg.id)
+                errors.remove(cfg.id)
                 render()
             }
             .setNegativeButton("لغو", null)
@@ -275,9 +321,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUi(running: Boolean) {
-        connectButton.text = if (running) "قطع اتصال" else "اتصال"
+        fab.setImageResource(if (running) R.drawable.ic_stop else R.drawable.ic_play)
+        fab.backgroundTintList =
+            ColorStateList.valueOf(Color.parseColor(if (running) "#FF6D00" else "#161100"))
+        fab.imageTintList =
+            ColorStateList.valueOf(if (running) Color.WHITE else Color.parseColor("#FFD400"))
         statusText.text = if (running) "متصل" else "قطع"
-        statusText.setTextColor(Color.parseColor(if (running) "#1B5E20" else "#5C4A00"))
+        statusText.setTextColor(Color.parseColor(if (running) "#69F0AE" else "#BBBBBB"))
+        if (!running) {
+            testText.text = "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+        } else if (!lastRunning) {
+            runConnectionTest()
+        }
+        lastRunning = running
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
