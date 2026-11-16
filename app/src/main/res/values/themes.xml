@@ -1,15 +1,31 @@
-<resources>
-    <color name="yellow">#FFC107</color>
-    <color name="yellow_dark">#FFA000</color>
-    <color name="bg">#16130A</color>
-    <color name="card">#2A2410</color>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <style name="Theme.Takvpn" parent="Theme.MaterialComponents.NoActionBar">
-        <item name="colorPrimary">@color/yellow</item>
-        <item name="colorOnPrimary">#000000</item>
-        <item name="colorSecondary">@color/yellow_dark</item>
-        <item name="android:windowBackground">@color/bg</item>
-        <item name="android:statusBarColor">@color/bg</item>
-        <item name="android:navigationBarColor">@color/bg</item>
-    </style>
-</resources>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Takvpn"
+        android:theme="@style/Theme.Takvpn">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".TakVpnService"
+            android:exported="false"
+            android:permission="android.permission.BIND_VPN_SERVICE">
+            <intent-filter>
+                <action android:name="android.net.VpnService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>
