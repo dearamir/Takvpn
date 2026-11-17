@@ -1,0 +1,24 @@
+<resources>
+    <color name="bg">#17130A</color>
+    <color name="card">#2B2511</color>
+    <color name="card_selected">#4D4208</color>
+    <color name="ink">#FFE680</color>
+    <color name="ink_soft">#CDB65A</color>
+    <color name="header_bg">#FFC800</color>
+    <color name="header_title">#161100</color>
+    <color name="header_sub">#3D3200</color>
+    <color name="status_off">#4A4000</color>
+    <color name="status_on">#0B5D1E</color>
+    <color name="btn_bg">#FFC800</color>
+    <color name="btn_text">#161100</color>
+    <color name="bar_bg">#2B2511</color>
+    <color name="bar_text">#FFE680</color>
+    <color name="fab_idle">#FFC800</color>
+    <color name="fab_icon">#161100</color>
+    <color name="fab_on">#FF6D00</color>
+    <color name="ping_good">#7CE08A</color>
+    <color name="ping_slow">#FFAB66</color>
+    <color name="ping_fail">#FF6B6B</color>
+    <color name="nav_bar">#000000</color>
+    <bool name="light_bars">false</bool>
+</resources>
