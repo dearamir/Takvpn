@@ -5,11 +5,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application
+        android:name=".TakApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="Takvpn"
-        android:theme="@style/Theme.Takvpn">
+        android:theme="@style/Theme.Takvpn"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
