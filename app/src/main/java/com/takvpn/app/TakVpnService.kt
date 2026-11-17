@@ -25,6 +25,7 @@ class TakVpnService : VpnService() {
     private var core: CoreController? = null
     private var currentConfig: String? = null
     private var cfgName = ""
+    private var foregroundOk = false
 
     @Volatile
     private var pingText = ""
@@ -56,7 +57,7 @@ class TakVpnService : VpnService() {
             currentConfig = config
             cfgName = try {
                 ConfigStore(this).selected()?.name.orEmpty()
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 ""
             }
             pingText = ""
@@ -67,17 +68,33 @@ class TakVpnService : VpnService() {
     }
 
     private fun showForeground() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            val ch = NotificationChannel(CHANNEL, "اتصال Takvpn", NotificationManager.IMPORTANCE_LOW)
-            ch.setShowBadge(false)
-            getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
-        }
-        startedAt = SystemClock.elapsedRealtime()
-        val n = buildNotification()
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIF_ID, n)
+        foregroundOk = false
+        try {
+            if (Build.VERSION.SDK_INT >= 26) {
+                val ch = NotificationChannel(CHANNEL, "اتصال Takvpn", NotificationManager.IMPORTANCE_LOW)
+                ch.setShowBadge(false)
+                getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
+            }
+            startedAt = SystemClock.elapsedRealtime()
+            val n = buildNotification()
+            try {
+                if (Build.VERSION.SDK_INT >= 34) {
+                    startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+                } else {
+                    startForeground(NOTIF_ID, n)
+                }
+                foregroundOk = true
+            } catch (e1: Throwable) {
+                AppLog.add("اعلان با نوع سرویس ناموفق: ${e1.javaClass.simpleName} ${e1.message}")
+                try {
+                    startForeground(NOTIF_ID, n)
+                    foregroundOk = true
+                } catch (e2: Throwable) {
+                    AppLog.add("اعلان ناموفق: ${e2.javaClass.simpleName} ${e2.message}")
+                }
+            }
+        } catch (e: Throwable) {
+            AppLog.add("ساخت اعلان ناموفق: ${e.javaClass.simpleName} ${e.message}")
         }
     }
 
@@ -113,9 +130,10 @@ class TakVpnService : VpnService() {
     }
 
     private fun notifyNow() {
+        if (!foregroundOk) return
         try {
             getSystemService(NotificationManager::class.java).notify(NOTIF_ID, buildNotification())
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
         }
     }
 
@@ -188,8 +206,9 @@ class TakVpnService : VpnService() {
     private fun shutdownForeground() {
         try {
             stopForeground(Service.STOP_FOREGROUND_REMOVE)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
         }
+        foregroundOk = false
         stopSelf()
     }
 
