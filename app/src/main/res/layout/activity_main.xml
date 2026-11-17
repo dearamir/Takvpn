@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        app:cardBackgroundColor="@color/ink"
+        app:cardBackgroundColor="@color/header_bg"
         app:cardCornerRadius="22dp"
         app:cardElevation="6dp">
 
@@ -25,7 +25,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Takvpn"
-                android:textColor="#FFD400"
+                android:textColor="@color/header_title"
                 android:textSize="30sp"
                 android:textStyle="bold" />
 
@@ -33,7 +33,7 @@
                 android:id="@+id/versionText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FFE680"
+                android:textColor="@color/header_sub"
                 android:textSize="12sp" />
 
             <TextView
@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="قطع"
-                android:textColor="#BBBBBB"
+                android:textColor="@color/status_off"
                 android:textSize="16sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -58,13 +58,13 @@
             android:id="@+id/pasteButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="3dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
             android:text="کلیپ‌بورد"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             app:cornerRadius="14dp" />
 
@@ -72,13 +72,13 @@
             android:id="@+id/qrButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="3dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
             android:text="اسکن QR"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold"
             app:cornerRadius="14dp" />
 
@@ -86,13 +86,27 @@
             android:id="@+id/pingAllButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_margin="3dp"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
             android:text="پینگ همه"
-            android:textSize="13sp"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:cornerRadius="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/moreButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            android:text="بیشتر"
+            android:textSize="12sp"
             android:textStyle="bold"
             app:cornerRadius="14dp" />
     </LinearLayout>
@@ -114,7 +128,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="48dp"
                 android:gravity="center"
-                android:text="هنوز کانفیگی اضافه نشده.\nاز کلیپ‌بورد یا QR اضافه کنید."
+                android:text="هنوز کانفیگی اضافه نشده.\nاز کلیپ‌بورد، QR یا اشتراک اضافه کنید."
                 android:textColor="@color/ink_soft"
                 android:textSize="15sp" />
 
@@ -126,10 +140,19 @@
         </LinearLayout>
     </ScrollView>
 
+    <TextView
+        android:id="@+id/usageText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:textColor="@color/ink_soft"
+        android:textSize="12sp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -140,7 +163,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            app:cardBackgroundColor="@color/ink"
+            app:cardBackgroundColor="@color/bar_bg"
             app:cardCornerRadius="32dp"
             app:cardElevation="6dp">
 
@@ -154,7 +177,7 @@
                 android:paddingStart="22dp"
                 android:paddingEnd="22dp"
                 android:text="قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
-                android:textColor="#FFE680"
+                android:textColor="@color/bar_text"
                 android:textSize="14sp" />
         </com.google.android.material.card.MaterialCardView>
 
@@ -164,11 +187,11 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:contentDescription="اتصال"
-            app:backgroundTint="@color/ink"
+            app:backgroundTint="@color/fab_idle"
             app:elevation="6dp"
             app:fabCustomSize="64dp"
             app:maxImageSize="32dp"
             app:srcCompat="@drawable/ic_play"
-            app:tint="#FFD400" />
+            app:tint="@color/fab_icon" />
     </LinearLayout>
 </LinearLayout>
