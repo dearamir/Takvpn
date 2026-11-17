@@ -16,10 +16,12 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -28,28 +30,36 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.zxing.BarcodeFormat
+import com.journeyapps.barcodescanner.BarcodeEncoder
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import libv2ray.Libv2ray
 import org.json.JSONObject
 import java.util.Locale
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity() {
 
+    private class Act(val icon: String, val title: String, val sub: String, val run: () -> Unit)
+
     private lateinit var store: ConfigStore
     private lateinit var subs: SubStore
+    private lateinit var titleText: TextView
     private lateinit var statusText: TextView
     private lateinit var emptyText: TextView
     private lateinit var testText: TextView
     private lateinit var usageText: TextView
     private lateinit var listContainer: LinearLayout
     private lateinit var fab: FloatingActionButton
+    private lateinit var titleGlow: GlowAnimator
+    private lateinit var statusGlow: GlowAnimator
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
@@ -96,36 +106,18 @@ class MainActivity : AppCompatActivity() {
         store = ConfigStore(this)
         subs = SubStore(this, store)
         totalBytes = prefs.getLong("total", 0L)
+        titleText = findViewById(R.id.titleText)
         statusText = findViewById(R.id.statusText)
         emptyText = findViewById(R.id.emptyText)
         testText = findViewById(R.id.testText)
         usageText = findViewById(R.id.usageText)
         listContainer = findViewById(R.id.listContainer)
         fab = findViewById(R.id.connectFab)
+        titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
+        statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
-        val ver = try {
-            packageManager.getPackageInfo(packageName, 0).versionName
-        } catch (e: Exception) {
-            ""
-        }
-        findViewById<TextView>(R.id.versionText).text = "نسخه $ver"
-
-        findViewById<MaterialButton>(R.id.pasteButton).setOnClickListener {
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val text = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString().orEmpty()
-            if (text.isBlank()) toast("کلیپ‌بورد خالیه") else addFromText(text)
-        }
-        findViewById<MaterialButton>(R.id.qrButton).setOnClickListener {
-            scanLauncher.launch(
-                ScanOptions()
-                    .setPrompt("QR کانفیگ رو جلوی دوربین بگیرید")
-                    .setBeepEnabled(false)
-                    .setOrientationLocked(false)
-                    .setCaptureActivity(PortraitCaptureActivity::class.java)
-            )
-        }
-        findViewById<MaterialButton>(R.id.pingAllButton).setOnClickListener { pingAll() }
-        findViewById<MaterialButton>(R.id.moreButton).setOnClickListener { showMenu(it) }
+        findViewById<TextView>(R.id.versionText).text = "نسخه ${verName()}"
+        findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
         }
@@ -149,6 +141,8 @@ class MainActivity : AppCompatActivity() {
         TakVpnService.onState = null
         TakVpnService.onError = null
         ui.removeCallbacks(ticker)
+        titleGlow.stop(c(R.color.header_title))
+        statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
         saveTotal()
     }
 
@@ -160,34 +154,117 @@ class MainActivity : AppCompatActivity() {
 
     private fun c(id: Int) = ContextCompat.getColor(this, id)
 
-    // ---------- menu ----------
+    private fun verName(): String =
+        try {
+            packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+        } catch (e: Exception) {
+            ""
+        }
 
-    private fun showMenu(anchor: View) {
-        val pm = PopupMenu(this, anchor)
-        pm.menu.add(0, 1, 0, "افزودن اشتراک (لینک)")
-        pm.menu.add(0, 2, 1, "به‌روزرسانی اشتراک‌ها")
-        pm.menu.add(0, 3, 2, "مدیریت و حذف اشتراک‌ها")
-        pm.menu.add(0, 4, 3, "نمایش لاگ")
-        pm.menu.add(0, 5, 4, "حالت تاریک / روشن")
-        pm.menu.add(0, 6, 5, "پورت‌هاپینگ Hysteria: " + (if (ConfigExtras.hopEnabled) "روشن" else "خاموش"))
-        pm.menu.add(0, 7, 6, "صفر کردن مصرف کل")
-        pm.setOnMenuItemClickListener {
-            when (it.itemId) {
-                1 -> addSubDialog()
-                2 -> updateAllSubs()
-                3 -> manageSubs()
-                4 -> showLog()
-                5 -> toggleNight()
-                6 -> toggleHop()
-                7 -> {
-                    totalBytes = 0L
-                    saveTotal()
-                    if (!TakVpnService.isRunning) usageText.text = "مصرف کل: ${fmt(0)}"
+    // ---------- actions sheet ----------
+
+    private fun showActions() {
+        val dialog = BottomSheetDialog(this)
+        val root = layoutInflater.inflate(R.layout.sheet_actions, null)
+        val container = root.findViewById<LinearLayout>(R.id.actionsContainer)
+
+        addSection(container, "افزودن کانفیگ")
+        addGrid(
+            container, dialog, R.color.act_add, listOf(
+                Act("📋", "کلیپ‌بورد", "چسباندن کانفیگ") { pasteFromClipboard() },
+                Act("📷", "اسکن QR", "با دوربین") { launchScan() },
+                Act("🔗", "افزودن اشتراک", "لینک سابسکریپشن") { addSubDialog() }
+            )
+        )
+        addSection(container, "ابزارها")
+        addGrid(
+            container, dialog, R.color.act_tool, listOf(
+                Act("⚡", "سریع‌ترین", "تست و اتصال خودکار") { connectFastest() },
+                Act("📶", "پینگ همه", "تست همه‌ی کانفیگ‌ها") { pingAll() },
+                Act("↕️", "مرتب‌سازی", "بر اساس پینگ") { sortByPing() },
+                Act("🧹", "حذف ناموفق‌ها", "کانفیگ‌های بدون پینگ") { deleteDead() }
+            )
+        )
+        addSection(container, "اشتراک‌ها")
+        addGrid(
+            container, dialog, R.color.act_sub, listOf(
+                Act("🔄", "به‌روزرسانی", "همه‌ی اشتراک‌ها") { updateAllSubs() },
+                Act("🗂️", "مدیریت", "مشاهده و حذف") { manageSubs() }
+            )
+        )
+        addSection(container, "سیستم")
+        addGrid(
+            container, dialog, R.color.act_sys, listOf(
+                Act("🌗", "حالت تاریک", "تاریک / روشن") { toggleNight() },
+                Act(
+                    "🔀", "پورت‌هاپینگ",
+                    "Hysteria: " + (if (ConfigExtras.hopEnabled) "روشن" else "خاموش")
+                ) { toggleHop() },
+                Act("📜", "لاگ", "رویدادها و خطاها") { showLog() },
+                Act("💾", "بکاپ", "کپی همه‌ی کانفیگ‌ها") { backupAll() },
+                Act("🧮", "صفر کردن مصرف", "مصرف کل داده") { resetUsage() },
+                Act("⬆️", "بررسی نسخه", "نسخه‌ی جدید؟") { checkUpdate() },
+                Act("ℹ️", "درباره", "نسخه و دانلود") { showAbout() }
+            )
+        )
+
+        dialog.setContentView(root)
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        dialog.behavior.skipCollapsed = true
+        dialog.show()
+    }
+
+    private fun addSection(container: LinearLayout, title: String) {
+        val tv = TextView(this)
+        tv.text = title
+        tv.textSize = 14f
+        tv.setTypeface(null, android.graphics.Typeface.BOLD)
+        tv.setTextColor(c(R.color.ink_soft))
+        tv.setPadding(dp(6), dp(14), dp(6), dp(4))
+        container.addView(tv)
+    }
+
+    private fun addGrid(container: LinearLayout, dialog: BottomSheetDialog, colorRes: Int, acts: List<Act>) {
+        var i = 0
+        while (i < acts.size) {
+            val row = LinearLayout(this)
+            row.orientation = LinearLayout.HORIZONTAL
+            for (j in 0..1) {
+                val a = acts.getOrNull(i + j)
+                if (a == null) {
+                    row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+                } else {
+                    val v = layoutInflater.inflate(R.layout.item_action, row, false) as MaterialCardView
+                    v.setCardBackgroundColor(c(colorRes))
+                    v.findViewById<TextView>(R.id.actIcon).text = a.icon
+                    v.findViewById<TextView>(R.id.actTitle).text = a.title
+                    v.findViewById<TextView>(R.id.actSub).text = a.sub
+                    v.setOnClickListener {
+                        dialog.dismiss()
+                        a.run()
+                    }
+                    row.addView(v)
                 }
             }
-            true
+            container.addView(row)
+            i += 2
         }
-        pm.show()
+    }
+
+    private fun pasteFromClipboard() {
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val text = cm.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString().orEmpty()
+        if (text.isBlank()) toast("کلیپ‌بورد خالیه") else addFromText(text)
+    }
+
+    private fun launchScan() {
+        scanLauncher.launch(
+            ScanOptions()
+                .setPrompt("QR کانفیگ رو جلوی دوربین بگیرید")
+                .setBeepEnabled(false)
+                .setOrientationLocked(false)
+                .setCaptureActivity(PortraitCaptureActivity::class.java)
+        )
     }
 
     private fun toggleNight() {
@@ -202,6 +279,64 @@ class MainActivity : AppCompatActivity() {
         ConfigExtras.hopEnabled = !ConfigExtras.hopEnabled
         prefs.edit().putBoolean("hop", ConfigExtras.hopEnabled).apply()
         toast("پورت‌هاپینگ " + (if (ConfigExtras.hopEnabled) "روشن شد" else "خاموش شد") + "\nاز اتصال بعدی اعمال می‌شه")
+    }
+
+    private fun resetUsage() {
+        totalBytes = 0L
+        saveTotal()
+        if (!TakVpnService.isRunning) usageText.text = "مصرف کل: ${fmt(0)}"
+    }
+
+    private fun backupAll() {
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
+            return
+        }
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("configs", store.items.joinToString("\n") { it.link }))
+        toast("${store.items.size} کانفیگ توی کلیپ‌بورد کپی شد")
+    }
+
+    private fun showAbout() {
+        AlertDialog.Builder(this)
+            .setTitle("Takvpn")
+            .setMessage("نسخه‌ی ${verName()}\ngithub.com/${UpdateChecker.REPO}")
+            .setPositiveButton("بستن", null)
+            .setNeutralButton("صفحه‌ی دانلود") { _, _ ->
+                startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${UpdateChecker.REPO}/releases/latest"))
+                )
+            }
+            .show()
+    }
+
+    private fun checkUpdate() {
+        toast("در حال بررسی نسخه...")
+        pool.execute {
+            try {
+                val r = UpdateChecker.latest()
+                val cur = UpdateChecker.lastNumber(verName())
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    if (r.minor > cur) {
+                        AlertDialog.Builder(this)
+                            .setTitle("نسخه‌ی جدید ${r.tag}")
+                            .setMessage("نسخه‌ی شما ${verName()} است. صفحه‌ی دانلود باز بشه؟")
+                            .setPositiveButton("دانلود") { _, _ ->
+                                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.url)))
+                            }
+                            .setNegativeButton("بعداً", null)
+                            .show()
+                    } else {
+                        toast("نسخه‌ی شما به‌روزه (${verName()})")
+                    }
+                }
+            } catch (e: Throwable) {
+                val m = (e.message ?: e.toString()).replace("\n", " ").take(80)
+                AppLog.add("بررسی نسخه ناموفق: $m")
+                runOnUiThread { toast("بررسی نسخه ناموفق: $m") }
+            }
+        }
     }
 
     // ---------- subscriptions ----------
@@ -242,23 +377,45 @@ class MainActivity : AppCompatActivity() {
         AppLog.add("دریافت اشتراک از ${hostOf(url)}")
         pool.execute {
             try {
-                val links = SubFetcher.fetch(url)
+                val res = SubFetcher.fetch(url)
+                val links = res.links
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
+                    res.info?.let { subs.setInfo(url, it) }
                     if (links.isEmpty()) {
                         AppLog.add("اشتراک خالی یا بدون کانفیگ پشتیبانی‌شده بود")
                         toast("کانفیگ پشتیبانی‌شده‌ای توی اشتراک پیدا نشد")
                     } else {
                         subs.apply(url, links)
-                        render()
                         AppLog.add("${links.size} کانفیگ از ${hostOf(url)} اضافه یا به‌روز شد")
                         toast("${links.size} کانفیگ از اشتراک اضافه یا به‌روز شد")
                     }
+                    render()
                 }
             } catch (e: Throwable) {
                 val m = (e.message ?: e.toString()).replace("\n", " ").take(80)
                 AppLog.add("خطای اشتراک (${hostOf(url)}): $m")
                 runOnUiThread { toast("دریافت اشتراک ناموفق: $m") }
+            }
+        }
+    }
+
+    private fun refreshSubInfo() {
+        subs.urls().forEach { url ->
+            pool.execute {
+                try {
+                    val info = SubFetcher.fetch(url).info
+                    if (info != null) {
+                        runOnUiThread {
+                            if (!isDestroyed) {
+                                subs.setInfo(url, info)
+                                render()
+                            }
+                        }
+                    }
+                } catch (e: Throwable) {
+                    AppLog.add("به‌روزرسانی اطلاعات اشتراک ناموفق (${hostOf(url)}): ${(e.message ?: "").take(60)}")
+                }
             }
         }
     }
@@ -299,6 +456,29 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("بستن", null)
             .show()
+    }
+
+    private fun subLabel(i: SubInfo): String {
+        val parts = mutableListOf<String>()
+        if (i.expire > 0) {
+            val days = (i.expire * 1000 - System.currentTimeMillis()) / 86400000L
+            parts.add(
+                when {
+                    days < 0 -> "⏳ منقضی شده"
+                    days == 0L -> "⏳ کمتر از ۱ روز"
+                    else -> "⏳ $days روز"
+                }
+            )
+        } else {
+            parts.add("⏳ نامحدود")
+        }
+        if (i.total > 0) {
+            val rem = i.total - i.up - i.down
+            parts.add("📦 " + fmt(rem.coerceAtLeast(0L)) + (if (rem <= 0) " (تمام شده)" else ""))
+        } else {
+            parts.add("📦 نامحدود")
+        }
+        return parts.joinToString("      ")
     }
 
     // ---------- log ----------
@@ -358,8 +538,11 @@ class MainActivity : AppCompatActivity() {
         lastTime = now
         tick++
         if (tick % 10 == 0) saveTotal()
+        val since = prefs.getLong("since", 0L)
+        val secs = if (since > 0) (System.currentTimeMillis() - since) / 1000 else 0L
+        val dur = String.format(Locale.US, "%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60)
         usageText.text =
-            "↓ ${fmt(rx - baseRx)} (${fmt((dRx / dt).toLong())}/s)    ↑ ${fmt(tx - baseTx)} (${fmt((dTx / dt).toLong())}/s)\n" +
+            "⏱ $dur    ↓ ${fmt(rx - baseRx)} (${fmt((dRx / dt).toLong())}/s)    ↑ ${fmt(tx - baseTx)} (${fmt((dTx / dt).toLong())}/s)\n" +
                 "مصرف کل: ${fmt(totalBytes)}"
     }
 
@@ -430,6 +613,14 @@ class MainActivity : AppCompatActivity() {
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
             ping.setTextColor(color)
+            val subView = v.findViewById<TextView>(R.id.subText)
+            val info = subs.infoForConfig(cfg.id)
+            if (info != null) {
+                subView.text = subLabel(info)
+                subView.visibility = View.VISIBLE
+            } else {
+                subView.visibility = View.GONE
+            }
             val selected = cfg.id == store.selectedId
             card.strokeWidth = if (selected) dp(3) else 0
             card.setCardBackgroundColor(c(if (selected) R.color.card_selected else R.color.card))
@@ -500,6 +691,87 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun connectFastest() {
+        if (TakVpnService.isRunning) {
+            toast("اول اتصال رو قطع کنید")
+            return
+        }
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
+            return
+        }
+        store.items.forEach { pings[it.id] = -2L }
+        render()
+        toast("در حال پیدا کردن سریع‌ترین کانفیگ...")
+        val list = store.items.toList()
+        val left = AtomicInteger(list.size)
+        list.forEach { cfg ->
+            pool.execute {
+                val (ms, err) = measure(cfg)
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    errors[cfg.id] = err
+                    pings[cfg.id] = ms
+                    render()
+                    if (left.decrementAndGet() == 0) pickFastest(list)
+                }
+            }
+        }
+    }
+
+    private fun pickFastest(list: List<Cfg>) {
+        val best = list.filter { (pings[it.id] ?: -1L) > 0 }
+            .minByOrNull { pings[it.id] ?: Long.MAX_VALUE }
+        if (best == null) {
+            toast("هیچ کانفیگی پینگ نداد")
+            return
+        }
+        store.select(best.id)
+        render()
+        AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
+        onConnectClicked()
+    }
+
+    private fun sortByPing() {
+        val sel = store.selectedId
+        store.items.sortBy { cfg ->
+            when (val p = pings[cfg.id]) {
+                null -> Long.MAX_VALUE - 1
+                -2L -> Long.MAX_VALUE - 1
+                -1L -> Long.MAX_VALUE
+                else -> p ?: Long.MAX_VALUE
+            }
+        }
+        store.select(sel)
+        render()
+        toast("بر اساس پینگ مرتب شد (اول «پینگ همه» رو بزنید)")
+    }
+
+    private fun deleteDead() {
+        val dead = store.items.filter { pings[it.id] == -1L }
+        if (dead.isEmpty()) {
+            toast("کانفیگ ناموفقی نیست (اول «پینگ همه» رو بزنید)")
+            return
+        }
+        if (TakVpnService.isRunning && dead.any { it.id == store.selectedId }) {
+            toast("اول اتصال رو قطع کنید")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("حذف ناموفق‌ها")
+            .setMessage("${dead.size} کانفیگ ناموفق حذف بشن؟")
+            .setPositiveButton("حذف") { _, _ ->
+                dead.forEach {
+                    store.remove(it.id)
+                    pings.remove(it.id)
+                    errors.remove(it.id)
+                }
+                render()
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
     private fun runConnectionTest() {
         val cfg = store.selected() ?: return
         testText.text = "در حال تست اتصال..."
@@ -564,10 +836,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun share(cfg: Cfg) {
-        val send = Intent(Intent.ACTION_SEND)
-            .setType("text/plain")
-            .putExtra(Intent.EXTRA_TEXT, cfg.link)
-        startActivity(Intent.createChooser(send, "اشتراک‌گذاری کانفیگ"))
+        AlertDialog.Builder(this)
+            .setTitle(cfg.name)
+            .setItems(arrayOf("📋 کپی لینک", "📤 ارسال به برنامه‌های دیگه", "🔳 نمایش QR")) { _, i ->
+                when (i) {
+                    0 -> {
+                        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("config", cfg.link))
+                        toast("لینک کپی شد")
+                    }
+                    1 -> {
+                        val send = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_TEXT, cfg.link)
+                        startActivity(Intent.createChooser(send, "اشتراک‌گذاری کانفیگ"))
+                    }
+                    2 -> showQr(cfg)
+                }
+            }
+            .show()
+    }
+
+    private fun showQr(cfg: Cfg) {
+        val bmp = try {
+            BarcodeEncoder().encodeBitmap(cfg.link, BarcodeFormat.QR_CODE, 800, 800)
+        } catch (e: Exception) {
+            toast("ساخت QR ناموفق بود (لینک خیلی بلنده)")
+            return
+        }
+        val iv = ImageView(this)
+        iv.setImageBitmap(bmp)
+        iv.scaleType = ImageView.ScaleType.FIT_CENTER
+        iv.setBackgroundColor(Color.WHITE)
+        iv.setPadding(dp(12), dp(12), dp(12), dp(12))
+        val box = FrameLayout(this)
+        box.setPadding(dp(20), dp(8), dp(20), 0)
+        box.addView(iv, FrameLayout.LayoutParams(dp(280), dp(280), Gravity.CENTER))
+        AlertDialog.Builder(this)
+            .setTitle(cfg.name)
+            .setView(box)
+            .setPositiveButton("بستن", null)
+            .show()
     }
 
     // ---------- connect ----------
@@ -608,15 +917,23 @@ class MainActivity : AppCompatActivity() {
         fab.imageTintList =
             ColorStateList.valueOf(if (running) Color.WHITE else c(R.color.fab_icon))
         statusText.text = if (running) "متصل" else "قطع"
-        statusText.setTextColor(c(if (running) R.color.status_on else R.color.status_off))
         if (running) {
+            if (prefs.getLong("since", 0L) == 0L) {
+                prefs.edit().putLong("since", System.currentTimeMillis()).apply()
+            }
             if (!lastRunning) {
                 AppLog.add("متصل شد: ${store.selected()?.name.orEmpty()}")
                 runConnectionTest()
+                refreshSubInfo()
             }
+            titleGlow.start()
+            statusGlow.start()
             startTracking()
         } else {
+            prefs.edit().putLong("since", 0L).apply()
             if (lastRunning) AppLog.add("اتصال قطع شد")
+            titleGlow.stop(c(R.color.header_title))
+            statusGlow.stop(c(R.color.status_off))
             testText.text = "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
             stopTracking()
         }
