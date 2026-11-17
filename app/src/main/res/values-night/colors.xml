@@ -4,11 +4,11 @@
     <color name="card_selected">#4D4208</color>
     <color name="ink">#FFE680</color>
     <color name="ink_soft">#CDB65A</color>
-    <color name="header_bg">#FFC800</color>
-    <color name="header_title">#161100</color>
-    <color name="header_sub">#3D3200</color>
-    <color name="status_off">#4A4000</color>
-    <color name="status_on">#0B5D1E</color>
+    <color name="header_bg">#2B2511</color>
+    <color name="header_title">#FFD400</color>
+    <color name="header_sub">#FFE680</color>
+    <color name="status_off">#BBBBBB</color>
+    <color name="status_on">#69F0AE</color>
     <color name="btn_bg">#FFC800</color>
     <color name="btn_text">#161100</color>
     <color name="bar_bg">#2B2511</color>
@@ -20,5 +20,9 @@
     <color name="ping_slow">#FFAB66</color>
     <color name="ping_fail">#FF6B6B</color>
     <color name="nav_bar">#000000</color>
+    <color name="act_add">#4D4208</color>
+    <color name="act_tool">#4A3510</color>
+    <color name="act_sub">#1F3D24</color>
+    <color name="act_sys">#1D3347</color>
     <bool name="light_bars">false</bool>
 </resources>
