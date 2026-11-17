@@ -124,21 +124,48 @@ object ConfigParser {
         val port = if (u.port > 0) u.port else 443
         val auth = u.userInfo ?: throw IllegalArgumentException("رمز Hysteria پیدا نشد")
         val q = query(u)
-        if (!q["obfs"].isNullOrEmpty()) {
-            throw IllegalArgumentException("obfs هنوز پشتیبانی نمی‌شه")
-        }
-        val insecure = q["insecure"] == "1" || q["insecure"] == "true"
+
+        val insecure = q["insecure"] == "1" || q["insecure"] == "true" ||
+            q["allowInsecure"] == "1" || q["allowInsecure"] == "true"
         val sni = q["sni"].orEmpty().ifEmpty { host }
         val tls = JSONObject()
             .put("serverName", sni)
             .put("alpn", JSONArray(listOf("h3")))
             .put("allowInsecure", insecure)
+
         val stream = JSONObject()
             .put("network", "hysteria")
             .put("method", "hysteria")
             .put("hysteriaSettings", JSONObject().put("version", 2).put("auth", auth))
             .put("security", "tls")
             .put("tlsSettings", tls)
+
+        var finalmask = JSONObject()
+        val fm = q["fm"].orEmpty()
+        if (fm.isNotBlank()) {
+            try {
+                finalmask = JSONObject(fm)
+            } catch (e: Exception) {
+            }
+        }
+        val obfsPass = q["obfs-password"].orEmpty()
+        if (q["obfs"] == "salamander" && obfsPass.isNotEmpty()) {
+            val udp = finalmask.optJSONArray("udp") ?: JSONArray()
+            var has = false
+            for (i in 0 until udp.length()) {
+                if (udp.optJSONObject(i)?.optString("type") == "salamander") has = true
+            }
+            if (!has) {
+                udp.put(
+                    JSONObject()
+                        .put("type", "salamander")
+                        .put("settings", JSONObject().put("password", obfsPass))
+                )
+            }
+            finalmask.put("udp", udp)
+        }
+        if (finalmask.length() > 0) stream.put("finalmask", finalmask)
+
         val settings = JSONObject().put("version", 2).put("address", host).put("port", port)
         return JSONObject()
             .put("tag", "proxy")
