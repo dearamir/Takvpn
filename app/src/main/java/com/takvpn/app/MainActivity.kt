@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity() {
                     .setPrompt("QR کانفیگ رو جلوی دوربین بگیرید")
                     .setBeepEnabled(false)
                     .setOrientationLocked(false)
+                    .setCaptureActivity(PortraitCaptureActivity::class.java)
             )
         }
         findViewById<MaterialButton>(R.id.pingAllButton).setOnClickListener { pingAll() }
