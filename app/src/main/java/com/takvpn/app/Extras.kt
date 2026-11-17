@@ -1,8 +1,13 @@
 package com.takvpn.app
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.LinearGradient
+import android.graphics.Shader
 import android.net.Uri
 import android.util.Base64
+import android.view.animation.LinearInterpolator
+import android.widget.TextView
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -94,8 +99,33 @@ object AppLog {
     }
 }
 
+class SubInfo(val up: Long, val down: Long, val total: Long, val expire: Long) {
+    fun toJson(): JSONObject =
+        JSONObject().put("up", up).put("down", down).put("total", total).put("expire", expire)
+
+    companion object {
+        fun fromJson(o: JSONObject) =
+            SubInfo(o.optLong("up"), o.optLong("down"), o.optLong("total"), o.optLong("expire"))
+
+        fun parse(h: String?): SubInfo? {
+            if (h.isNullOrBlank()) return null
+            val m = HashMap<String, Long>()
+            h.split(";").forEach { part ->
+                val kv = part.trim().split("=")
+                if (kv.size == 2) {
+                    kv[1].trim().toDoubleOrNull()?.let { m[kv[0].trim().lowercase()] = it.toLong() }
+                }
+            }
+            if (!m.containsKey("total") && !m.containsKey("expire")) return null
+            return SubInfo(m["upload"] ?: 0L, m["download"] ?: 0L, m["total"] ?: 0L, m["expire"] ?: 0L)
+        }
+    }
+}
+
+class SubResult(val links: List<String>, val info: SubInfo?)
+
 object SubFetcher {
-    fun fetch(url: String): List<String> {
+    fun fetch(url: String): SubResult {
         val u = URL(url)
         if (u.protocol != "http" && u.protocol != "https") {
             throw IOException("آدرس باید با http یا https شروع بشه")
@@ -107,8 +137,9 @@ object SubFetcher {
             c.setRequestProperty("User-Agent", "v2rayNG/1.10.0")
             val code = c.responseCode
             if (code !in 200..299) throw IOException("HTTP $code")
+            val info = SubInfo.parse(c.getHeaderField("Subscription-Userinfo"))
             val body = c.inputStream.bufferedReader().use { it.readText() }
-            return parse(body)
+            return SubResult(parse(body), info)
         } finally {
             c.disconnect()
         }
@@ -140,6 +171,7 @@ object SubFetcher {
 class SubStore(context: Context, private val store: ConfigStore) {
     private val prefs = context.getSharedPreferences("takvpn", Context.MODE_PRIVATE)
     private val map = LinkedHashMap<String, MutableList<String>>()
+    private val infos = HashMap<String, SubInfo>()
 
     init {
         try {
@@ -155,11 +187,33 @@ class SubStore(context: Context, private val store: ConfigStore) {
         } catch (e: Exception) {
             map.clear()
         }
+        try {
+            val o = JSONObject(prefs.getString("subinfo", "{}"))
+            val keys = o.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                infos[k] = SubInfo.fromJson(o.getJSONObject(k))
+            }
+        } catch (e: Exception) {
+            infos.clear()
+        }
     }
 
     fun urls(): List<String> = map.keys.toList()
 
     fun count(url: String): Int = map[url]?.size ?: 0
+
+    fun setInfo(url: String, info: SubInfo) {
+        infos[url] = info
+        saveInfo()
+    }
+
+    fun infoForConfig(id: String): SubInfo? {
+        for ((u, ids) in map) {
+            if (id in ids) return infos[u]
+        }
+        return null
+    }
 
     fun apply(url: String, links: List<String>) {
         val oldIds = map[url].orEmpty()
@@ -184,12 +238,86 @@ class SubStore(context: Context, private val store: ConfigStore) {
     fun remove(url: String) {
         map[url]?.toList()?.forEach { store.remove(it) }
         map.remove(url)
+        infos.remove(url)
         save()
+        saveInfo()
     }
 
     private fun save() {
         val o = JSONObject()
         map.forEach { (k, v) -> o.put(k, JSONArray(v)) }
         prefs.edit().putString("subs", o.toString()).apply()
+    }
+
+    private fun saveInfo() {
+        val o = JSONObject()
+        infos.forEach { (k, v) -> o.put(k, v.toJson()) }
+        prefs.edit().putString("subinfo", o.toString()).apply()
+    }
+}
+
+object UpdateChecker {
+    const val REPO = "dearamir/Takvpn"
+
+    class Result(val tag: String, val minor: Int, val url: String)
+
+    fun lastNumber(s: String): Int =
+        Regex("(\\d+)\\D*$").find(s)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+
+    fun latest(): Result {
+        val u = URL("https://api.github.com/repos/$REPO/releases/latest")
+        val c = u.openConnection() as HttpURLConnection
+        try {
+            c.connectTimeout = 15000
+            c.readTimeout = 20000
+            c.setRequestProperty("User-Agent", "Takvpn")
+            c.setRequestProperty("Accept", "application/vnd.github+json")
+            if (c.responseCode !in 200..299) throw IOException("HTTP ${c.responseCode}")
+            val o = JSONObject(c.inputStream.bufferedReader().use { it.readText() })
+            val tag = o.getString("tag_name")
+            return Result(
+                tag,
+                lastNumber(tag),
+                o.optString("html_url", "https://github.com/$REPO/releases/latest")
+            )
+        } finally {
+            c.disconnect()
+        }
+    }
+}
+
+class GlowAnimator(private val tv: TextView, private val base: Int, private val shine: Int) {
+    private var anim: ValueAnimator? = null
+
+    fun start() {
+        if (anim != null) return
+        val a = ValueAnimator.ofFloat(-0.5f, 1.5f)
+        a.duration = 2000
+        a.repeatCount = ValueAnimator.INFINITE
+        a.interpolator = LinearInterpolator()
+        a.addUpdateListener {
+            val w = tv.width.toFloat().coerceAtLeast(1f)
+            val p = it.animatedValue as Float
+            val x = p * w
+            tv.paint.shader = LinearGradient(
+                x - w * 0.35f, 0f, x + w * 0.35f, 0f,
+                intArrayOf(base, shine, base),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            tv.invalidate()
+        }
+        anim = a
+        tv.setShadowLayer(16f, 0f, 0f, base)
+        a.start()
+    }
+
+    fun stop(restoreColor: Int) {
+        anim?.cancel()
+        anim = null
+        tv.paint.shader = null
+        tv.setShadowLayer(0f, 0f, 0f, 0)
+        tv.setTextColor(restoreColor)
+        tv.invalidate()
     }
 }
