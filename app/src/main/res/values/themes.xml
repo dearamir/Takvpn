@@ -5,15 +5,32 @@
     <color name="ink">#161100</color>
     <color name="ink_soft">#5C4A00</color>
     <color name="ic_bg">#FFC800</color>
+    <color name="header_bg">#161100</color>
+    <color name="header_title">#FFD400</color>
+    <color name="header_sub">#FFE680</color>
+    <color name="status_off">#BBBBBB</color>
+    <color name="status_on">#69F0AE</color>
+    <color name="btn_bg">#161100</color>
+    <color name="btn_text">#FFD400</color>
+    <color name="bar_bg">#161100</color>
+    <color name="bar_text">#FFE680</color>
+    <color name="fab_idle">#161100</color>
+    <color name="fab_icon">#FFD400</color>
+    <color name="fab_on">#FF6D00</color>
+    <color name="ping_good">#1B5E20</color>
+    <color name="ping_slow">#BF360C</color>
+    <color name="ping_fail">#B00020</color>
+    <color name="nav_bar">#161100</color>
+    <bool name="light_bars">true</bool>
 
-    <style name="Theme.Takvpn" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">@color/ink</item>
-        <item name="colorOnPrimary">#FFD400</item>
-        <item name="colorSecondary">@color/ink</item>
+    <style name="Theme.Takvpn" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/btn_bg</item>
+        <item name="colorOnPrimary">@color/btn_text</item>
+        <item name="colorSecondary">@color/btn_bg</item>
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@color/bg</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@color/ink</item>
+        <item name="android:windowLightStatusBar">@bool/light_bars</item>
+        <item name="android:navigationBarColor">@color/nav_bar</item>
         <item name="android:textColorPrimary">@color/ink</item>
     </style>
 </resources>
