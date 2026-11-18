@@ -63,9 +63,12 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
-    private val pool = Executors.newFixedThreadPool(3)
+    private val pool = Executors.newFixedThreadPool(4)
     private val ui = Handler(Looper.getMainLooper())
     private var pendingConfig: String? = null
+    private var pendingName = ""
+    private var pendingLink = ""
+    private var pendingSmart = false
     private var lastRunning = false
 
     private var inited = false
@@ -124,6 +127,21 @@ class MainActivity : AppCompatActivity() {
         fab.setOnClickListener { onConnectClicked() }
 
         render()
+
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 11)
+        }
+
+        if (savedInstanceState == null && prefs.getBoolean("auto_open", false) &&
+            !TakVpnService.isRunning && store.items.isNotEmpty()
+        ) {
+            ui.postDelayed({
+                if (!isDestroyed && !TakVpnService.isRunning) onConnectClicked()
+            }, 700)
+        }
     }
 
     override fun onStart() {
@@ -133,6 +151,12 @@ class MainActivity : AppCompatActivity() {
             AppLog.add("خطای اتصال: $msg")
             runOnUiThread { toast("خطا: $msg") }
         }
+        TakVpnService.onSwitched = {
+            runOnUiThread {
+                render()
+                runConnectionTest()
+            }
+        }
         updateUi(TakVpnService.isRunning)
     }
 
@@ -140,6 +164,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         TakVpnService.onState = null
         TakVpnService.onError = null
+        TakVpnService.onSwitched = null
         ui.removeCallbacks(ticker)
         titleGlow.stop(c(R.color.header_title))
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
@@ -161,7 +186,11 @@ class MainActivity : AppCompatActivity() {
             ""
         }
 
+    private fun smartSelected() = prefs.getBoolean("smart_sel", false)
+
     // ---------- actions sheet ----------
+
+    private fun onOff(key: String) = if (prefs.getBoolean(key, false)) "روشن" else "خاموش"
 
     private fun showActions() {
         val dialog = BottomSheetDialog(this)
@@ -190,6 +219,18 @@ class MainActivity : AppCompatActivity() {
             container, dialog, R.color.act_sub, listOf(
                 Act("🔄", "به‌روزرسانی", "همه‌ی اشتراک‌ها") { updateAllSubs() },
                 Act("🗂️", "مدیریت", "مشاهده و حذف") { manageSubs() }
+            )
+        )
+        addSection(container, "اتصال و شبکه")
+        addGrid(
+            container, dialog, R.color.act_sub, listOf(
+                Act("🧭", "DNS", prefs.getString("dns", TakVpnService.DEFAULT_DNS).orEmpty()) { dnsDialog() },
+                Act("🌐", "سایت‌های .ir مستقیم", onOff("direct_ir")) {
+                    toggleSetting("direct_ir", "باز شدن مستقیم سایت‌های .ir")
+                },
+                Act("🚀", "اتصال هنگام باز شدن", onOff("auto_open")) {
+                    toggleSetting("auto_open", "اتصال هنگام باز شدن اپ", "دفعه‌ی بعد که اپ رو باز کنید")
+                }
             )
         )
         addSection(container, "سیستم")
@@ -249,6 +290,46 @@ class MainActivity : AppCompatActivity() {
             container.addView(row)
             i += 2
         }
+    }
+
+    private fun toggleSetting(key: String, title: String, note: String = "از اتصال بعدی اعمال می‌شه") {
+        val v = !prefs.getBoolean(key, false)
+        prefs.edit().putBoolean(key, v).apply()
+        toast("$title " + (if (v) "روشن شد" else "خاموش شد") + "\n" + note)
+    }
+
+    private fun dnsDialog() {
+        val input = EditText(this)
+        input.setText(prefs.getString("dns", TakVpnService.DEFAULT_DNS))
+        input.hint = "1.1.1.1, 8.8.8.8"
+        input.setSingleLine()
+        val box = FrameLayout(this)
+        box.setPadding(dp(20), dp(8), dp(20), 0)
+        box.addView(
+            input,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
+        AlertDialog.Builder(this)
+            .setTitle("DNS (آدرس‌ها با ویرگول)")
+            .setView(box)
+            .setPositiveButton("ذخیره") { _, _ ->
+                val list = TakVpnService.parseDns(input.text.toString())
+                if (list.isEmpty()) {
+                    toast("آدرس IPv4 معتبری وارد نشد")
+                } else {
+                    prefs.edit().putString("dns", list.joinToString(",")).apply()
+                    toast("DNS ذخیره شد. از اتصال بعدی اعمال می‌شه")
+                }
+            }
+            .setNeutralButton("پیش‌فرض") { _, _ ->
+                prefs.edit().remove("dns").apply()
+                toast("DNS به پیش‌فرض برگشت")
+            }
+            .setNegativeButton("لغو", null)
+            .show()
     }
 
     private fun pasteFromClipboard() {
@@ -602,9 +683,32 @@ class MainActivity : AppCompatActivity() {
         if (added > 0) render()
     }
 
+    private fun addSmartCard() {
+        val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
+        val card = v as MaterialCardView
+        v.findViewById<TextView>(R.id.nameText).text = "⚡ سوییچ هوشمند"
+        val d = v.findViewById<TextView>(R.id.pingText)
+        d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"
+        d.setTextColor(c(R.color.ink_soft))
+        v.findViewById<View>(R.id.subText).visibility = View.GONE
+        v.findViewById<View>(R.id.editBtn).visibility = View.GONE
+        v.findViewById<View>(R.id.deleteBtn).visibility = View.GONE
+        v.findViewById<View>(R.id.shareBtn).visibility = View.GONE
+        val sel = smartSelected()
+        card.strokeWidth = if (sel) dp(3) else 0
+        card.setCardBackgroundColor(c(if (sel) R.color.card_selected else R.color.card))
+        card.setOnClickListener {
+            prefs.edit().putBoolean("smart_sel", true).apply()
+            render()
+        }
+        listContainer.addView(v)
+    }
+
     private fun render() {
         listContainer.removeAllViews()
         emptyText.visibility = if (store.items.isEmpty()) View.VISIBLE else View.GONE
+        if (store.items.isNotEmpty()) addSmartCard()
+        val smartSel = smartSelected()
         for (cfg in store.items) {
             val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
             val card = v as MaterialCardView
@@ -621,10 +725,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 subView.visibility = View.GONE
             }
-            val selected = cfg.id == store.selectedId
+            val selected = cfg.id == store.selectedId && !smartSel
             card.strokeWidth = if (selected) dp(3) else 0
             card.setCardBackgroundColor(c(if (selected) R.color.card_selected else R.color.card))
             card.setOnClickListener {
+                prefs.edit().putBoolean("smart_sel", false).apply()
                 store.select(cfg.id)
                 render()
             }
@@ -649,10 +754,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun measure(cfg: Cfg): Pair<Long, String> {
+    private fun measure(link: String): Pair<Long, String> {
         return try {
             CoreEnv.init(applicationContext)
-            val j = JSONObject(ConfigParser.buildConfig(cfg.link))
+            val j = JSONObject(ConfigParser.buildConfig(link))
             j.remove("inbounds")
             val ms = Libv2ray.measureOutboundDelay(j.toString(), PING_URL)
             if (ms > 0) ms to "" else -1L to "بدون پاسخ"
@@ -679,7 +784,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPing(cfg: Cfg) {
         pool.execute {
-            val (ms, err) = measure(cfg)
+            val (ms, err) = measure(cfg.link)
             if (ms <= 0) AppLog.add("پینگ ناموفق (${cfg.name}): $err")
             runOnUiThread {
                 if (!isDestroyed) {
@@ -691,6 +796,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun testAllThen(done: (List<Cfg>) -> Unit) {
+        val list = store.items.toList()
+        list.forEach { pings[it.id] = -2L }
+        render()
+        val left = AtomicInteger(list.size)
+        list.forEach { cfg ->
+            pool.execute {
+                val (ms, err) = measure(cfg.link)
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    errors[cfg.id] = err
+                    pings[cfg.id] = ms
+                    render()
+                    if (left.decrementAndGet() == 0) done(list)
+                }
+            }
+        }
+    }
+
+    private fun bestOf(list: List<Cfg>): Cfg? =
+        list.filter { (pings[it.id] ?: -1L) > 0 }.minByOrNull { pings[it.id] ?: Long.MAX_VALUE }
+
     private fun connectFastest() {
         if (TakVpnService.isRunning) {
             toast("اول اتصال رو قطع کنید")
@@ -700,36 +827,39 @@ class MainActivity : AppCompatActivity() {
             toast("کانفیگی وجود نداره")
             return
         }
-        store.items.forEach { pings[it.id] = -2L }
-        render()
         toast("در حال پیدا کردن سریع‌ترین کانفیگ...")
-        val list = store.items.toList()
-        val left = AtomicInteger(list.size)
-        list.forEach { cfg ->
-            pool.execute {
-                val (ms, err) = measure(cfg)
-                runOnUiThread {
-                    if (isDestroyed) return@runOnUiThread
-                    errors[cfg.id] = err
-                    pings[cfg.id] = ms
-                    render()
-                    if (left.decrementAndGet() == 0) pickFastest(list)
-                }
+        testAllThen { list ->
+            val best = bestOf(list)
+            if (best == null) {
+                toast("هیچ کانفیگی پینگ نداد")
+            } else {
+                prefs.edit().putBoolean("smart_sel", false).apply()
+                store.select(best.id)
+                render()
+                AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
+                connectWith(best, false)
             }
         }
     }
 
-    private fun pickFastest(list: List<Cfg>) {
-        val best = list.filter { (pings[it.id] ?: -1L) > 0 }
-            .minByOrNull { pings[it.id] ?: Long.MAX_VALUE }
-        if (best == null) {
-            toast("هیچ کانفیگی پینگ نداد")
+    private fun connectSmart() {
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
             return
         }
-        store.select(best.id)
-        render()
-        AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
-        onConnectClicked()
+        testText.text = "در حال پیدا کردن بهترین کانفیگ..."
+        fab.isEnabled = false
+        testAllThen { list ->
+            fab.isEnabled = true
+            val best = bestOf(list)
+            if (best == null) {
+                testText.text = "هیچ کانفیگی پینگ نداد"
+                toast("هیچ کانفیگی پینگ نداد")
+            } else {
+                AppLog.add("سوییچ هوشمند: ${best.name} (${pings[best.id]} ms)")
+                connectWith(best, true)
+            }
+        }
     }
 
     private fun sortByPing() {
@@ -753,7 +883,7 @@ class MainActivity : AppCompatActivity() {
             toast("کانفیگ ناموفقی نیست (اول «پینگ همه» رو بزنید)")
             return
         }
-        if (TakVpnService.isRunning && dead.any { it.id == store.selectedId }) {
+        if (TakVpnService.isRunning) {
             toast("اول اتصال رو قطع کنید")
             return
         }
@@ -773,17 +903,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun runConnectionTest() {
-        val cfg = store.selected() ?: return
+        val link = if (TakVpnService.isRunning && TakVpnService.activeLink.isNotEmpty()) {
+            TakVpnService.activeLink
+        } else {
+            store.selected()?.link
+        } ?: return
+        val smart = smartSelected()
+        val name = TakVpnService.activeName
         testText.text = "در حال تست اتصال..."
         pool.execute {
-            val (ms, err) = measure(cfg)
+            val (ms, err) = measure(link)
             AppLog.add(if (ms > 0) "تست اتصال: $ms ms" else "تست اتصال ناموفق: $err")
             runOnUiThread {
                 if (!isDestroyed) {
+                    val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
                     testText.text = if (ms > 0) {
-                        "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد"
+                        prefix + "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد"
                     } else {
-                        "تست ناموفق" + (if (err.isNotEmpty()) ": $err" else "")
+                        prefix + "تست ناموفق" + (if (err.isNotEmpty()) ": $err" else "")
                     }
                 }
             }
@@ -818,7 +955,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun confirmDelete(cfg: Cfg) {
-        if (TakVpnService.isRunning && cfg.id == store.selectedId) {
+        if (TakVpnService.isRunning && cfg.link == TakVpnService.activeLink) {
             toast("اول اتصال رو قطع کنید")
             return
         }
@@ -886,19 +1023,34 @@ class MainActivity : AppCompatActivity() {
             startService(Intent(this, TakVpnService::class.java).setAction(TakVpnService.ACTION_STOP))
             return
         }
-        val cfg = store.selected()
-        if (cfg == null) {
-            toast("اول یه کانفیگ اضافه و انتخاب کنید")
+        if (store.items.isEmpty()) {
+            toast("اول یه کانفیگ اضافه کنید")
             return
         }
+        if (smartSelected()) {
+            connectSmart()
+            return
+        }
+        val cfg = store.selected()
+        if (cfg == null) {
+            toast("اول یه کانفیگ انتخاب کنید")
+            return
+        }
+        connectWith(cfg, false)
+    }
+
+    private fun connectWith(cfg: Cfg, smart: Boolean) {
         val json = try {
             ConfigExtras.build(cfg.link)
         } catch (e: Exception) {
             toast("کانفیگ نامعتبر: ${e.message}")
             return
         }
-        AppLog.add("درخواست اتصال: ${cfg.name}")
+        AppLog.add((if (smart) "اتصال هوشمند: " else "درخواست اتصال: ") + cfg.name)
         pendingConfig = json
+        pendingName = cfg.name
+        pendingLink = cfg.link
+        pendingSmart = smart
         val intent = VpnService.prepare(this)
         if (intent != null) vpnPermission.launch(intent) else startVpn(json)
     }
@@ -907,6 +1059,9 @@ class MainActivity : AppCompatActivity() {
         startService(
             Intent(this, TakVpnService::class.java)
                 .putExtra(TakVpnService.EXTRA_CONFIG, config)
+                .putExtra(TakVpnService.EXTRA_SMART, pendingSmart)
+                .putExtra(TakVpnService.EXTRA_NAME, pendingName)
+                .putExtra(TakVpnService.EXTRA_LINK, pendingLink)
         )
     }
 
@@ -922,7 +1077,7 @@ class MainActivity : AppCompatActivity() {
                 prefs.edit().putLong("since", System.currentTimeMillis()).apply()
             }
             if (!lastRunning) {
-                AppLog.add("متصل شد: ${store.selected()?.name.orEmpty()}")
+                AppLog.add("متصل شد: ${TakVpnService.activeName}")
                 runConnectionTest()
                 refreshSubInfo()
             }
