@@ -16,6 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      XRAY_CORE_VERSION: "26.11.9"
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
@@ -30,7 +31,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p app/libs
-          gh release download --repo 2dust/AndroidLibXrayLite --pattern "libv2ray.aar" --dir app/libs
+          gh release download "v$XRAY_CORE_VERSION" --repo 2dust/AndroidLibXrayLite --pattern "libv2ray.aar" --dir app/libs
           ls -la app/libs
 
       - name: Prepare signing key
@@ -60,7 +61,7 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build
-        run: gradle :app:assembleRelease :app:assembleDebug --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }}
+        run: gradle :app:assembleRelease :app:assembleDebug --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }} -PxrayCoreVersion=$XRAY_CORE_VERSION
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
