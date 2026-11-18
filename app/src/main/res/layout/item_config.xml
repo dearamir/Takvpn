@@ -39,6 +39,15 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/typeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/ink_soft"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
                 android:id="@+id/pingText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
