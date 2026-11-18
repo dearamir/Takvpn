@@ -1175,6 +1175,11 @@ class MainActivity : AppCompatActivity() {
             val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
             val card = v as MaterialCardView
             v.findViewById<TextView>(R.id.nameText).text = cfg.name
+            v.findViewById<TextView>(R.id.typeText).apply {
+                text = ConfigStore.typeOf(cfg.link)
+                setTextColor(c(R.color.ink_soft))
+                setTypeface(null, Typeface.BOLD)
+            }
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
             ping.text = label

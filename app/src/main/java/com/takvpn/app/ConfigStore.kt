@@ -63,6 +63,36 @@ class ConfigStore(context: Context) {
     }
 
     companion object {
+        fun typeOf(link: String): String {
+            val uri = Uri.parse(link.trim())
+            val scheme = uri.scheme?.lowercase().orEmpty()
+            val protocol = when (scheme) {
+                "vless" -> "VLESS"
+                "vmess" -> "VMess"
+                "hysteria" -> "Hysteria"
+                "hysteria2", "hy2" -> "Hysteria 2"
+                "trojan" -> "Trojan"
+                else -> "نامشخص"
+            }
+            var transport = uri.getQueryParameter("type").orEmpty()
+            var host = uri.getQueryParameter("host").orEmpty()
+            var security = uri.getQueryParameter("security").orEmpty()
+            if (scheme == "vmess") {
+                try {
+                    var encoded = link.trim().removePrefix("vmess://").substringBefore("#")
+                        .replace('-', '+').replace('_', '/')
+                    while (encoded.length % 4 != 0) encoded += "="
+                    val data = JSONObject(String(Base64.decode(encoded, Base64.DEFAULT)))
+                    transport = data.optString("net", transport)
+                    host = data.optString("host", host)
+                    security = if (data.optString("tls") == "tls") "tls" else security
+                } catch (_: Exception) { }
+            }
+            val isCdn = transport in listOf("ws", "httpupgrade") &&
+                host.isNotBlank() && security.equals("tls", ignoreCase = true)
+            return if (isCdn) "$protocol · CDN" else protocol
+        }
+
         fun nameOf(l: String): String {
             val name = try {
                 if (l.startsWith("vmess://")) {
