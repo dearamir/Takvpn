@@ -69,19 +69,19 @@ class MainActivity : AppCompatActivity() {
     )
 
     private val uiPalettes = listOf(
-        UiPalette("طلایی", Color.rgb(255,200,0), Color.WHITE, Color.rgb(255,241,166), Color.rgb(22,17,0), Color.rgb(255,212,0), Color.rgb(22,17,0), Color.rgb(92,74,0), Color.rgb(22,17,0), Color.rgb(255,230,128), Color.rgb(22,17,0)),
-        UiPalette("آبی اقیانوسی", Color.rgb(8,35,62), Color.rgb(18,55,88), Color.rgb(28,83,125), Color.rgb(5,24,43), Color.rgb(45,170,255), Color.WHITE, Color.rgb(180,215,240), Color.rgb(5,24,43), Color.WHITE, Color.rgb(12,95,160)),
-        UiPalette("بنفش", Color.rgb(35,19,55), Color.rgb(57,35,82), Color.rgb(89,55,125), Color.rgb(25,12,42), Color.rgb(194,145,255), Color.WHITE, Color.rgb(220,200,240), Color.rgb(25,12,42), Color.WHITE, Color.rgb(105,55,160)),
-        UiPalette("قرمز", Color.rgb(55,15,20), Color.rgb(78,28,34), Color.rgb(120,42,50), Color.rgb(35,8,12), Color.rgb(255,95,105), Color.WHITE, Color.rgb(245,195,195), Color.rgb(35,8,12), Color.WHITE, Color.rgb(170,25,40)),
-        UiPalette("سبز زمردی", Color.rgb(9,45,36), Color.rgb(20,67,54), Color.rgb(30,100,78), Color.rgb(5,30,24), Color.rgb(65,220,165), Color.WHITE, Color.rgb(185,230,215), Color.rgb(5,30,24), Color.WHITE, Color.rgb(15,125,90)),
-        UiPalette("مشکی لوکس", Color.rgb(15,15,18), Color.rgb(38,38,43), Color.rgb(65,65,72), Color.BLACK, Color.rgb(230,190,90), Color.WHITE, Color.rgb(200,200,205), Color.BLACK, Color.rgb(245,220,165), Color.rgb(55,55,60)),
-        UiPalette("فیروزه‌ای", Color.rgb(8,48,55), Color.rgb(18,72,80), Color.rgb(28,105,115), Color.rgb(5,32,38), Color.rgb(60,225,215), Color.WHITE, Color.rgb(180,230,225), Color.rgb(5,32,38), Color.WHITE, Color.rgb(0,130,135)),
-        UiPalette("صورتی", Color.rgb(58,25,43), Color.rgb(82,42,63), Color.rgb(120,58,88), Color.rgb(38,14,28), Color.rgb(255,145,195), Color.WHITE, Color.rgb(245,205,225), Color.rgb(38,14,28), Color.WHITE, Color.rgb(175,55,115))
+        UiPalette("آبی اقیانوسی", Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
+        UiPalette("مشکی طلایی", Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
+        UiPalette("زمردی", Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
+        UiPalette("بنفش نئونی", Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
     )
     private val textColors = listOf(
-        "سفید" to Color.WHITE, "طلایی" to Color.rgb(255,212,0), "آبی" to Color.rgb(80,175,255),
-        "سبز" to Color.rgb(90,220,150), "قرمز" to Color.rgb(255,105,115),
-        "بنفش" to Color.rgb(205,155,255), "نارنجی" to Color.rgb(255,165,70),
+        "سفید یخی" to Color.rgb(245,248,255),
+        "طلایی" to Color.rgb(245,205,105),
+        "فیروزه‌ای" to Color.rgb(0,210,235),
+        "سبز زمردی" to Color.rgb(65,220,165),
+        "بنفش" to Color.rgb(190,145,255),
+        "نقره‌ای" to Color.rgb(190,200,215),
+        "نارنجی" to Color.rgb(255,165,70),
         "پیش‌فرض پوسته" to Color.TRANSPARENT
     )
     private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
