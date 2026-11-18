@@ -725,10 +725,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 val latest = UpdateChecker.latest()
                 prefs.edit().putLong("last_update_check", System.currentTimeMillis()).apply()
-                val currentCode = BuildConfig.VERSION_CODE
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
-                    if (latest.versionCode > currentCode) {
+                    if (compareCoreVersions(latest.tag, verName()) > 0) {
                         val notes = latest.notes.trim().take(1800)
                         AlertDialog.Builder(this)
                             .setTitle("نسخه‌ی جدید ${latest.tag} موجود است")
