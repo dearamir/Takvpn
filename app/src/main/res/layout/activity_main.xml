@@ -61,28 +61,26 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <com.google.android.material.card.MaterialCardView
+            <FrameLayout
                 android:id="@+id/plusButton"
                 android:layout_width="52dp"
                 android:layout_height="52dp"
                 android:layout_gravity="top|start"
                 android:layout_margin="6dp"
+                android:background="@null"
                 android:clickable="true"
-                android:focusable="true"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="0dp"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+                android:focusable="true">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
+                    android:includeFontPadding="false"
                     android:text="+"
                     android:textColor="@color/header_title"
-                    android:textSize="36sp"
+                    android:textSize="40sp"
                     android:textStyle="bold" />
-            </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
 
