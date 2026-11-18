@@ -259,7 +259,13 @@ class SubStore(context: Context, private val store: ConfigStore) {
 object UpdateChecker {
     const val REPO = "dearamir/Takvpn"
 
-    class Result(val tag: String, val minor: Int, val url: String)
+    class Result(
+        val tag: String,
+        val versionCode: Int,
+        val downloadUrl: String,
+        val notes: String,
+        val sha256: String
+    )
 
     fun lastNumber(s: String): Int =
         Regex("(\\d+)\\D*$").find(s)?.groupValues?.get(1)?.toIntOrNull() ?: 0
@@ -275,10 +281,24 @@ object UpdateChecker {
             if (c.responseCode !in 200..299) throw IOException("HTTP ${c.responseCode}")
             val o = JSONObject(c.inputStream.bufferedReader().use { it.readText() })
             val tag = o.getString("tag_name")
+            val assets = o.optJSONArray("assets") ?: JSONArray()
+            var apk: JSONObject? = null
+            for (i in 0 until assets.length()) {
+                val item = assets.optJSONObject(i) ?: continue
+                val name = item.optString("name")
+                if (name.endsWith(".apk", true) && !name.contains("-debug", true)) {
+                    apk = item
+                    break
+                }
+            }
+            val asset = apk ?: throw IOException("فایل APK نسخه‌ی جدید در انتشار پیدا نشد")
+            val digest = asset.optString("digest")
             return Result(
                 tag,
                 lastNumber(tag),
-                o.optString("html_url", "https://github.com/$REPO/releases/latest")
+                asset.getString("browser_download_url"),
+                o.optString("body", ""),
+                if (digest.startsWith("sha256:")) digest.removePrefix("sha256:") else ""
             )
         } finally {
             c.disconnect()
