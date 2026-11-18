@@ -139,43 +139,79 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAppearanceDialog() {
         val names = uiPalettes.map { it.name }.toTypedArray()
-        AlertDialog.Builder(this)
+        val original = prefs.getString("ui_palette", null)
+        var confirmed = false
+        val dialog = AlertDialog.Builder(this)
             .setTitle("انتخاب پوسته")
-            .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { dialog, which ->
+            .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { _, which ->
                 prefs.edit().putString("ui_palette", names[which]).apply()
                 applyAppPalette()
-                dialog.dismiss()
             }
-            .setPositiveButton("پیش‌فرض") { _, _ ->
+            .setPositiveButton("تأیید", null)
+            .setNeutralButton("پیش‌فرض", null)
+            .setNegativeButton("لغو", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                confirmed = true
+                dialog.dismiss()
+                toast("پوسته ذخیره شد")
+            }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 prefs.edit().remove("ui_palette").apply()
                 applyAppPalette()
-                toast("پوسته به حالت پیش‌فرض برگشت")
             }
-            .setNegativeButton("بستن", null)
-            .show()
+        }
+        dialog.setOnDismissListener {
+            if (!confirmed) {
+                if (original == null) prefs.edit().remove("ui_palette").apply()
+                else prefs.edit().putString("ui_palette", original).apply()
+                applyAppPalette()
+            }
+        }
+        dialog.show()
     }
 
     private fun showTextColorDialog() {
         val names = textColors.map { it.first }.toTypedArray()
-        val selected = names.indexOf(prefs.getString("ui_text_color", "پیش‌فرض پوسته")).coerceAtLeast(0)
-        AlertDialog.Builder(this)
+        val original = prefs.getString("ui_text_color", null)
+        val selected = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
+        var confirmed = false
+        val dialog = AlertDialog.Builder(this)
             .setTitle("رنگ نوشته‌ها")
-            .setSingleChoiceItems(names, selected) { dialog, which ->
+            .setSingleChoiceItems(names, selected) { _, which ->
                 if (names[which] == "پیش‌فرض پوسته") {
                     prefs.edit().remove("ui_text_color").apply()
                 } else {
                     prefs.edit().putString("ui_text_color", names[which]).apply()
                 }
                 applyAppPalette()
-                dialog.dismiss()
             }
-            .setPositiveButton("پیش‌فرض نوشته") { _, _ ->
+            .setPositiveButton("تأیید", null)
+            .setNeutralButton("پیش‌فرض نوشته", null)
+            .setNegativeButton("لغو", null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                confirmed = true
+                dialog.dismiss()
+                toast("رنگ نوشته‌ها ذخیره شد")
+            }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 prefs.edit().remove("ui_text_color").apply()
                 applyAppPalette()
-                toast("رنگ نوشته‌ها به حالت پیش‌فرض برگشت")
             }
-            .setNegativeButton("بستن", null)
-            .show()
+        }
+        dialog.setOnDismissListener {
+            if (!confirmed) {
+                if (original == null) prefs.edit().remove("ui_text_color").apply()
+                else prefs.edit().putString("ui_text_color", original).apply()
+                applyAppPalette()
+            }
+        }
+        dialog.show()
     }
 
     private lateinit var store: ConfigStore
