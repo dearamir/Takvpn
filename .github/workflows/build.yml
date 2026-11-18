@@ -61,7 +61,12 @@ jobs:
           gradle-version: "8.9"
 
       - name: Build
-        run: gradle :app:assembleRelease :app:assembleDebug --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }} -PxrayCoreVersion=$XRAY_CORE_VERSION
+        run: |
+          MAJOR=$((1 + (GITHUB_RUN_NUMBER - 1) / 100))
+          MINOR=$(printf "%02d" $(((GITHUB_RUN_NUMBER - 1) % 100)))
+          APP_VERSION="$MAJOR.$MINOR"
+          echo "Building Takvpn $APP_VERSION"
+          gradle :app:assembleRelease :app:assembleDebug --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=$APP_VERSION -PxrayCoreVersion=$XRAY_CORE_VERSION
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
@@ -78,7 +83,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          V="1.${{ github.run_number }}"
+          MAJOR=$((1 + (GITHUB_RUN_NUMBER - 1) / 100))
+          MINOR=$(printf "%02d" $(((GITHUB_RUN_NUMBER - 1) % 100)))
+          V="$MAJOR.$MINOR"
           cp app/build/outputs/apk/release/app-release.apk "Takvpn-v$V.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "Takvpn-v$V-debug.apk"
           gh release create "v$V" "Takvpn-v$V.apk" "Takvpn-v$V-debug.apk" --title "Takvpn $V" --notes "Takvpn version $V" --latest
