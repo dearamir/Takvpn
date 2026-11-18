@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore:
       - "**.md"
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -34,19 +36,23 @@ jobs:
       - name: Prepare signing key
         run: |
           if [ -z "$KEYSTORE_PASSWORD" ]; then
-            echo "KEYSTORE_PASSWORD not set, using a temporary key"
+            echo "KEYSTORE_PASSWORD not set; Gradle will use the debug signing config for the release build"
             exit 0
           fi
-          if [ -f takvpn.keystore.enc ]; then
-            openssl enc -d -aes-256-cbc -pbkdf2 -md sha256 -in takvpn.keystore.enc -out release.keystore -pass env:KEYSTORE_PASSWORD
-          else
+
+          if [ -f release.keystore.enc ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -md sha256 -in release.keystore.enc -out release.keystore -pass env:KEYSTORE_PASSWORD
+          elif [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF" = "refs/heads/main" ]; then
             keytool -genkeypair -keystore release.keystore -alias takvpn -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 8000 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -dname "CN=Takvpn"
-            openssl enc -aes-256-cbc -pbkdf2 -md sha256 -salt -in release.keystore -out takvpn.keystore.enc -pass env:KEYSTORE_PASSWORD
+            openssl enc -aes-256-cbc -pbkdf2 -md sha256 -salt -in release.keystore -out release.keystore.enc -pass env:KEYSTORE_PASSWORD
             git config user.name "github-actions"
             git config user.email "actions@github.com"
-            git add takvpn.keystore.enc
+            git add release.keystore.enc
             git commit -m "Add encrypted signing key"
             git push
+          else
+            echo "Encrypted release key is missing; creating a temporary key for this test build"
+            keytool -genkeypair -keystore release.keystore -alias takvpn -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity 8000 -storepass "$KEYSTORE_PASSWORD" -keypass "$KEYSTORE_PASSWORD" -dname "CN=Takvpn"
           fi
 
       - uses: gradle/actions/setup-gradle@v4
@@ -56,7 +62,18 @@ jobs:
       - name: Build
         run: gradle :app:assembleRelease :app:assembleDebug --no-daemon -PappVersionCode=${{ github.run_number }} -PappVersionName=1.${{ github.run_number }}
 
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Takvpn-APKs-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
