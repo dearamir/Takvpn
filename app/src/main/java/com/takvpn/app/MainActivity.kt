@@ -94,11 +94,11 @@ class MainActivity : AppCompatActivity() {
             is MaterialCardView -> {
                 val bg = when (view.id) {
                     R.id.testBar -> p.bar
-                    R.id.plusButton -> p.accent
+                    R.id.plusButton -> Color.TRANSPARENT
                     else -> if (view.strokeWidth > 0) p.selected else p.card
                 }
                 view.setCardBackgroundColor(bg)
-                view.strokeColor = p.accent
+                view.strokeColor = if (view.id == R.id.plusButton) Color.TRANSPARENT else p.accent
             }
             is FloatingActionButton -> {
                 view.backgroundTintList = ColorStateList.valueOf(if (TakVpnService.isRunning) p.accent else p.fab)
@@ -114,7 +114,14 @@ class MainActivity : AppCompatActivity() {
                 R.id.pingText -> Unit
                 R.id.subText, R.id.usageText, R.id.emptyText, R.id.actSub -> view.setTextColor(p.soft)
                 R.id.testText -> view.setTextColor(p.barText)
-                else -> view.setTextColor(activeTextColor(p))
+                else -> {
+                    if ((view.parent as? View)?.id == R.id.plusButton) {
+                        view.setTextColor(p.accent)
+                        view.textSize = 36f
+                    } else {
+                        view.setTextColor(activeTextColor(p))
+                    }
+                }
             }
         }
         if (view is ViewGroup) for (i in 0 until view.childCount) applyPaletteToTree(view.getChildAt(i), p)
