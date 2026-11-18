@@ -301,7 +301,8 @@ class MainActivity : AppCompatActivity() {
         ui.removeCallbacks(ticker)
         titleGlow.stop(c(R.color.header_title))
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
-        versionShine?.cancel()        connectIcon.stopShine()
+        versionShine?.cancel()
+        connectIcon.stopShine()
         saveTotal()
     }
 
@@ -600,7 +601,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Throwable) {
-                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)                runOnUiThread {
+                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)
+                runOnUiThread {
                     if (!isDestroyed) toast("بررسی هسته ناموفق بود: $message")
                 }
             } finally {
@@ -900,6 +902,7 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("بستن", null)
             .show()
     }
+
     private fun subLabel(i: SubInfo): String {
         val parts = mutableListOf<String>()
         if (i.expire > 0) {
@@ -1199,7 +1202,8 @@ class MainActivity : AppCompatActivity() {
                 toast("هیچ کانفیگی پینگ نداد")
             } else {
                 prefs.edit().putBoolean("smart_sel", false).apply()
-                store.select(best.id)                render()
+                store.select(best.id)
+                render()
                 AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
                 connectWith(best, false)
             }
