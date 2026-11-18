@@ -136,13 +136,11 @@ class MainActivity : AppCompatActivity() {
                 prefs.edit().putString("ui_palette", names[which]).apply()
                 applyAppPalette()
                 dialog.dismiss()
-                showTextColorDialog()
             }
-            .setNeutralButton("رنگ نوشته‌ها") { _, _ -> showTextColorDialog() }
             .setPositiveButton("پیش‌فرض") { _, _ ->
-                prefs.edit().remove("ui_palette").remove("ui_text_color").apply()
+                prefs.edit().remove("ui_palette").apply()
                 applyAppPalette()
-                toast("ظاهر برنامه به پیش‌فرض برگشت")
+                toast("پوسته به حالت پیش‌فرض برگشت")
             }
             .setNegativeButton("بستن", null)
             .show()
@@ -154,9 +152,18 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("رنگ نوشته‌ها")
             .setSingleChoiceItems(names, selected) { dialog, which ->
-                prefs.edit().putString("ui_text_color", names[which]).apply()
+                if (names[which] == "پیش‌فرض پوسته") {
+                    prefs.edit().remove("ui_text_color").apply()
+                } else {
+                    prefs.edit().putString("ui_text_color", names[which]).apply()
+                }
                 applyAppPalette()
                 dialog.dismiss()
+            }
+            .setPositiveButton("پیش‌فرض نوشته") { _, _ ->
+                prefs.edit().remove("ui_text_color").apply()
+                applyAppPalette()
+                toast("رنگ نوشته‌ها به حالت پیش‌فرض برگشت")
             }
             .setNegativeButton("بستن", null)
             .show()
@@ -407,7 +414,8 @@ class MainActivity : AppCompatActivity() {
                 Act("📜", "لاگ", "رویدادها و خطاها") { showLog() },
                 Act("💾", "بکاپ", "کپی همه‌ی کانفیگ‌ها") { backupAll() },
                 Act("🧮", "صفر کردن مصرف", "مصرف کل داده") { resetUsage() },
-                Act("🎨", "ظاهر و رنگ‌بندی", "پوسته و رنگ نوشته‌ها") { showAppearanceDialog() },
+                Act("🎨", "انتخاب پوسته", "تغییر رنگ پس‌زمینه و کارت‌ها") { showAppearanceDialog() },
+                Act("🖋️", "رنگ نوشته‌ها", "تغییر مستقل رنگ متن‌ها") { showTextColorDialog() },
                 Act("⬆️", "بررسی نسخه", "نسخه‌ی جدید؟") { checkUpdate() },
                 Act("ℹ️", "درباره", "نسخه و دانلود") { showAbout() }
             )
