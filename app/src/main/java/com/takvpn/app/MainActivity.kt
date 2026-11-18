@@ -171,6 +171,7 @@ class MainActivity : AppCompatActivity() {
                 prefs.edit().remove("ui_palette").apply()
                 applyAppPalette()
             }
+            styleAppearanceDialogText(dialog)
         }
         dialog.setOnDismissListener {
             if (!confirmed) {
@@ -183,7 +184,6 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
         dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
-        styleAppearanceDialogText(dialog)
     }
 
     private fun showTextColorDialog() {
@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity() {
                 prefs.edit().remove("ui_text_color").apply()
                 applyAppPalette()
             }
+            styleAppearanceDialogText(dialog)
         }
         dialog.setOnDismissListener {
             if (!confirmed) {
@@ -228,27 +229,30 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
         dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
-        styleAppearanceDialogText(dialog)
     }
 
     private fun styleAppearanceDialogText(dialog: AlertDialog) {
-        dialog.findViewById<TextView>(androidx.appcompat.R.id.alertTitle)?.apply {
-            setTextColor(Color.WHITE)
-            setTypeface(null, Typeface.BOLD)
-        }
-        listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL).forEach { which ->
-            dialog.getButton(which)?.apply {
-                setTextColor(Color.WHITE)
-                setTypeface(null, Typeface.BOLD)
+        fun applyWhiteText(view: View?) {
+            if (view == null) return
+            if (view is TextView) {
+                view.setTextColor(Color.WHITE)
+                view.setTypeface(view.typeface, Typeface.BOLD)
+                view.setShadowLayer(2f, 0f, 1f, Color.BLACK)
+            }
+            if (view is ViewGroup) {
+                for (index in 0 until view.childCount) applyWhiteText(view.getChildAt(index))
             }
         }
-        val list = dialog.listView
-        for (index in 0 until list.childCount) {
-            (list.getChildAt(index) as? TextView)?.apply {
-                setTextColor(Color.WHITE)
-                setTypeface(null, Typeface.BOLD)
+
+        val decor = dialog.window?.decorView
+        applyWhiteText(decor)
+        dialog.listView.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
+            override fun onChildViewAdded(parent: View?, child: View?) {
+                applyWhiteText(child)
             }
-        }
+            override fun onChildViewRemoved(parent: View?, child: View?) = Unit
+        })
+        dialog.listView.post { applyWhiteText(decor) }
     }
 
     private lateinit var store: ConfigStore
