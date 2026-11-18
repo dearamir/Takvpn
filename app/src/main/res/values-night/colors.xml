@@ -16,9 +16,9 @@
     <color name="fab_idle">#FFC800</color>
     <color name="fab_icon">#161100</color>
     <color name="fab_on">#FF6D00</color>
-    <color name="ping_good">#7CE08A</color>
+    <color name="ping_good">#00E676</color>
     <color name="ping_slow">#FFAB66</color>
-    <color name="ping_fail">#FF6B6B</color>
+    <color name="ping_fail">#FF1744</color>
     <color name="nav_bar">#000000</color>
     <color name="act_add">#4D4208</color>
     <color name="act_tool">#4A3510</color>
