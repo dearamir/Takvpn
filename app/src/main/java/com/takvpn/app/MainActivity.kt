@@ -350,6 +350,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateUi(TakVpnService.isRunning)
+        flowSpeedView.startFlow()
         maybeCheckForUpdates()
         versionShine?.takeIf { !it.isRunning }?.start()
     }
@@ -1545,13 +1546,13 @@ class MainActivity : AppCompatActivity() {
             invalidate()
         }
         fun stopFlow() { waveAnimator?.cancel(); waveAnimator = null }
-        override fun onAttachedToWindow() {
-            super.onAttachedToWindow()
+        fun startFlow() {
             if (waveAnimator?.isRunning != true) waveAnimator = ValueAnimator.ofFloat(0f, (Math.PI * 2).toFloat()).apply {
                 duration = 1800L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
                 addUpdateListener { phase = it.animatedValue as Float; invalidate() }; start()
             }
         }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); startFlow() }
         override fun onDetachedFromWindow() { stopFlow(); super.onDetachedFromWindow() }
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
