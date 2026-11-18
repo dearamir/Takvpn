@@ -1499,3 +1499,11 @@ class MainActivity : AppCompatActivity() {
         }
         @Deprecated("Deprecated in Java")
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    companion object {
+        const val PING_URL = "https://www.gstatic.com/generate_204"
+    }
+}
