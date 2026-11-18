@@ -10,6 +10,8 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.Typeface
 import android.graphics.LinearGradient
@@ -171,6 +173,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0.04f)
     }
 
     private fun showTextColorDialog() {
@@ -212,6 +216,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0.04f)
     }
 
     private lateinit var store: ConfigStore
@@ -227,6 +233,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleGlow: GlowAnimator
     private lateinit var statusGlow: GlowAnimator
     private var versionShine: ValueAnimator? = null
+    private var connectColorAnimator: ValueAnimator? = null
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
@@ -293,6 +300,7 @@ class MainActivity : AppCompatActivity() {
         val versionText = findViewById<TextView>(R.id.versionText)
         versionText.text = verName()
         setupVersionShine(versionText)
+        findViewById<TextView>(R.id.coreVersionCorner).text = "Xray " + BuildConfig.XRAY_CORE_VERSION
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
@@ -332,6 +340,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateUi(TakVpnService.isRunning)
+        maybeCheckForUpdates()
         versionShine?.takeIf { !it.isRunning }?.start()
     }
 
@@ -1154,7 +1163,7 @@ class MainActivity : AppCompatActivity() {
     private fun pingLabel(id: String): Pair<String, Int> {
         val soft = c(R.color.ink_soft)
         return when (val p = pings[id]) {
-            null -> "پینگ: برای تست اینجا بزنید" to soft
+            null -> "پینگ: برای تست اینجا بزنید" to Color.WHITE
             -2L -> "در حال تست..." to soft
             -1L -> {
                 val e = errors[id].orEmpty()
