@@ -40,6 +40,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
@@ -103,8 +105,8 @@ class MainActivity : AppCompatActivity() {
                 view.imageTintList = ColorStateList.valueOf(Color.WHITE)
             }
             is android.widget.ImageButton -> {
-                view.imageTintList = ColorStateList.valueOf(p.header)
-                view.setBackgroundColor(p.accent)
+                view.imageTintList = ColorStateList.valueOf(p.accent)
+                view.backgroundTintList = null
             }
             is TextView -> when (view.id) {
                 R.id.titleText, R.id.versionText -> view.setTextColor(p.accent)
@@ -124,8 +126,9 @@ class MainActivity : AppCompatActivity() {
             it.setBackgroundColor(p.bg)
             applyPaletteToTree(it, p)
         }
-        window.statusBarColor = p.bg
+        window.statusBarColor = p.header
         window.navigationBarColor = p.header
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
     }
 
     private fun showAppearanceDialog() {
@@ -226,6 +229,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
 
         store = ConfigStore(this)
@@ -297,8 +301,7 @@ class MainActivity : AppCompatActivity() {
         ui.removeCallbacks(ticker)
         titleGlow.stop(c(R.color.header_title))
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
-        versionShine?.cancel()
-        connectIcon.stopShine()
+        versionShine?.cancel()        connectIcon.stopShine()
         saveTotal()
     }
 
@@ -597,8 +600,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Throwable) {
-                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)
-                runOnUiThread {
+                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)                runOnUiThread {
                     if (!isDestroyed) toast("بررسی هسته ناموفق بود: $message")
                 }
             } finally {
@@ -898,7 +900,6 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("بستن", null)
             .show()
     }
-
     private fun subLabel(i: SubInfo): String {
         val parts = mutableListOf<String>()
         if (i.expire > 0) {
@@ -1050,6 +1051,7 @@ class MainActivity : AppCompatActivity() {
         val d = v.findViewById<TextView>(R.id.pingText)
         d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"
         d.setTextColor(c(R.color.ink_soft))
+        d.setTypeface(null, Typeface.BOLD)
         v.findViewById<View>(R.id.subText).visibility = View.GONE
         v.findViewById<View>(R.id.editBtn).visibility = View.GONE
         v.findViewById<View>(R.id.deleteBtn).visibility = View.GONE
@@ -1197,8 +1199,7 @@ class MainActivity : AppCompatActivity() {
                 toast("هیچ کانفیگی پینگ نداد")
             } else {
                 prefs.edit().putBoolean("smart_sel", false).apply()
-                store.select(best.id)
-                render()
+                store.select(best.id)                render()
                 AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
                 connectWith(best, false)
             }
@@ -1456,7 +1457,7 @@ class MainActivity : AppCompatActivity() {
         override fun draw(canvas: Canvas) {
             val b = bounds
             if (b.isEmpty) return
-            paint.textSize = b.height() * 0.94f
+            paint.textSize = b.height() * 1.04f
             paint.shader = if (connected) gradient else null
             if (connected) {
                 matrix.setTranslate(offset, 0f)
@@ -1498,13 +1499,3 @@ class MainActivity : AppCompatActivity() {
         }
         @Deprecated("Deprecated in Java")
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
-    }
-
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
-
-    companion object {
-        const val PING_URL = "https://www.gstatic.com/generate_204"
-    }
-}
