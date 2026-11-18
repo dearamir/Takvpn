@@ -695,4 +695,390 @@ class MainActivity : AppCompatActivity() {
         d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"
         d.setTextColor(c(R.color.ink_soft))
         v.findViewById<View>(R.id.subText).visibility = View.GONE
-        v.findViewById<View>(R.i
+        v.findViewById<View>(R.id.editBtn).visibility = View.GONE
+        v.findViewById<View>(R.id.deleteBtn).visibility = View.GONE
+        v.findViewById<View>(R.id.shareBtn).visibility = View.GONE
+        val sel = smartSelected()
+        card.strokeWidth = if (sel) dp(3) else 0
+        card.setCardBackgroundColor(c(if (sel) R.color.card_selected else R.color.card))
+        card.setOnClickListener {
+            prefs.edit().putBoolean("smart_sel", true).apply()
+            render()
+        }
+        listContainer.addView(v)
+    }
+
+    private fun render() {
+        listContainer.removeAllViews()
+        emptyText.visibility = if (store.items.isEmpty()) View.VISIBLE else View.GONE
+        if (store.items.isNotEmpty()) addSmartCard()
+        val smartSel = smartSelected()
+        for (cfg in store.items) {
+            val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
+            val card = v as MaterialCardView
+            v.findViewById<TextView>(R.id.nameText).text = cfg.name
+            val ping = v.findViewById<TextView>(R.id.pingText)
+            val (label, color) = pingLabel(cfg.id)
+            ping.text = label
+            ping.setTextColor(color)
+            val subView = v.findViewById<TextView>(R.id.subText)
+            val info = subs.infoForConfig(cfg.id)
+            if (info != null) {
+                subView.text = subLabel(info)
+                subView.visibility = View.VISIBLE
+            } else {
+                subView.visibility = View.GONE
+            }
+            val selected = cfg.id == store.selectedId && !smartSel
+            card.strokeWidth = if (selected) dp(3) else 0
+            card.setCardBackgroundColor(c(if (selected) R.color.card_selected else R.color.card))
+            card.setOnClickListener {
+                prefs.edit().putBoolean("smart_sel", false).apply()
+                store.select(cfg.id)
+                render()
+            }
+            v.findViewById<View>(R.id.editBtn).setOnClickListener {
+                ConfigEditor.editConfig(this, store, cfg) { render() }
+            }
+            v.findViewById<View>(R.id.deleteBtn).setOnClickListener { confirmDelete(cfg) }
+            v.findViewById<View>(R.id.shareBtn).setOnClickListener { share(cfg) }
+            ping.setOnClickListener { pingOne(cfg) }
+            listContainer.addView(v)
+        }
+    }
+
+    private fun pingLabel(id: String): Pair<String, Int> {
+        val soft = c(R.color.ink_soft)
+        return when (val p = pings[id]) {
+            null -> "پینگ: برای تست اینجا بزنید" to soft
+            -2L -> "در حال تست..." to soft
+            -1L -> {
+                val e = errors[id].orEmpty()
+                (if (e.isBlank()) "ناموفق" else "ناموفق: $e") to c(R.color.ping_fail)
+            }
+            else -> "$p ms" to c(if ((p ?: 0L) < 400L) R.color.ping_good else R.color.ping_slow)
+        }
+    }
+
+    private fun measure(link: String): Pair<Long, String> {
+        return try {
+            CoreEnv.init(applicationContext)
+            val j = JSONObject(ConfigParser.buildConfig(link))
+            j.remove("inbounds")
+            val ms = Libv2ray.measureOutboundDelay(j.toString(), PING_URL)
+            if (ms > 0) ms to "" else -1L to "بدون پاسخ"
+        } catch (e: Throwable) {
+            -1L to (e.message ?: e.toString()).replace("\n", " ").take(90)
+        }
+    }
+
+    private fun pingOne(cfg: Cfg) {
+        pings[cfg.id] = -2L
+        render()
+        startPing(cfg)
+    }
+
+    private fun pingAll() {
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
+            return
+        }
+        store.items.forEach { pings[it.id] = -2L }
+        render()
+        store.items.toList().forEach { startPing(it) }
+    }
+
+    private fun startPing(cfg: Cfg) {
+        pool.execute {
+            val (ms, err) = measure(cfg.link)
+            if (ms <= 0) AppLog.add("پینگ ناموفق (${cfg.name}): $err")
+            runOnUiThread {
+                if (!isDestroyed) {
+                    errors[cfg.id] = err
+                    pings[cfg.id] = ms
+                    render()
+                }
+            }
+        }
+    }
+
+    private fun testAllThen(done: (List<Cfg>) -> Unit) {
+        val list = store.items.toList()
+        list.forEach { pings[it.id] = -2L }
+        render()
+        val left = AtomicInteger(list.size)
+        list.forEach { cfg ->
+            pool.execute {
+                val (ms, err) = measure(cfg.link)
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    errors[cfg.id] = err
+                    pings[cfg.id] = ms
+                    render()
+                    if (left.decrementAndGet() == 0) done(list)
+                }
+            }
+        }
+    }
+
+    private fun bestOf(list: List<Cfg>): Cfg? =
+        list.filter { (pings[it.id] ?: -1L) > 0 }.minByOrNull { pings[it.id] ?: Long.MAX_VALUE }
+
+    private fun connectFastest() {
+        if (TakVpnService.isRunning) {
+            toast("اول اتصال رو قطع کنید")
+            return
+        }
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
+            return
+        }
+        toast("در حال پیدا کردن سریع‌ترین کانفیگ...")
+        testAllThen { list ->
+            val best = bestOf(list)
+            if (best == null) {
+                toast("هیچ کانفیگی پینگ نداد")
+            } else {
+                prefs.edit().putBoolean("smart_sel", false).apply()
+                store.select(best.id)
+                render()
+                AppLog.add("سریع‌ترین: ${best.name} (${pings[best.id]} ms)")
+                connectWith(best, false)
+            }
+        }
+    }
+
+    private fun connectSmart() {
+        if (store.items.isEmpty()) {
+            toast("کانفیگی وجود نداره")
+            return
+        }
+        testText.text = "در حال پیدا کردن بهترین کانفیگ..."
+        fab.isEnabled = false
+        testAllThen { list ->
+            fab.isEnabled = true
+            val best = bestOf(list)
+            if (best == null) {
+                testText.text = "هیچ کانفیگی پینگ نداد"
+                toast("هیچ کانفیگی پینگ نداد")
+            } else {
+                AppLog.add("سوییچ هوشمند: ${best.name} (${pings[best.id]} ms)")
+                connectWith(best, true)
+            }
+        }
+    }
+
+    private fun sortByPing() {
+        val sel = store.selectedId
+        store.items.sortBy { cfg ->
+            when (val p = pings[cfg.id]) {
+                null -> Long.MAX_VALUE - 1
+                -2L -> Long.MAX_VALUE - 1
+                -1L -> Long.MAX_VALUE
+                else -> p ?: Long.MAX_VALUE
+            }
+        }
+        store.select(sel)
+        render()
+        toast("بر اساس پینگ مرتب شد (اول «پینگ همه» رو بزنید)")
+    }
+
+    private fun deleteDead() {
+        val dead = store.items.filter { pings[it.id] == -1L }
+        if (dead.isEmpty()) {
+            toast("کانفیگ ناموفقی نیست (اول «پینگ همه» رو بزنید)")
+            return
+        }
+        if (TakVpnService.isRunning) {
+            toast("اول اتصال رو قطع کنید")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("حذف ناموفق‌ها")
+            .setMessage("${dead.size} کانفیگ ناموفق حذف بشن؟")
+            .setPositiveButton("حذف") { _, _ ->
+                dead.forEach {
+                    store.remove(it.id)
+                    pings.remove(it.id)
+                    errors.remove(it.id)
+                }
+                render()
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
+    private fun runConnectionTest() {
+        val link = if (TakVpnService.isRunning && TakVpnService.activeLink.isNotEmpty()) {
+            TakVpnService.activeLink
+        } else {
+            store.selected()?.link
+        } ?: return
+        val smart = smartSelected()
+        val name = TakVpnService.activeName
+        testText.text = "در حال تست اتصال..."
+        pool.execute {
+            val (ms, err) = measure(link)
+            AppLog.add(if (ms > 0) "تست اتصال: $ms ms" else "تست اتصال ناموفق: $err")
+            runOnUiThread {
+                if (!isDestroyed) {
+                    val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
+                    testText.text = if (ms > 0) {
+                        prefix + "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد"
+                    } else {
+                        prefix + "تست ناموفق" + (if (err.isNotEmpty()) ": $err" else "")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun confirmDelete(cfg: Cfg) {
+        if (TakVpnService.isRunning && cfg.link == TakVpnService.activeLink) {
+            toast("اول اتصال رو قطع کنید")
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle("حذف کانفیگ")
+            .setMessage("«${cfg.name}» حذف بشه؟")
+            .setPositiveButton("حذف") { _, _ ->
+                store.remove(cfg.id)
+                pings.remove(cfg.id)
+                errors.remove(cfg.id)
+                render()
+            }
+            .setNegativeButton("لغو", null)
+            .show()
+    }
+
+    private fun share(cfg: Cfg) {
+        AlertDialog.Builder(this)
+            .setTitle(cfg.name)
+            .setItems(arrayOf("📋 کپی لینک", "📤 ارسال به برنامه‌های دیگه", "🔳 نمایش QR")) { _, i ->
+                when (i) {
+                    0 -> {
+                        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("config", cfg.link))
+                        toast("لینک کپی شد")
+                    }
+                    1 -> {
+                        val send = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_TEXT, cfg.link)
+                        startActivity(Intent.createChooser(send, "اشتراک‌گذاری کانفیگ"))
+                    }
+                    2 -> showQr(cfg)
+                }
+            }
+            .show()
+    }
+
+    private fun showQr(cfg: Cfg) {
+        val bmp = try {
+            BarcodeEncoder().encodeBitmap(cfg.link, BarcodeFormat.QR_CODE, 800, 800)
+        } catch (e: Exception) {
+            toast("ساخت QR ناموفق بود (لینک خیلی بلنده)")
+            return
+        }
+        val iv = ImageView(this)
+        iv.setImageBitmap(bmp)
+        iv.scaleType = ImageView.ScaleType.FIT_CENTER
+        iv.setBackgroundColor(Color.WHITE)
+        iv.setPadding(dp(12), dp(12), dp(12), dp(12))
+        val box = FrameLayout(this)
+        box.setPadding(dp(20), dp(8), dp(20), 0)
+        box.addView(iv, FrameLayout.LayoutParams(dp(280), dp(280), Gravity.CENTER))
+        AlertDialog.Builder(this)
+            .setTitle(cfg.name)
+            .setView(box)
+            .setPositiveButton("بستن", null)
+            .show()
+    }
+
+    // ---------- connect ----------
+
+    private fun onConnectClicked() {
+        if (TakVpnService.isRunning) {
+            startService(Intent(this, TakVpnService::class.java).setAction(TakVpnService.ACTION_STOP))
+            return
+        }
+        if (store.items.isEmpty()) {
+            toast("اول یه کانفیگ اضافه کنید")
+            return
+        }
+        if (smartSelected()) {
+            connectSmart()
+            return
+        }
+        val cfg = store.selected()
+        if (cfg == null) {
+            toast("اول یه کانفیگ انتخاب کنید")
+            return
+        }
+        connectWith(cfg, false)
+    }
+
+    private fun connectWith(cfg: Cfg, smart: Boolean) {
+        val json = try {
+            ConfigExtras.build(cfg.link)
+        } catch (e: Exception) {
+            toast("کانفیگ نامعتبر: ${e.message}")
+            return
+        }
+        AppLog.add((if (smart) "اتصال هوشمند: " else "درخواست اتصال: ") + cfg.name)
+        pendingConfig = json
+        pendingName = cfg.name
+        pendingLink = cfg.link
+        pendingSmart = smart
+        val intent = VpnService.prepare(this)
+        if (intent != null) vpnPermission.launch(intent) else startVpn(json)
+    }
+
+    private fun startVpn(config: String) {
+        startService(
+            Intent(this, TakVpnService::class.java)
+                .putExtra(TakVpnService.EXTRA_CONFIG, config)
+                .putExtra(TakVpnService.EXTRA_SMART, pendingSmart)
+                .putExtra(TakVpnService.EXTRA_NAME, pendingName)
+                .putExtra(TakVpnService.EXTRA_LINK, pendingLink)
+        )
+    }
+
+    private fun updateUi(running: Boolean) {
+        fab.setImageResource(if (running) R.drawable.ic_stop else R.drawable.ic_play)
+        fab.backgroundTintList =
+            ColorStateList.valueOf(c(if (running) R.color.fab_on else R.color.fab_idle))
+        fab.imageTintList =
+            ColorStateList.valueOf(if (running) Color.WHITE else c(R.color.fab_icon))
+        statusText.text = if (running) "متصل" else "قطع"
+        if (running) {
+            if (prefs.getLong("since", 0L) == 0L) {
+                prefs.edit().putLong("since", System.currentTimeMillis()).apply()
+            }
+            if (!lastRunning) {
+                AppLog.add("متصل شد: ${TakVpnService.activeName}")
+                runConnectionTest()
+                refreshSubInfo()
+            }
+            titleGlow.start()
+            statusGlow.start()
+            startTracking()
+        } else {
+            prefs.edit().putLong("since", 0L).apply()
+            if (lastRunning) AppLog.add("اتصال قطع شد")
+            titleGlow.stop(c(R.color.header_title))
+            statusGlow.stop(c(R.color.status_off))
+            testText.text = "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+            stopTracking()
+        }
+        lastRunning = running
+    }
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    companion object {
+        const val PING_URL = "https://www.gstatic.com/generate_204"
+    }
+}
