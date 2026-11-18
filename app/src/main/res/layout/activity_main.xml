@@ -61,6 +61,17 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/coreVersionCorner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="7dp"
+                android:text="Xray"
+                android:textColor="@color/header_sub"
+                android:textSize="8sp"
+                android:alpha="0.72" />
+
             <FrameLayout
                 android:id="@+id/plusButton"
                 android:layout_width="52dp"
