@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     )
 
     private val uiPalettes = listOf(
+        UiPalette("مشکی نارنجی", Color.rgb(14,15,18), Color.rgb(28,30,35), Color.rgb(48,38,29), Color.rgb(9,10,12), Color.rgb(255,146,43), Color.rgb(246,244,241), Color.rgb(169,169,174), Color.rgb(22,23,27), Color.rgb(246,244,241), Color.rgb(55,38,24)),
         UiPalette("آبی اقیانوسی", Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
         UiPalette("مشکی طلایی", Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
         UiPalette("زمردی", Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
@@ -88,7 +89,7 @@ class MainActivity : AppCompatActivity() {
         "نارنجی" to Color.rgb(255,165,70),
         "پیش‌فرض پوسته" to Color.TRANSPARENT
     )
-    private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
+    private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "مشکی نارنجی") } ?: uiPalettes.first()
     private fun activeTextColor(p: UiPalette = activePalette()): Int =
         textColors.find { it.first == prefs.getString("ui_text_color", "پیش‌فرض پوسته") }?.second
             ?.takeIf { it != Color.TRANSPARENT } ?: p.text
