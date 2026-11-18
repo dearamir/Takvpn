@@ -50,18 +50,17 @@
                         android:textSize="10sp" />
                 </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="wrap_content"
+                <FrameLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="5dp"
-                    android:gravity="center"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="5dp">
 
                     <TextView
                         android:id="@+id/statusText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
                         android:text="قطع"
                         android:textColor="@color/status_off"
                         android:textSize="15sp"
@@ -71,7 +70,7 @@
                         android:id="@+id/pingAllButton"
                         android:layout_width="wrap_content"
                         android:layout_height="32dp"
-                        android:layout_marginStart="12dp"
+                        android:layout_gravity="end|center_vertical"
                         android:clickable="true"
                         android:focusable="true"
                         app:cardBackgroundColor="@color/header_title"
@@ -91,7 +90,7 @@
                             android:textSize="11sp"
                             android:textStyle="bold" />
                     </com.google.android.material.card.MaterialCardView>
-                </LinearLayout>
+                </FrameLayout>
             </LinearLayout>
 
             <TextView
