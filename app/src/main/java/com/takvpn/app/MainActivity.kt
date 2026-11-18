@@ -60,6 +60,104 @@ class MainActivity : AppCompatActivity() {
 
     private class Act(val icon: String, val title: String, val sub: String, val run: () -> Unit)
 
+    private data class UiPalette(
+        val name: String, val bg: Int, val card: Int, val selected: Int,
+        val header: Int, val accent: Int, val text: Int, val soft: Int,
+        val bar: Int, val barText: Int, val fab: Int
+    )
+
+    private val uiPalettes = listOf(
+        UiPalette("طلایی", Color.rgb(255,200,0), Color.WHITE, Color.rgb(255,241,166), Color.rgb(22,17,0), Color.rgb(255,212,0), Color.rgb(22,17,0), Color.rgb(92,74,0), Color.rgb(22,17,0), Color.rgb(255,230,128), Color.rgb(22,17,0)),
+        UiPalette("آبی اقیانوسی", Color.rgb(8,35,62), Color.rgb(18,55,88), Color.rgb(28,83,125), Color.rgb(5,24,43), Color.rgb(45,170,255), Color.WHITE, Color.rgb(180,215,240), Color.rgb(5,24,43), Color.WHITE, Color.rgb(12,95,160)),
+        UiPalette("بنفش", Color.rgb(35,19,55), Color.rgb(57,35,82), Color.rgb(89,55,125), Color.rgb(25,12,42), Color.rgb(194,145,255), Color.WHITE, Color.rgb(220,200,240), Color.rgb(25,12,42), Color.WHITE, Color.rgb(105,55,160)),
+        UiPalette("قرمز", Color.rgb(55,15,20), Color.rgb(78,28,34), Color.rgb(120,42,50), Color.rgb(35,8,12), Color.rgb(255,95,105), Color.WHITE, Color.rgb(245,195,195), Color.rgb(35,8,12), Color.WHITE, Color.rgb(170,25,40)),
+        UiPalette("سبز زمردی", Color.rgb(9,45,36), Color.rgb(20,67,54), Color.rgb(30,100,78), Color.rgb(5,30,24), Color.rgb(65,220,165), Color.WHITE, Color.rgb(185,230,215), Color.rgb(5,30,24), Color.WHITE, Color.rgb(15,125,90)),
+        UiPalette("مشکی لوکس", Color.rgb(15,15,18), Color.rgb(38,38,43), Color.rgb(65,65,72), Color.BLACK, Color.rgb(230,190,90), Color.WHITE, Color.rgb(200,200,205), Color.BLACK, Color.rgb(245,220,165), Color.rgb(55,55,60)),
+        UiPalette("فیروزه‌ای", Color.rgb(8,48,55), Color.rgb(18,72,80), Color.rgb(28,105,115), Color.rgb(5,32,38), Color.rgb(60,225,215), Color.WHITE, Color.rgb(180,230,225), Color.rgb(5,32,38), Color.WHITE, Color.rgb(0,130,135)),
+        UiPalette("صورتی", Color.rgb(58,25,43), Color.rgb(82,42,63), Color.rgb(120,58,88), Color.rgb(38,14,28), Color.rgb(255,145,195), Color.WHITE, Color.rgb(245,205,225), Color.rgb(38,14,28), Color.WHITE, Color.rgb(175,55,115))
+    )
+    private val textColors = listOf(
+        "سفید" to Color.WHITE, "طلایی" to Color.rgb(255,212,0), "آبی" to Color.rgb(80,175,255),
+        "سبز" to Color.rgb(90,220,150), "قرمز" to Color.rgb(255,105,115),
+        "بنفش" to Color.rgb(205,155,255), "نارنجی" to Color.rgb(255,165,70),
+        "پیش‌فرض پوسته" to Color.TRANSPARENT
+    )
+    private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
+    private fun activeTextColor(p: UiPalette = activePalette()): Int =
+        textColors.find { it.first == prefs.getString("ui_text_color", "پیش‌فرض پوسته") }?.second
+            ?.takeIf { it != Color.TRANSPARENT } ?: p.text
+
+    private fun applyPaletteToTree(view: View, p: UiPalette = activePalette()) {
+        when (view) {
+            is MaterialCardView -> {
+                view.setCardBackgroundColor(p.card)
+                view.strokeColor = p.accent
+            }
+            is FloatingActionButton -> {
+                view.backgroundTintList = ColorStateList.valueOf(if (TakVpnService.isRunning) p.accent else p.fab)
+                view.imageTintList = ColorStateList.valueOf(Color.WHITE)
+            }
+            is android.widget.ImageButton -> {
+                view.imageTintList = ColorStateList.valueOf(p.header)
+                view.setBackgroundColor(p.accent)
+            }
+            is TextView -> when (view.id) {
+                R.id.titleText, R.id.versionText -> view.setTextColor(p.accent)
+                R.id.statusText -> view.setTextColor(if (TakVpnService.isRunning) Color.rgb(90,230,155) else p.soft)
+                R.id.pingText -> Unit
+                R.id.subText, R.id.usageText, R.id.emptyText, R.id.actSub -> view.setTextColor(p.soft)
+                R.id.testText -> view.setTextColor(p.barText)
+                else -> view.setTextColor(activeTextColor(p))
+            }
+        }
+        if (view is ViewGroup) for (i in 0 until view.childCount) applyPaletteToTree(view.getChildAt(i), p)
+    }
+
+    private fun applyAppPalette() {
+        val p = activePalette()
+        findViewById<View>(android.R.id.content)?.let {
+            it.setBackgroundColor(p.bg)
+            applyPaletteToTree(it, p)
+        }
+        findViewById<View>(R.id.testBar)?.setBackgroundColor(p.bar)
+        window.statusBarColor = p.bg
+        window.navigationBarColor = p.header
+    }
+
+    private fun showAppearanceDialog() {
+        val names = uiPalettes.map { it.name }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("انتخاب پوسته")
+            .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { dialog, which ->
+                prefs.edit().putString("ui_palette", names[which]).apply()
+                applyAppPalette()
+                dialog.dismiss()
+                showTextColorDialog()
+            }
+            .setNeutralButton("رنگ نوشته‌ها") { _, _ -> showTextColorDialog() }
+            .setPositiveButton("پیش‌فرض") { _, _ ->
+                prefs.edit().remove("ui_palette").remove("ui_text_color").apply()
+                applyAppPalette()
+                toast("ظاهر برنامه به پیش‌فرض برگشت")
+            }
+            .setNegativeButton("بستن", null)
+            .show()
+    }
+
+    private fun showTextColorDialog() {
+        val names = textColors.map { it.first }.toTypedArray()
+        val selected = names.indexOf(prefs.getString("ui_text_color", "پیش‌فرض پوسته")).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle("رنگ نوشته‌ها")
+            .setSingleChoiceItems(names, selected) { dialog, which ->
+                prefs.edit().putString("ui_text_color", names[which]).apply()
+                applyAppPalette()
+                dialog.dismiss()
+            }
+            .setNegativeButton("بستن", null)
+            .show()
+    }
+
     private lateinit var store: ConfigStore
     private lateinit var subs: SubStore
     private lateinit var titleText: TextView
@@ -145,6 +243,7 @@ class MainActivity : AppCompatActivity() {
         fab.setOnClickListener { onConnectClicked() }
 
         render()
+        applyAppPalette()
 
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
@@ -304,6 +403,7 @@ class MainActivity : AppCompatActivity() {
                 Act("📜", "لاگ", "رویدادها و خطاها") { showLog() },
                 Act("💾", "بکاپ", "کپی همه‌ی کانفیگ‌ها") { backupAll() },
                 Act("🧮", "صفر کردن مصرف", "مصرف کل داده") { resetUsage() },
+                Act("🎨", "ظاهر و رنگ‌بندی", "پوسته و رنگ نوشته‌ها") { showAppearanceDialog() },
                 Act("⬆️", "بررسی نسخه", "نسخه‌ی جدید؟") { checkUpdate() },
                 Act("ℹ️", "درباره", "نسخه و دانلود") { showAbout() }
             )
@@ -313,6 +413,8 @@ class MainActivity : AppCompatActivity() {
         dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         dialog.behavior.skipCollapsed = true
         dialog.show()
+        applyPaletteToTree(root)
+        root.setBackgroundColor(activePalette().bg)
     }
 
     private fun addSection(container: LinearLayout, title: String) {
@@ -987,6 +1089,7 @@ class MainActivity : AppCompatActivity() {
             ping.setOnClickListener { pingOne(cfg) }
             listContainer.addView(v)
         }
+        applyAppPalette()
     }
 
     private fun pingLabel(id: String): Pair<String, Int> {
