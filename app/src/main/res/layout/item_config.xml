@@ -62,12 +62,12 @@
             android:layout_height="42dp"
             android:layout_marginStart="3dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:elevation="0dp"
-            android:padding="8dp"
+            android:elevation="3dp"
+            android:padding="7dp"
             android:scaleType="centerInside"
             android:contentDescription="ویرایش"
-            android:src="@android:drawable/ic_menu_edit"
-            android:tint="#704500" />
+            android:src="@drawable/ic_gold_edit"
+            android:tint="#FFD36A" />
 
         <ImageButton
             android:id="@+id/deleteBtn"
@@ -79,8 +79,8 @@
             android:padding="8dp"
             android:scaleType="centerInside"
             android:contentDescription="حذف"
-            android:src="@android:drawable/ic_menu_delete"
-            android:tint="#704500" />
+            android:src="@drawable/ic_gold_delete"
+            android:tint="#FFD36A" />
 
         <ImageButton
             android:id="@+id/shareBtn"
@@ -92,7 +92,7 @@
             android:padding="8dp"
             android:scaleType="centerInside"
             android:contentDescription="اشتراک‌گذاری"
-            android:src="@android:drawable/ic_menu_share"
-            android:tint="#704500" />
+            android:src="@drawable/ic_gold_share"
+            android:tint="#FFD36A" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
