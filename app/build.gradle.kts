@@ -5,10 +5,15 @@ plugins {
 
 val appVersionCode = (project.findProperty("appVersionCode") as String?)?.toIntOrNull() ?: 1
 val appVersionName = (project.findProperty("appVersionName") as String?) ?: "1.0"
+val xrayCoreVersion = (project.findProperty("xrayCoreVersion") as String?) ?: "26.11.9"
 
 android {
     namespace = "com.takvpn.app"
     compileSdk = 34
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.takvpn.app"
@@ -16,6 +21,7 @@ android {
         targetSdk = 34
         versionCode = appVersionCode
         versionName = appVersionName
+        buildConfigField("String", "XRAY_CORE_VERSION", "\"$xrayCoreVersion\"")
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }

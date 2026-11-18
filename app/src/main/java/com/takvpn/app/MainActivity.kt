@@ -51,6 +51,8 @@ import com.journeyapps.barcodescanner.ScanOptions
 import libv2ray.Libv2ray
 import org.json.JSONObject
 import java.util.Locale
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -439,14 +441,78 @@ class MainActivity : AppCompatActivity() {
     private fun showAbout() {
         AlertDialog.Builder(this)
             .setTitle("Takvpn")
-            .setMessage("نسخه‌ی ${verName()}\ngithub.com/${UpdateChecker.REPO}")
+            .setMessage(
+                "نسخه‌ی برنامه: ${verName()}\nنسخه‌ی هسته Xray: ${BuildConfig.XRAY_CORE_VERSION}\ngithub.com/${UpdateChecker.REPO}"
+            )
             .setPositiveButton("بستن", null)
-            .setNeutralButton("صفحه‌ی دانلود") { _, _ ->
+            .setNeutralButton("بررسی بروزرسانی هسته") { _, _ -> checkCoreUpdate() }
+            .setNegativeButton("صفحه‌ی دانلود") { _, _ ->
                 startActivity(
                     Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${UpdateChecker.REPO}/releases/latest"))
                 )
             }
             .show()
+    }
+
+    private fun checkCoreUpdate() {
+        toast("در حال بررسی نسخه‌ی هسته...")
+        pool.execute {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = URL("https://api.github.com/repos/2dust/AndroidLibXrayLite/releases/latest")
+                    .openConnection() as HttpURLConnection
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+                connection.setRequestProperty("Accept", "application/vnd.github+json")
+                if (connection.responseCode !in 200..299) {
+                    throw IllegalStateException("HTTP ${connection.responseCode}")
+                }
+                val release = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                val latest = release.optString("tag_name").removePrefix("v")
+                val current = BuildConfig.XRAY_CORE_VERSION
+                val newer = compareCoreVersions(latest, current) > 0
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    if (newer) {
+                        AlertDialog.Builder(this)
+                            .setTitle("هسته‌ی جدید موجود است")
+                            .setMessage(
+                                "هسته‌ی فعلی: $current\nآخرین هسته: $latest\n\nبرای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود."
+                            )
+                            .setPositiveButton("دریافت نسخه‌ی جدید برنامه") { _, _ ->
+                                startActivity(
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse("https://github.com/${UpdateChecker.REPO}/releases/latest")
+                                    )
+                                )
+                            }
+                            .setNegativeButton("بعداً", null)
+                            .show()
+                    } else {
+                        toast("هسته‌ی Xray به‌روزه ($current)")
+                    }
+                }
+            } catch (e: Throwable) {
+                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)
+                runOnUiThread {
+                    if (!isDestroyed) toast("بررسی هسته ناموفق بود: $message")
+                }
+            } finally {
+                connection?.disconnect()
+            }
+        }
+    }
+
+    private fun compareCoreVersions(first: String, second: String): Int {
+        val a = first.split(".").map { it.toIntOrNull() ?: 0 }
+        val b = second.split(".").map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val left = a.getOrElse(i) { 0 }
+            val right = b.getOrElse(i) { 0 }
+            if (left != right) return left.compareTo(right)
+        }
+        return 0
     }
 
     private fun checkUpdate() {
@@ -1134,10 +1200,16 @@ class MainActivity : AppCompatActivity() {
         }
         private val matrix = Matrix()
         private val gradient = LinearGradient(
-            -120f, 0f, 120f, 0f,
-            intArrayOf(Color.WHITE, Color.parseColor("#FFFFD36A"), Color.WHITE,
-                Color.parseColor("#FFFFB52E"), Color.WHITE),
-            floatArrayOf(0f, 0.38f, 0.5f, 0.62f, 1f),
+            -72f, 0f, 72f, 0f,
+            intArrayOf(
+                Color.parseColor("#FFFFA000"),
+                Color.parseColor("#FFFFD45C"),
+                Color.WHITE,
+                Color.WHITE,
+                Color.parseColor("#FFFFD45C"),
+                Color.parseColor("#FFFFA000")
+            ),
+            floatArrayOf(0f, 0.32f, 0.44f, 0.56f, 0.68f, 1f),
             Shader.TileMode.CLAMP
         )
         private var shine: ValueAnimator? = null
@@ -1147,7 +1219,7 @@ class MainActivity : AppCompatActivity() {
         override fun draw(canvas: Canvas) {
             val b = bounds
             if (b.isEmpty) return
-            paint.textSize = b.height() * 0.78f
+            paint.textSize = b.height() * 0.94f
             paint.shader = if (connected) gradient else null
             if (connected) {
                 matrix.setTranslate(offset, 0f)
@@ -1165,8 +1237,8 @@ class MainActivity : AppCompatActivity() {
 
         fun startShine() {
             if (!connected || shine?.isRunning == true) return
-            shine = ValueAnimator.ofFloat(-240f, bounds.width().coerceAtLeast(64).toFloat() + 240f).apply {
-                duration = 1700L
+            shine = ValueAnimator.ofFloat(-150f, bounds.width().coerceAtLeast(64).toFloat() + 150f).apply {
+                duration = 1250L
                 repeatCount = ValueAnimator.INFINITE
                 interpolator = LinearInterpolator()
                 addUpdateListener {
