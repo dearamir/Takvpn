@@ -11,9 +11,9 @@ import android.graphics.Color
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.drawable.ColorDrawable
 import kotlin.math.ln
 import kotlin.math.sin
-import android.graphics.Path
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.Typeface
@@ -240,7 +240,6 @@ class MainActivity : AppCompatActivity() {
     private var versionShine: ValueAnimator? = null
     private var connectColorAnimator: ValueAnimator? = null
     private lateinit var flowSpeedView: FlowSpeedView
-    private var connectColorAnimator: ValueAnimator? = null
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
