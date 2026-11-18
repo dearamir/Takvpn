@@ -230,7 +230,8 @@ class MainActivity : AppCompatActivity() {
                 },
                 Act("🚀", "اتصال هنگام باز شدن", onOff("auto_open")) {
                     toggleSetting("auto_open", "اتصال هنگام باز شدن اپ", "دفعه‌ی بعد که اپ رو باز کنید")
-                }
+                },
+                Act("📲", "انتخاب اپ‌ها", AppPicker.summary(this)) { AppPicker.show(this) }
             )
         )
         addSection(container, "سیستم")
