@@ -442,15 +442,11 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Takvpn")
             .setMessage(
-                "نسخه‌ی برنامه: ${verName()}\nنسخه‌ی هسته Xray: ${BuildConfig.XRAY_CORE_VERSION}\ngithub.com/${UpdateChecker.REPO}"
+                "نسخه‌ی برنامه: ${verName()}\nنسخه‌ی هسته Xray: ${BuildConfig.XRAY_CORE_VERSION}\nبروزرسانی مستقیم از داخل برنامه"
             )
-            .setPositiveButton("بستن", null)
+            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
             .setNeutralButton("بررسی بروزرسانی هسته") { _, _ -> checkCoreUpdate() }
-            .setNegativeButton("صفحه‌ی دانلود") { _, _ ->
-                startActivity(
-                    Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/${UpdateChecker.REPO}/releases/latest"))
-                )
-            }
+            .setNegativeButton("بستن", null)
             .show()
     }
 
@@ -479,14 +475,7 @@ class MainActivity : AppCompatActivity() {
                             .setMessage(
                                 "هسته‌ی فعلی: $current\nآخرین هسته: $latest\n\nبرای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود."
                             )
-                            .setPositiveButton("دریافت نسخه‌ی جدید برنامه") { _, _ ->
-                                startActivity(
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        Uri.parse("https://github.com/${UpdateChecker.REPO}/releases/latest")
-                                    )
-                                )
-                            }
+                            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
                             .setNegativeButton("بعداً", null)
                             .show()
                     } else {
