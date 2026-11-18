@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
         statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
-        findViewById<TextView>(R.id.versionText).text = "نسخه ${verName()}"
+        findViewById<TextView>(R.id.versionText).text = verName()
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
