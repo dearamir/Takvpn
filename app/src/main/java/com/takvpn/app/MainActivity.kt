@@ -1146,7 +1146,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun addSmartCard() {
         val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
+        val smartParams = v.layoutParams as? LinearLayout.LayoutParams
+            ?: LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        smartParams.marginStart = dp(12)
+        smartParams.marginEnd = dp(12)
+        v.layoutParams = smartParams
         val card = v as MaterialCardView
+        card.radius = dp(13).toFloat()
         v.findViewById<TextView>(R.id.nameText).text = "⚡ سوییچ هوشمند"
         val d = v.findViewById<TextView>(R.id.pingText)
         d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"

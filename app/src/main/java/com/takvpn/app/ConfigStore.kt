@@ -66,17 +66,21 @@ class ConfigStore(context: Context) {
         fun typeOf(link: String): String {
             val uri = Uri.parse(link.trim())
             val scheme = uri.scheme?.lowercase().orEmpty()
-            val protocol = when (scheme) {
+            var protocol = when (scheme) {
                 "vless" -> "VLESS"
                 "vmess" -> "VMess"
                 "hysteria" -> "Hysteria"
                 "hysteria2", "hy2" -> "Hysteria 2"
                 "trojan" -> "Trojan"
+                "ss" -> "Shadowsocks"
                 else -> "نامشخص"
             }
             var transport = uri.getQueryParameter("type").orEmpty()
-            var host = uri.getQueryParameter("host").orEmpty()
             var security = uri.getQueryParameter("security").orEmpty()
+            var host = uri.getQueryParameter("host").orEmpty()
+            var path = uri.getQueryParameter("path").orEmpty()
+            var sni = uri.getQueryParameter("sni").orEmpty()
+            var flow = uri.getQueryParameter("flow").orEmpty()
             if (scheme == "vmess") {
                 try {
                     var encoded = link.trim().removePrefix("vmess://").substringBefore("#")
@@ -85,12 +89,35 @@ class ConfigStore(context: Context) {
                     val data = JSONObject(String(Base64.decode(encoded, Base64.DEFAULT)))
                     transport = data.optString("net", transport)
                     host = data.optString("host", host)
-                    security = if (data.optString("tls") == "tls") "tls" else security
+                    path = data.optString("path", path)
+                    sni = data.optString("sni", sni)
+                    security = if (data.optString("tls").isNotBlank() && data.optString("tls") != "none") "tls" else security
                 } catch (_: Exception) { }
             }
-            val isCdn = transport in listOf("ws", "httpupgrade") &&
+            val parts = mutableListOf(protocol)
+            val transportLabel = when (transport.lowercase()) {
+                "tcp" -> "TCP"
+                "ws" -> "WS"
+                "grpc" -> "gRPC"
+                "xhttp", "splithttp" -> "XHTTP"
+                "httpupgrade" -> "HTTPUpgrade"
+                "kcp" -> "mKCP"
+                "quic" -> "QUIC"
+                "http" -> "HTTP"
+                else -> transport.takeIf { it.isNotBlank() }?.uppercase()
+            }
+            transportLabel?.let { parts.add(it) }
+            when (security.lowercase()) {
+                "reality" -> parts.add("REALITY")
+                "tls" -> parts.add("TLS")
+                "none" -> Unit
+                else -> security.takeIf { it.isNotBlank() }?.uppercase()?.let { parts.add(it) }
+            }
+            if (flow.isNotBlank()) parts.add(flow.uppercase())
+            val cdnLike = transport.lowercase() in listOf("ws", "httpupgrade") &&
                 host.isNotBlank() && security.equals("tls", ignoreCase = true)
-            return if (isCdn) "$protocol · CDN" else protocol
+            if (cdnLike) parts.add("CDN")
+            return parts.distinct().joinToString(" / ")
         }
 
         fun nameOf(l: String): String {
