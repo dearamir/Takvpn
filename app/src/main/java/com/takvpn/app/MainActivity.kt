@@ -725,7 +725,6 @@ class MainActivity : AppCompatActivity() {
             try {
                 val latest = UpdateChecker.latest()
                 prefs.edit().putLong("last_update_check", System.currentTimeMillis()).apply()
-                val currentCode = BuildConfig.VERSION_CODE
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     if (compareCoreVersions(latest.tag, verName()) > 0) {
