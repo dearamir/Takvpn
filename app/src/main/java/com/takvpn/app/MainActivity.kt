@@ -94,18 +94,17 @@ class MainActivity : AppCompatActivity() {
             is MaterialCardView -> {
                 val bg = when (view.id) {
                     R.id.testBar -> p.bar
-                    R.id.plusButton -> Color.TRANSPARENT
                     else -> if (view.strokeWidth > 0) p.selected else p.card
                 }
                 view.setCardBackgroundColor(bg)
-                view.strokeColor = if (view.id == R.id.plusButton) Color.TRANSPARENT else p.accent
+                view.strokeColor = p.accent
             }
             is FloatingActionButton -> {
                 view.backgroundTintList = ColorStateList.valueOf(if (TakVpnService.isRunning) p.accent else p.fab)
                 view.imageTintList = ColorStateList.valueOf(Color.WHITE)
             }
             is android.widget.ImageButton -> {
-                view.imageTintList = ColorStateList.valueOf(p.accent)
+                view.imageTintList = ColorStateList.valueOf(Color.rgb(255,211,106))
                 view.backgroundTintList = null
             }
             is TextView -> when (view.id) {
@@ -117,7 +116,7 @@ class MainActivity : AppCompatActivity() {
                 else -> {
                     if ((view.parent as? View)?.id == R.id.plusButton) {
                         view.setTextColor(p.accent)
-                        view.textSize = 36f
+                        view.textSize = 40f
                     } else {
                         view.setTextColor(activeTextColor(p))
                     }
