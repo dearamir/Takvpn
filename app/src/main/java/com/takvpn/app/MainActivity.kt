@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
                 view.imageTintList = ColorStateList.valueOf(Color.WHITE)
             }
             is android.widget.ImageButton -> {
-                view.imageTintList = ColorStateList.valueOf(Color.rgb(255,211,106))
+                view.imageTintList = ColorStateList.valueOf(Color.rgb(255,146,43))
                 view.backgroundTintList = null
             }
             is TextView -> when (view.id) {
@@ -334,7 +334,7 @@ class MainActivity : AppCompatActivity() {
         connectIcon = ConnectTDrawable()
         fab.setImageDrawable(connectIcon)
         fab.imageTintList = null
-        titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
+        titleGlow = GlowAnimator(titleText, Color.parseColor("#FF922B"), Color.parseColor("#FFE0BF"))
         statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
         val versionText = findViewById<TextView>(R.id.versionText)
@@ -1633,12 +1633,12 @@ class MainActivity : AppCompatActivity() {
         private val gradient = LinearGradient(
             -72f, 0f, 72f, 0f,
             intArrayOf(
-                Color.parseColor("#FFFFA000"),
-                Color.parseColor("#FFFFD45C"),
+                Color.parseColor("#FFFF922B"),
+                Color.parseColor("#FFFFB15C"),
                 Color.WHITE,
                 Color.WHITE,
-                Color.parseColor("#FFFFD45C"),
-                Color.parseColor("#FFFFA000")
+                Color.parseColor("#FFFFB15C"),
+                Color.parseColor("#FFFF922B")
             ),
             floatArrayOf(0f, 0.32f, 0.44f, 0.56f, 0.68f, 1f),
             Shader.TileMode.CLAMP
@@ -1670,7 +1670,7 @@ class MainActivity : AppCompatActivity() {
                     val py = cy + sin(angle).toFloat() * r
                     if (i == 0) wave.moveTo(px, py) else wave.lineTo(px, py)
                 }
-                wave.close(); ringPaint.color = Color.parseColor("#FFFFA000"); canvas.drawPath(wave, ringPaint)
+                wave.close(); ringPaint.color = Color.parseColor("#FFFF922B"); canvas.drawPath(wave, ringPaint)
             }
             paint.textSize = b.height() * 0.82f
             paint.shader = if (connected) gradient else null
