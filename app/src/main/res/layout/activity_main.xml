@@ -61,6 +61,17 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/coreVersionCorner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|end"
+                android:layout_margin="7dp"
+                android:text="Xray"
+                android:textColor="@color/header_sub"
+                android:textSize="8sp"
+                android:alpha="0.72" />
+
             <FrameLayout
                 android:id="@+id/plusButton"
                 android:layout_width="52dp"
@@ -78,8 +89,8 @@
                     android:includeFontPadding="false"
                     android:text="+"
                     android:textColor="@color/header_title"
-                    android:textSize="40sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-light"
+                    android:textSize="40sp" />
             </FrameLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -113,14 +124,26 @@
         </LinearLayout>
     </ScrollView>
 
-    <TextView
-        android:id="@+id/usageText"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:gravity="center"
-        android:textColor="@color/ink_soft"
-        android:textSize="12sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <FrameLayout
+            android:id="@+id/speedIndicatorSlot"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginEnd="8dp" />
+        <TextView
+            android:id="@+id/usageText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/ink_soft"
+            android:textSize="12sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"

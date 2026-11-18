@@ -10,6 +10,10 @@ import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.drawable.ColorDrawable
+import kotlin.math.ln
+import kotlin.math.sin
 import android.graphics.drawable.Drawable
 import android.graphics.Typeface
 import android.graphics.LinearGradient
@@ -171,6 +175,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0.04f)
+        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun showTextColorDialog() {
@@ -212,6 +219,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         dialog.show()
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setDimAmount(0.04f)
+        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private lateinit var store: ConfigStore
@@ -227,6 +237,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var titleGlow: GlowAnimator
     private lateinit var statusGlow: GlowAnimator
     private var versionShine: ValueAnimator? = null
+    private var connectColorAnimator: ValueAnimator? = null
+    private lateinit var flowSpeedView: FlowSpeedView
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
@@ -260,6 +272,7 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             pendingConfig?.let { startVpn(it) }
         } else {
+            resetConnectVisual()
             toast("اجازه‌ی VPN داده نشد")
         }
     }
@@ -284,6 +297,8 @@ class MainActivity : AppCompatActivity() {
         usageText = findViewById(R.id.usageText)
         listContainer = findViewById(R.id.listContainer)
         fab = findViewById(R.id.connectFab)
+        flowSpeedView = FlowSpeedView(this)
+        findViewById<FrameLayout>(R.id.speedIndicatorSlot).addView(flowSpeedView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         connectIcon = ConnectTDrawable()
         fab.setImageDrawable(connectIcon)
         fab.imageTintList = null
@@ -293,6 +308,7 @@ class MainActivity : AppCompatActivity() {
         val versionText = findViewById<TextView>(R.id.versionText)
         versionText.text = verName()
         setupVersionShine(versionText)
+        findViewById<TextView>(R.id.coreVersionCorner).text = "Xray " + BuildConfig.XRAY_CORE_VERSION
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
@@ -332,6 +348,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateUi(TakVpnService.isRunning)
+        flowSpeedView.startFlow()
+        maybeCheckForUpdates()
         versionShine?.takeIf { !it.isRunning }?.start()
     }
 
@@ -345,6 +363,9 @@ class MainActivity : AppCompatActivity() {
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
         versionShine?.cancel()
         connectIcon.stopShine()
+        connectColorAnimator?.cancel()
+        connectColorAnimator = null
+        flowSpeedView.stopFlow()
         saveTotal()
     }
 
@@ -1019,6 +1040,7 @@ class MainActivity : AppCompatActivity() {
         val dRx = (rx - lastRx).coerceAtLeast(0L)
         val dTx = (tx - lastTx).coerceAtLeast(0L)
         val dt = ((now - lastTime) / 1000.0).coerceAtLeast(0.5)
+        flowSpeedView.setRate(((dRx + dTx) / dt).toLong())
         totalBytes += dRx + dTx
         lastRx = rx
         lastTx = tx
@@ -1043,6 +1065,7 @@ class MainActivity : AppCompatActivity() {
         inited = false
         saveTotal()
         usageText.text = "مصرف کل: ${fmt(totalBytes)}"
+        flowSpeedView.setRate(0L)
     }
 
     private fun saveTotal() {
@@ -1154,7 +1177,7 @@ class MainActivity : AppCompatActivity() {
     private fun pingLabel(id: String): Pair<String, Int> {
         val soft = c(R.color.ink_soft)
         return when (val p = pings[id]) {
-            null -> "پینگ: برای تست اینجا بزنید" to soft
+            null -> "پینگ: برای تست اینجا بزنید" to Color.WHITE
             -2L -> "در حال تست..." to soft
             -1L -> {
                 val e = errors[id].orEmpty()
@@ -1237,6 +1260,7 @@ class MainActivity : AppCompatActivity() {
             toast("کانفیگی وجود نداره")
             return
         }
+        startConnectVisual()
         toast("در حال پیدا کردن سریع‌ترین کانفیگ...")
         testAllThen { list ->
             val best = bestOf(list)
@@ -1257,6 +1281,7 @@ class MainActivity : AppCompatActivity() {
             toast("کانفیگی وجود نداره")
             return
         }
+        startConnectVisual()
         testText.text = "در حال پیدا کردن بهترین کانفیگ..."
         fab.isEnabled = false
         testAllThen { list ->
@@ -1429,6 +1454,7 @@ class MainActivity : AppCompatActivity() {
             toast("کانفیگ نامعتبر: ${e.message}")
             return
         }
+        startConnectVisual()
         AppLog.add((if (smart) "اتصال هوشمند: " else "درخواست اتصال: ") + cfg.name)
         pendingConfig = json
         pendingName = cfg.name
@@ -1450,8 +1476,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUi(running: Boolean) {
         connectIcon.setConnected(running)
-        fab.backgroundTintList =
-            ColorStateList.valueOf(c(if (running) R.color.fab_on else R.color.fab_idle))
+        if (running) {
+            connectIcon.setFlowing(true)
+            if (connectColorAnimator == null) startConnectColorTransition()
+        } else resetConnectVisual()
         statusText.text = if (running) "متصل" else "قطع"
         if (running) {
             if (prefs.getLong("since", 0L) == 0L) {
@@ -1476,6 +1504,82 @@ class MainActivity : AppCompatActivity() {
         lastRunning = running
     }
 
+    private fun startConnectVisual() {
+        connectIcon.setFlowing(true)
+        startConnectColorTransition()
+    }
+
+    private fun startConnectColorTransition() {
+        connectColorAnimator?.cancel()
+        connectColorAnimator = ValueAnimator.ofObject(android.animation.ArgbEvaluator(), Color.parseColor("#151515"), Color.parseColor("#FF9800")).apply {
+            duration = 10_000L
+            interpolator = LinearInterpolator()
+            addUpdateListener { fab.backgroundTintList = ColorStateList.valueOf(it.animatedValue as Int) }
+            start()
+        }
+    }
+
+    private fun resetConnectVisual() {
+        connectColorAnimator?.cancel()
+        connectColorAnimator = null
+        connectIcon.setFlowing(false)
+        fab.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#151515"))
+    }
+
+    private inner class FlowSpeedView(context: Context) : View(context) {
+        private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = dp(2).toFloat(); color = Color.WHITE }
+        private val bubble = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private var level = 0.04f
+        private var phase = 0f
+        private var waveAnimator: ValueAnimator? = null
+        fun setRate(bytesPerSecond: Long) {
+            val normalized = (ln(1.0 + bytesPerSecond.coerceAtLeast(0L)) / ln(1.0 + 2_000_000.0)).toFloat().coerceIn(0f, 1f)
+            level = 0.04f + normalized * 0.92f
+            fill.color = when {
+                normalized > 0.66f -> Color.rgb(40, 210, 145)
+                normalized > 0.30f -> Color.rgb(255, 175, 55)
+                else -> Color.rgb(235, 85, 75)
+            }
+            invalidate()
+        }
+        fun stopFlow() { waveAnimator?.cancel(); waveAnimator = null }
+        fun startFlow() {
+            if (waveAnimator?.isRunning != true) waveAnimator = ValueAnimator.ofFloat(0f, (Math.PI * 2).toFloat()).apply {
+                duration = 1800L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+                addUpdateListener { phase = it.animatedValue as Float; invalidate() }; start()
+            }
+        }
+        override fun onAttachedToWindow() { super.onAttachedToWindow(); startFlow() }
+        override fun onDetachedFromWindow() { stopFlow(); super.onDetachedFromWindow() }
+        override fun onDraw(canvas: Canvas) {
+            super.onDraw(canvas)
+            val radius = minOf(width, height) * 0.43f
+            if (radius <= 0f) return
+            val cx = width / 2f; val cy = height / 2f
+            val clip = Path().apply { addCircle(cx, cy, radius, Path.Direction.CW) }
+            val save = canvas.save(); canvas.clipPath(clip)
+            val surfaceY = cy + radius * (0.88f - level * 1.72f)
+            val liquid = Path().apply {
+                moveTo(cx-radius, cy+radius); lineTo(cx-radius, surfaceY)
+                for (step in 0..24) {
+                    val px = cx-radius + (2f*radius*step/24f)
+                    val py = surfaceY + sin(step/24.0*Math.PI*2.0 + phase.toDouble()).toFloat()*radius*0.10f
+                    lineTo(px,py)
+                }
+                lineTo(cx+radius,cy+radius); close()
+            }
+            canvas.drawPath(liquid, fill)
+            for (i in 0..2) {
+                val bx = cx + sin((phase*0.8f+i*2.1f).toDouble()).toFloat()*radius*0.52f
+                val by = cy + radius*(0.52f-((phase*0.12f+i*0.31f)%0.72f))
+                bubble.color = Color.WHITE; bubble.alpha = 170
+                canvas.drawCircle(bx,by,dp(1).toFloat(),bubble)
+            }
+            canvas.restoreToCount(save); canvas.drawCircle(cx,cy,radius,outline)
+        }
+    }
+
     private inner class ConnectTDrawable : Drawable() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
@@ -1497,13 +1601,30 @@ class MainActivity : AppCompatActivity() {
             Shader.TileMode.CLAMP
         )
         private var shine: ValueAnimator? = null
+        private var waveAnimator: ValueAnimator? = null
+        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.8f }
+        private var flowing = false
+        private var wavePhase = 0f
         private var connected = false
         private var offset = -240f
 
         override fun draw(canvas: Canvas) {
             val b = bounds
             if (b.isEmpty) return
-            paint.textSize = b.height() * 1.04f
+            if (flowing) {
+                val cx = b.exactCenterX(); val cy = b.exactCenterY()
+                val radius = minOf(b.width(), b.height()) * 0.47f
+                val wave = Path()
+                for (i in 0..80) {
+                    val angle = i / 80.0 * Math.PI * 2.0
+                    val r = radius + sin(angle * 7.0 + wavePhase.toDouble()).toFloat() * 1.4f
+                    val px = cx + kotlin.math.cos(angle).toFloat() * r
+                    val py = cy + sin(angle).toFloat() * r
+                    if (i == 0) wave.moveTo(px, py) else wave.lineTo(px, py)
+                }
+                wave.close(); ringPaint.color = Color.parseColor("#FFFFA000"); canvas.drawPath(wave, ringPaint)
+            }
+            paint.textSize = b.height() * 0.82f
             paint.shader = if (connected) gradient else null
             if (connected) {
                 matrix.setTranslate(offset, 0f)
@@ -1516,6 +1637,14 @@ class MainActivity : AppCompatActivity() {
         fun setConnected(value: Boolean) {
             connected = value
             if (value) startShine() else stopShine()
+            invalidateSelf()
+        }
+        fun setFlowing(value: Boolean) {
+            flowing = value
+            if (value && waveAnimator?.isRunning != true) waveAnimator = ValueAnimator.ofFloat(0f, (Math.PI*2).toFloat()).apply {
+                duration = 1600L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+                addUpdateListener { wavePhase = it.animatedValue as Float; invalidateSelf() }; start()
+            } else if (!value) { waveAnimator?.cancel(); waveAnimator = null }
             invalidateSelf()
         }
 
@@ -1534,8 +1663,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun stopShine() {
-            shine?.cancel()
-            shine = null
+            shine?.cancel(); shine = null
+            waveAnimator?.cancel(); waveAnimator = null; flowing = false
         }
 
         override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
