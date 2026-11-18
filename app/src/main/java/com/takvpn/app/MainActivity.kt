@@ -129,6 +129,7 @@ class MainActivity : AppCompatActivity() {
         fab = findViewById(R.id.connectFab)
         connectIcon = ConnectTDrawable()
         fab.setImageDrawable(connectIcon)
+        fab.imageTintList = null
         titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
         statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
@@ -1101,8 +1102,6 @@ class MainActivity : AppCompatActivity() {
         connectIcon.setConnected(running)
         fab.backgroundTintList =
             ColorStateList.valueOf(c(if (running) R.color.fab_on else R.color.fab_idle))
-        fab.imageTintList =
-            ColorStateList.valueOf(if (running) Color.WHITE else c(R.color.fab_icon))
         statusText.text = if (running) "متصل" else "قطع"
         if (running) {
             if (prefs.getLong("since", 0L) == 0L) {
