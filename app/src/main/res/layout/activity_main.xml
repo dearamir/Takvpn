@@ -89,8 +89,8 @@
                     android:includeFontPadding="false"
                     android:text="+"
                     android:textColor="@color/header_title"
-                    android:textSize="40sp"
-                    android:textStyle="bold" />
+                    android:fontFamily="sans-serif-light"
+                    android:textSize="40sp" />
             </FrameLayout>
         </FrameLayout>
     </com.google.android.material.card.MaterialCardView>
