@@ -1062,6 +1062,7 @@ class MainActivity : AppCompatActivity() {
         inited = false
         saveTotal()
         usageText.text = "مصرف کل: ${fmt(totalBytes)}"
+        flowSpeedView.setRate(0L)
     }
 
     private fun saveTotal() {
@@ -1474,7 +1475,7 @@ class MainActivity : AppCompatActivity() {
         connectIcon.setConnected(running)
         if (running) {
             connectIcon.setFlowing(true)
-            if (connectColorAnimator?.isRunning != true) startConnectColorTransition()
+            if (connectColorAnimator == null) startConnectColorTransition()
         } else resetConnectVisual()
         statusText.text = if (running) "متصل" else "قطع"
         if (running) {
@@ -1567,10 +1568,10 @@ class MainActivity : AppCompatActivity() {
             }
             canvas.drawPath(liquid, fill)
             for (i in 0..2) {
-                val bx = cx + sin(phase*0.8f+i*2.1f)*radius*0.52f
+                val bx = cx + sin((phase*0.8f+i*2.1f).toDouble()).toFloat()*radius*0.52f
                 val by = cy + radius*(0.52f-((phase*0.12f+i*0.31f)%0.72f))
                 bubble.color = Color.WHITE; bubble.alpha = 170
-                canvas.drawCircle(bx,by,dp(1),bubble)
+                canvas.drawCircle(bx,by,dp(1).toFloat(),bubble)
             }
             canvas.restoreToCount(save); canvas.drawCircle(cx,cy,radius,outline)
         }
@@ -1613,7 +1614,7 @@ class MainActivity : AppCompatActivity() {
                 val wave = Path()
                 for (i in 0..80) {
                     val angle = i / 80.0 * Math.PI * 2.0
-                    val r = radius + sin(angle * 7.0 + wavePhase).toFloat() * 1.4f
+                    val r = radius + sin(angle * 7.0 + wavePhase.toDouble()).toFloat() * 1.4f
                     val px = cx + kotlin.math.cos(angle).toFloat() * r
                     val py = cy + sin(angle).toFloat() * r
                     if (i == 0) wave.moveTo(px, py) else wave.lineTo(px, py)
