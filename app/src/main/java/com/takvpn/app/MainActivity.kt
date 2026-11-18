@@ -98,6 +98,7 @@ class MainActivity : AppCompatActivity() {
             is MaterialCardView -> {
                 val bg = when (view.id) {
                     R.id.testBar -> p.bar
+                    R.id.pingAllButton -> p.accent
                     else -> if (view.strokeWidth > 0) p.selected else p.card
                 }
                 view.setCardBackgroundColor(bg)
@@ -117,6 +118,10 @@ class MainActivity : AppCompatActivity() {
                 R.id.pingText -> Unit
                 R.id.subText, R.id.usageText, R.id.emptyText, R.id.actSub -> view.setTextColor(p.soft)
                 R.id.testText -> view.setTextColor(p.barText)
+                R.id.pingAllLabel -> {
+                    view.setTextColor(Color.WHITE)
+                    view.setTypeface(null, Typeface.BOLD)
+                }
                 else -> {
                     if ((view.parent as? View)?.id == R.id.plusButton) {
                         view.setTextColor(p.accent)
@@ -178,6 +183,7 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
         dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
+        styleAppearanceDialogText(dialog)
     }
 
     private fun showTextColorDialog() {
@@ -222,6 +228,27 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
         dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
+        styleAppearanceDialogText(dialog)
+    }
+
+    private fun styleAppearanceDialogText(dialog: AlertDialog) {
+        dialog.findViewById<TextView>(androidx.appcompat.R.id.alertTitle)?.apply {
+            setTextColor(Color.WHITE)
+            setTypeface(null, Typeface.BOLD)
+        }
+        listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL).forEach { which ->
+            dialog.getButton(which)?.apply {
+                setTextColor(Color.WHITE)
+                setTypeface(null, Typeface.BOLD)
+            }
+        }
+        val list = dialog.listView
+        for (index in 0 until list.childCount) {
+            (list.getChildAt(index) as? TextView)?.apply {
+                setTextColor(Color.WHITE)
+                setTypeface(null, Typeface.BOLD)
+            }
+        }
     }
 
     private lateinit var store: ConfigStore
@@ -310,6 +337,7 @@ class MainActivity : AppCompatActivity() {
         setupVersionShine(versionText)
         findViewById<TextView>(R.id.coreVersionCorner).text = "Xray " + BuildConfig.XRAY_CORE_VERSION
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
+        findViewById<View>(R.id.pingAllButton).setOnClickListener { pingAll() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
         }
@@ -1602,7 +1630,12 @@ class MainActivity : AppCompatActivity() {
         )
         private var shine: ValueAnimator? = null
         private var waveAnimator: ValueAnimator? = null
-        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 1.8f }
+        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = dp(2).toFloat()
+            strokeJoin = Paint.Join.ROUND
+            strokeCap = Paint.Cap.ROUND
+        }
         private var flowing = false
         private var wavePhase = 0f
         private var connected = false
@@ -1613,11 +1646,11 @@ class MainActivity : AppCompatActivity() {
             if (b.isEmpty) return
             if (flowing) {
                 val cx = b.exactCenterX(); val cy = b.exactCenterY()
-                val radius = minOf(b.width(), b.height()) * 0.47f
+                val radius = minOf(b.width(), b.height()) * 0.43f
                 val wave = Path()
-                for (i in 0..80) {
-                    val angle = i / 80.0 * Math.PI * 2.0
-                    val r = radius + sin(angle * 7.0 + wavePhase.toDouble()).toFloat() * 1.4f
+                for (i in 0..160) {
+                    val angle = i / 160.0 * Math.PI * 2.0
+                    val r = radius + sin(angle * 9.0 + wavePhase.toDouble()).toFloat() * dp(3).toFloat()
                     val px = cx + kotlin.math.cos(angle).toFloat() * r
                     val py = cy + sin(angle).toFloat() * r
                     if (i == 0) wave.moveTo(px, py) else wave.lineTo(px, py)
