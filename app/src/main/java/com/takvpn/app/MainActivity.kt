@@ -8,6 +8,9 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
+import android.graphics.Shader
 import android.net.TrafficStats
 import android.net.Uri
 import android.net.VpnService
@@ -17,6 +20,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
 import android.view.Gravity
+import android.view.animation.LinearInterpolator
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -26,6 +30,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.animation.ValueAnimator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -60,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fab: FloatingActionButton
     private lateinit var titleGlow: GlowAnimator
     private lateinit var statusGlow: GlowAnimator
+    private var versionShine: ValueAnimator? = null
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
@@ -119,7 +125,9 @@ class MainActivity : AppCompatActivity() {
         titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
         statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
-        findViewById<TextView>(R.id.versionText).text = verName()
+        val versionText = findViewById<TextView>(R.id.versionText)
+        versionText.text = verName()
+        setupVersionShine(versionText)
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
@@ -158,6 +166,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateUi(TakVpnService.isRunning)
+        versionShine?.takeIf { !it.isRunning }?.start()
     }
 
     override fun onStop() {
@@ -168,6 +177,7 @@ class MainActivity : AppCompatActivity() {
         ui.removeCallbacks(ticker)
         titleGlow.stop(c(R.color.header_title))
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
+        versionShine?.cancel()
         saveTotal()
     }
 
@@ -175,6 +185,41 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         pool.shutdownNow()
         ui.removeCallbacksAndMessages(null)
+    }
+
+    private fun setupVersionShine(view: TextView) {
+        view.post {
+            if (view.width <= 0 || isFinishing || isDestroyed) return@post
+
+            val textWidth = view.paint.measureText(view.text.toString()).coerceAtLeast(view.width.toFloat())
+            val shineWidth = textWidth * 1.4f
+            val matrix = Matrix()
+            val gradient = LinearGradient(
+                0f, 0f, shineWidth, 0f,
+                intArrayOf(
+                    c(R.color.header_sub),
+                    c(R.color.header_sub),
+                    Color.WHITE,
+                    Color.parseColor("#FFFFD1"),
+                    c(R.color.header_sub)
+                ),
+                floatArrayOf(0f, 0.38f, 0.48f, 0.54f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            view.paint.shader = gradient
+
+            versionShine = ValueAnimator.ofFloat(-shineWidth, textWidth + shineWidth).apply {
+                duration = 2200L
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = LinearInterpolator()
+                addUpdateListener { animation ->
+                    matrix.setTranslate(animation.animatedValue as Float, 0f)
+                    gradient.setLocalMatrix(matrix)
+                    view.invalidate()
+                }
+                start()
+            }
+        }
     }
 
     private fun c(id: Int) = ContextCompat.getColor(this, id)
