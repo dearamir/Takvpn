@@ -15,6 +15,15 @@ android {
         buildConfig = true
     }
 
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     defaultConfig {
         applicationId = "com.takvpn.app"
         minSdk = 24
