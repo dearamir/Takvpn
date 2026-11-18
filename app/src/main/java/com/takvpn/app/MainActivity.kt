@@ -90,7 +90,12 @@ class MainActivity : AppCompatActivity() {
     private fun applyPaletteToTree(view: View, p: UiPalette = activePalette()) {
         when (view) {
             is MaterialCardView -> {
-                view.setCardBackgroundColor(p.card)
+                val bg = when (view.id) {
+                    R.id.testBar -> p.bar
+                    R.id.plusButton -> p.accent
+                    else -> if (view.strokeWidth > 0) p.selected else p.card
+                }
+                view.setCardBackgroundColor(bg)
                 view.strokeColor = p.accent
             }
             is FloatingActionButton -> {
@@ -119,7 +124,6 @@ class MainActivity : AppCompatActivity() {
             it.setBackgroundColor(p.bg)
             applyPaletteToTree(it, p)
         }
-        findViewById<View>(R.id.testBar)?.setBackgroundColor(p.bar)
         window.statusBarColor = p.bg
         window.navigationBarColor = p.header
     }
