@@ -8,6 +8,10 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.Drawable
+import android.graphics.Typeface
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Shader
@@ -63,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var usageText: TextView
     private lateinit var listContainer: LinearLayout
     private lateinit var fab: FloatingActionButton
+    private lateinit var connectIcon: ConnectTDrawable
     private lateinit var titleGlow: GlowAnimator
     private lateinit var statusGlow: GlowAnimator
     private var versionShine: ValueAnimator? = null
@@ -122,6 +127,8 @@ class MainActivity : AppCompatActivity() {
         usageText = findViewById(R.id.usageText)
         listContainer = findViewById(R.id.listContainer)
         fab = findViewById(R.id.connectFab)
+        connectIcon = ConnectTDrawable()
+        fab.setImageDrawable(connectIcon)
         titleGlow = GlowAnimator(titleText, Color.parseColor("#FFB800"), Color.parseColor("#FFF8D6"))
         statusGlow = GlowAnimator(statusText, c(R.color.status_on), Color.WHITE)
 
@@ -178,6 +185,7 @@ class MainActivity : AppCompatActivity() {
         titleGlow.stop(c(R.color.header_title))
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
         versionShine?.cancel()
+        connectIcon.stopShine()
         saveTotal()
     }
 
@@ -1090,7 +1098,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUi(running: Boolean) {
-        fab.setImageResource(if (running) R.drawable.ic_stop else R.drawable.ic_play)
+        connectIcon.setConnected(running)
         fab.backgroundTintList =
             ColorStateList.valueOf(c(if (running) R.color.fab_on else R.color.fab_idle))
         fab.imageTintList =
@@ -1117,6 +1125,71 @@ class MainActivity : AppCompatActivity() {
             stopTracking()
         }
         lastRunning = running
+    }
+
+    private inner class ConnectTDrawable : Drawable() {
+        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textAlign = Paint.Align.CENTER
+            typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+        }
+        private val matrix = Matrix()
+        private val gradient = LinearGradient(
+            -120f, 0f, 120f, 0f,
+            intArrayOf(Color.WHITE, Color.parseColor("#FFFFD36A"), Color.WHITE,
+                Color.parseColor("#FFFFB52E"), Color.WHITE),
+            floatArrayOf(0f, 0.38f, 0.5f, 0.62f, 1f),
+            Shader.TileMode.CLAMP
+        )
+        private var shine: ValueAnimator? = null
+        private var connected = false
+        private var offset = -240f
+
+        override fun draw(canvas: Canvas) {
+            val b = bounds
+            if (b.isEmpty) return
+            paint.textSize = b.height() * 0.78f
+            paint.shader = if (connected) gradient else null
+            if (connected) {
+                matrix.setTranslate(offset, 0f)
+                gradient.setLocalMatrix(matrix)
+            }
+            val y = b.exactCenterY() - (paint.ascent() + paint.descent()) / 2f
+            canvas.drawText("T", b.exactCenterX(), y, paint)
+        }
+
+        fun setConnected(value: Boolean) {
+            connected = value
+            if (value) startShine() else stopShine()
+            invalidateSelf()
+        }
+
+        fun startShine() {
+            if (!connected || shine?.isRunning == true) return
+            shine = ValueAnimator.ofFloat(-240f, bounds.width().coerceAtLeast(64).toFloat() + 240f).apply {
+                duration = 1700L
+                repeatCount = ValueAnimator.INFINITE
+                interpolator = LinearInterpolator()
+                addUpdateListener {
+                    offset = it.animatedValue as Float
+                    invalidateSelf()
+                }
+                start()
+            }
+        }
+
+        fun stopShine() {
+            shine?.cancel()
+            shine = null
+        }
+
+        override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
+        override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {
+            paint.colorFilter = colorFilter
+            invalidateSelf()
+        }
+        @Deprecated("Deprecated in Java")
+        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
