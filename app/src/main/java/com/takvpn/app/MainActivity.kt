@@ -178,6 +178,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
+        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private fun showTextColorDialog() {
@@ -221,6 +222,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.window?.setDimAmount(0.04f)
+        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
     }
 
     private lateinit var store: ConfigStore
@@ -272,6 +274,7 @@ class MainActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             pendingConfig?.let { startVpn(it) }
         } else {
+            resetConnectVisual()
             toast("اجازه‌ی VPN داده نشد")
         }
     }
@@ -362,6 +365,7 @@ class MainActivity : AppCompatActivity() {
         versionShine?.cancel()
         connectIcon.stopShine()
         connectColorAnimator?.cancel()
+        connectColorAnimator = null
         flowSpeedView.stopFlow()
         saveTotal()
     }
