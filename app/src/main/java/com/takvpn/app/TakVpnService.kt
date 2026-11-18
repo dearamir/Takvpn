@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.VpnService
@@ -13,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
+import android.service.quicksettings.TileService
 import androidx.core.app.NotificationCompat
 import libv2ray.CoreCallbackHandler
 import libv2ray.CoreController
@@ -57,6 +59,16 @@ class TakVpnService : VpnService() {
             }
             ACTION_PING -> {
                 doPing()
+                return START_NOT_STICKY
+            }
+            ACTION_SMART -> {
+                smartMode = true
+                cfgName = "در حال پیدا کردن بهترین..."
+                activeName = ""
+                activeLink = ""
+                pingText = ""
+                showForeground()
+                Thread { smartStart() }.start()
                 return START_NOT_STICKY
             }
         }
@@ -147,6 +159,13 @@ class TakVpnService : VpnService() {
         }
     }
 
+    private fun refreshTile() {
+        try {
+            TileService.requestListeningState(this, ComponentName(this, VpnTileService::class.java))
+        } catch (e: Throwable) {
+        }
+    }
+
     // ---------- ping / smart switch ----------
 
     private fun measureMs(config: String): Long =
@@ -198,6 +217,31 @@ class TakVpnService : VpnService() {
         }
     }
 
+    private fun smartStart() {
+        val best = bestOf(ConfigStore(this).items.toList())
+        if (best == null) {
+            AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
+            handler.post {
+                shutdownForeground()
+                onError?.invoke("کانفیگ سالمی پیدا نشد")
+            }
+            return
+        }
+        val json = try {
+            ConfigExtras.build(best.link)
+        } catch (e: Throwable) {
+            handler.post { shutdownForeground() }
+            return
+        }
+        currentConfig = json
+        cfgName = best.name
+        activeName = best.name
+        activeLink = best.link
+        AppLog.add("سوییچ هوشمند: ${best.name}")
+        startVpn(json)
+        startWatchdog()
+    }
+
     private fun startWatchdog() {
         val gen = ++wdGen
         if (!smartMode) return
@@ -226,8 +270,7 @@ class TakVpnService : VpnService() {
     }
 
     private fun switchBest(gen: Int) {
-        val cands = ConfigStore(this).items.filter { it.link != SMART_LINK }
-        val best = bestOf(cands)
+        val best = bestOf(ConfigStore(this).items.toList())
         if (gen != wdGen || !isRunning) return
         if (best == null) {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
@@ -276,6 +319,35 @@ class TakVpnService : VpnService() {
         }
     }
 
+    private fun applySplit(b: Builder) {
+        val mode = prefs.getInt("split_mode", 0)
+        val apps = prefs.getStringSet("split_apps", emptySet()) ?: emptySet()
+        var allowed = 0
+        if (mode == 1 && apps.isNotEmpty()) {
+            apps.forEach {
+                try {
+                    b.addAllowedApplication(it)
+                    allowed++
+                } catch (e: Exception) {
+                }
+            }
+        }
+        if (allowed == 0) {
+            try {
+                b.addDisallowedApplication(packageName)
+            } catch (e: Exception) {
+            }
+            if (mode == 2) {
+                apps.forEach {
+                    try {
+                        b.addDisallowedApplication(it)
+                    } catch (e: Exception) {
+                    }
+                }
+            }
+        }
+    }
+
     @Synchronized
     private fun startVpn(config: String) {
         stopCore()
@@ -286,7 +358,7 @@ class TakVpnService : VpnService() {
                 .setMtu(1500)
                 .addAddress("172.19.0.1", 30)
                 .addRoute("0.0.0.0", 0)
-                .addDisallowedApplication(packageName)
+            applySplit(b)
             val dns = parseDns(prefs.getString("dns", DEFAULT_DNS) ?: DEFAULT_DNS)
                 .ifEmpty { parseDns(DEFAULT_DNS) }
             dns.forEach {
@@ -307,7 +379,10 @@ class TakVpnService : VpnService() {
             core = controller
             startedAt = SystemClock.elapsedRealtime()
             updateState(true)
-            handler.post { notifyNow() }
+            handler.post {
+                notifyNow()
+                refreshTile()
+            }
         } catch (e: Throwable) {
             stopCore()
             updateState(false)
@@ -315,6 +390,7 @@ class TakVpnService : VpnService() {
             AppLog.add("اتصال ناموفق: $msg")
             handler.post {
                 shutdownForeground()
+                refreshTile()
                 onError?.invoke(msg)
             }
         }
@@ -326,6 +402,7 @@ class TakVpnService : VpnService() {
         stopCore()
         updateState(false)
         shutdownForeground()
+        refreshTile()
     }
 
     private fun shutdownForeground() {
@@ -358,6 +435,7 @@ class TakVpnService : VpnService() {
         wdGen++
         stopCore()
         updateState(false)
+        refreshTile()
         activeName = ""
         activeLink = ""
         handler.removeCallbacksAndMessages(null)
@@ -368,11 +446,11 @@ class TakVpnService : VpnService() {
         const val ACTION_STOP = "com.takvpn.app.STOP"
         const val ACTION_RESTART = "com.takvpn.app.RESTART"
         const val ACTION_PING = "com.takvpn.app.PING"
+        const val ACTION_SMART = "com.takvpn.app.SMART"
         const val EXTRA_CONFIG = "config"
         const val EXTRA_SMART = "smart"
         const val EXTRA_NAME = "name"
         const val EXTRA_LINK = "link"
-        const val SMART_LINK = "smart://best"
         const val DEFAULT_DNS = "1.1.1.1,8.8.8.8"
         private const val CHANNEL = "takvpn_conn"
         private const val NOTIF_ID = 1
