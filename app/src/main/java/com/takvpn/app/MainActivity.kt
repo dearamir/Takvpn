@@ -14,7 +14,6 @@ import android.graphics.Path
 import android.graphics.drawable.ColorDrawable
 import kotlin.math.ln
 import kotlin.math.sin
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.Typeface
 import android.graphics.LinearGradient
