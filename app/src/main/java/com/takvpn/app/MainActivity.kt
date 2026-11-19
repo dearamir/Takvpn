@@ -296,6 +296,8 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
+    private val countryFlags = mutableMapOf<String, String>()
+    private val countryLookups = mutableSetOf<String>()
     private val pool = Executors.newFixedThreadPool(4)
     private val ui = Handler(Looper.getMainLooper())
     private var pendingConfig: String? = null
@@ -1254,7 +1256,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun pingLabel(id: String): Pair<String, Int> {
         val soft = c(R.color.ink_soft)
-        return when (val p = pings[id]) {
+        val flag = countryFlags[id]?.let { "$it  " }.orEmpty()
+        val (label, color) = when (val p = pings[id]) {
             null -> "پینگ: برای تست اینجا بزنید" to Color.WHITE
             -2L -> "در حال تست..." to soft
             -1L -> {
@@ -1262,6 +1265,47 @@ class MainActivity : AppCompatActivity() {
                 (if (e.isBlank()) "ناموفق" else "ناموفق: $e") to c(R.color.ping_fail)
             }
             else -> "$p ms" to c(if ((p ?: 0L) < 400L) R.color.ping_good else R.color.ping_slow)
+        }
+        return (if (pings[id] != null && pings[id] != -2L) flag + label else label) to color
+    }
+
+    private fun lookupCountryFlag(cfg: Cfg) {
+        synchronized(countryLookups) {
+            if (cfg.id in countryLookups || countryFlags.containsKey(cfg.id)) return
+            countryLookups.add(cfg.id)
+        }
+        pool.execute {
+            var connection: HttpURLConnection? = null
+            try {
+                val host = ServerEndpoint.hostFromLink(cfg.link)
+                    ?: throw IllegalStateException("Server host not found")
+                val serverIp = try {
+                    java.net.InetAddress.getByName(host).hostAddress
+                } catch (_: Throwable) {
+                    host
+                }
+                val encodedIp = java.net.URLEncoder.encode(serverIp, "UTF-8")
+                connection = (URL("https://ipwho.is/$encodedIp").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 5000
+                    readTimeout = 5000
+                    requestMethod = "GET"
+                }
+                val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                if (!json.optBoolean("success", false)) return@execute
+                val code = json.optString("country_code").uppercase(Locale.US)
+                if (code.length != 2 || !code.all { it in 'A'..'Z' }) return@execute
+                val flag = code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
+                runOnUiThread {
+                    if (!isDestroyed) {
+                        countryFlags[cfg.id] = flag
+                        render()
+                    }
+                }
+            } catch (_: Throwable) {
+                // Keep the ping result visible even if country lookup is unavailable.
+            } finally {
+                connection?.disconnect()
+            }
         }
     }
 
@@ -1302,6 +1346,7 @@ class MainActivity : AppCompatActivity() {
                     errors[cfg.id] = err
                     pings[cfg.id] = ms
                     render()
+                    lookupCountryFlag(cfg)
                 }
             }
         }
