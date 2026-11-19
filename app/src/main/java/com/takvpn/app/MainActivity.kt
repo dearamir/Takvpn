@@ -36,6 +36,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.HorizontalScrollView
 import android.widget.TextView
 import android.widget.Toast
 import android.animation.ValueAnimator
@@ -1222,7 +1223,7 @@ class MainActivity : AppCompatActivity() {
             val title = TextView(this).apply { text = label; textSize = 10f; gravity = Gravity.CENTER; setTextColor(activeTextColor()); maxLines = 1 }
             item.addView(icon, LinearLayout.LayoutParams(dp(48), dp(44)))
             item.addView(title)
-            item.setOnClickListener(click)
+            item.setOnClickListener { click() }
             strip.addView(item)
         }
         addSubscriptionIcon("all", "همه", "🌐", store.items.size, prefs.getString("subscription_selected", "all") == "all") {
