@@ -1191,8 +1191,12 @@ class MainActivity : AppCompatActivity() {
         card.strokeWidth = if (sel) dp(3) else 0
         card.setCardBackgroundColor(c(if (sel) R.color.card_selected else R.color.card))
         card.setOnClickListener {
+            val switchWhileConnected = TakVpnService.isRunning
             prefs.edit().putBoolean("smart_sel", true).apply()
             render()
+            // Switching from a manual profile to Smart while connected must
+            // choose the best profile and replace the currently active tunnel.
+            if (switchWhileConnected) connectSmart()
         }
         listContainer.addView(v)
     }
