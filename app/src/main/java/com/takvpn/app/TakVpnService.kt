@@ -301,23 +301,43 @@ class TakVpnService : VpnService() {
     // ---------- vpn ----------
 
     private fun finalConfig(config: String): String {
-        if (!prefs.getBoolean("direct_ir", false)) return config
         return try {
             val j = JSONObject(config)
-            val rule = JSONObject()
-                .put("type", "field")
-                .put("domain", JSONArray(listOf("domain:ir")))
-                .put("outboundTag", "direct")
-            val routing = j.optJSONObject("routing") ?: JSONObject()
-            val old = routing.optJSONArray("rules") ?: JSONArray()
-            val rules = JSONArray()
-            rules.put(rule)
-            for (i in 0 until old.length()) rules.put(old.get(i))
-            routing.put("rules", rules)
-            if (!routing.has("domainStrategy")) routing.put("domainStrategy", "AsIs")
-            j.put("routing", routing)
+            // Local SOCKS endpoint lets the app query the real public exit IP
+            // through this exact Xray outbound, even when the Android VPN excludes
+            // the TakVPN app itself to prevent routing loops.
+            val inbounds = j.optJSONArray("inbounds") ?: JSONArray()
+            val hasProbe = (0 until inbounds.length()).any {
+                inbounds.optJSONObject(it)?.optString("tag") == "takvpn-ip-probe"
+            }
+            if (!hasProbe) {
+                inbounds.put(
+                    JSONObject()
+                        .put("tag", "takvpn-ip-probe")
+                        .put("listen", "127.0.0.1")
+                        .put("port", IP_PROBE_SOCKS_PORT)
+                        .put("protocol", "socks")
+                        .put("settings", JSONObject().put("auth", "noauth").put("udp", false))
+                )
+            }
+            j.put("inbounds", inbounds)
+
+            if (prefs.getBoolean("direct_ir", false)) {
+                val rule = JSONObject()
+                    .put("type", "field")
+                    .put("domain", JSONArray(listOf("domain:ir")))
+                    .put("outboundTag", "direct")
+                val routing = j.optJSONObject("routing") ?: JSONObject()
+                val old = routing.optJSONArray("rules") ?: JSONArray()
+                val rules = JSONArray().put(rule)
+                for (i in 0 until old.length()) rules.put(old.get(i))
+                routing.put("rules", rules)
+                if (!routing.has("domainStrategy")) routing.put("domainStrategy", "AsIs")
+                j.put("routing", routing)
+            }
             j.toString()
         } catch (e: Throwable) {
+            AppLog.add("ساخت مسیر بررسی IP ناموفق: ${e.message}")
             config
         }
     }
@@ -476,6 +496,7 @@ class TakVpnService : VpnService() {
         const val EXTRA_NAME = "name"
         const val EXTRA_LINK = "link"
         const val DEFAULT_DNS = "1.1.1.1,8.8.8.8"
+        const val IP_PROBE_SOCKS_PORT = 10991
         private const val CHANNEL = "takvpn_conn"
         private const val NOTIF_ID = 1
         private const val PING_URL = "https://www.gstatic.com/generate_204"
