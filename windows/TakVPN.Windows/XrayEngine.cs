@@ -192,7 +192,7 @@ public sealed class XrayEngine : IDisposable
                     ["dns"] = new JsonArray("1.1.1.1", "8.8.8.8"),
                     ["autoSystemRoutingTable"] = new JsonArray("0.0.0.0/0", "::/0"),
                     ["autoOutboundsInterface"] = "auto",
-                    ["autoSystemWfpBlockLeak"] = new JsonArray("dns")
+                    ["autoSystemWfpBlockLeak"] = new JsonArray("dns", "misconfigtun")
                 }
             });
             config["routing"] = new JsonObject
