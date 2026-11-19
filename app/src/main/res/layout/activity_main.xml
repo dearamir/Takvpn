@@ -91,6 +91,16 @@
                             android:textStyle="bold" />
                     </com.google.android.material.card.MaterialCardView>
                 </FrameLayout>
+
+                <TextView
+                    android:id="@+id/connectionInfoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <TextView
