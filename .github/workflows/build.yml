@@ -90,7 +90,8 @@ jobs:
             esac
             cp "$APK" "release-assets/Takvpn-v$APP_VERSION-$ABI.apk"
           done
-          echo "$APP_VERSION" > release-version.txt
+          echo "$APP_VERSION" > release-assets/release-version.txt
+          ls -la release-assets
 
       - name: Upload debug APKs
         uses: actions/upload-artifact@v4
@@ -105,9 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Takvpn-Release-APKs-${{ github.run_number }}
-          path: |
-            release-assets/*.apk
-            release-version.txt
+          path: release-assets/*
           if-no-files-found: error
           retention-days: 14
 
