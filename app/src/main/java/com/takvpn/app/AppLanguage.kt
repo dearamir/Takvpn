@@ -594,8 +594,89 @@ object AppLanguage {
         )
     )
 
-    fun translate(text: String, language: String): String =
-        dialogTranslations[language]?.get(text) ?: homeTranslations[language]?.get(text) ?: runtimeTranslations[language]?.get(text) ?: actionTranslations[language]?.get(text) ?: translations[language]?.get(text) ?: text
+    private val englishFallback = mapOf(
+        "اتصال" to "Connect",
+        "قطع" to "Disconnected",
+        "متصل" to "Connected",
+        "⌁  پینگ همه" to "⌁  Ping all",
+        "گزینه‌ها" to "Options",
+        "ویرایش" to "Edit",
+        "حذف" to "Delete",
+        "اشتراک‌گذاری" to "Share",
+        "اجازه‌ی VPN داده نشد" to "VPN permission was not granted",
+        "اول وصل بشید" to "Connect first",
+        "اول اتصال رو قطع کنید" to "Disconnect first",
+        "اول یه کانفیگ اضافه کنید" to "Add a config first",
+        "اول یه کانفیگ انتخاب کنید" to "Select a config first",
+        "روشن" to "On",
+        "خاموش" to "Off",
+        "روشن شد" to "Enabled",
+        "خاموش شد" to "Disabled",
+        "کلیپ‌بورد خالیه" to "Clipboard is empty",
+        "DNS به پیش‌فرض برگشت" to "DNS reset to default",
+        "در حال بررسی نسخه..." to "Checking for updates...",
+        "در حال بررسی نسخه‌ی هسته..." to "Checking for core updates...",
+        "هسته‌ی جدید موجود است" to "A new core version is available",
+        "بعداً" to "Later",
+        "هسته‌ی Xray به‌روزه" to "Xray core is up to date",
+        "دانلود و نصب" to "Download and install",
+        "دانلود ناموفق بود" to "Download failed",
+        "باشه" to "OK",
+        "رفتن به تنظیمات" to "Open settings",
+        "لینک اشتراک" to "Subscription link",
+        "افزودن" to "Add",
+        "اشتراک" to "Subscription",
+        "در حال دریافت اشتراک..." to "Downloading subscription...",
+        "اشتراکی ثبت نشده" to "No subscriptions saved",
+        "برای حذف، روی اشتراک بزنید" to "Tap a subscription to remove it",
+        "حذف اشتراک" to "Remove subscription",
+        "حذف کانفیگ" to "Delete config",
+        "نامحدود" to "Unlimited",
+        "منقضی شده" to "Expired",
+        "کمتر از ۱ روز" to "Less than 1 day",
+        "تمام شده" to "Used up",
+        "پینگ ناموفق" to "Ping failed",
+        "در حال تست..." to "Testing...",
+        "بدون پاسخ" to "No response",
+        "جستجوی اپ" to "Search apps",
+        "انتخاب اپ‌ها" to "Select apps",
+        "ذخیره شد. از اتصال بعدی اعمال می‌شه" to "Saved. Applies on the next connection",
+        "کانفیگ جدید" to "New config",
+        "ویرایش کانفیگ" to "Edit config",
+        "این کانفیگ قابل ویرایش نیست" to "This config cannot be edited",
+        "نوع کانفیگ" to "Config type",
+        "نشانی سرور خالیه" to "Server address is empty",
+        "پورت نامعتبره" to "Invalid port",
+        "شناسه (UUID) خالیه" to "UUID is empty",
+        "رمز عبور خالیه" to "Password is empty",
+        "شبکه (Network)" to "Network",
+        "نوع هدر" to "Header type",
+        "هاست (Host)" to "Host",
+        "مسیر (Path)" to "Path",
+        "نام سرویس gRPC" to "gRPC service name",
+        "حالت xhttp" to "xhttp mode",
+        "امنیت (TLS)" to "Security (TLS)",
+        "اثرانگشت (fp)" to "Fingerprint (fp)",
+        "اجازه‌ی گواهی ناامن" to "Allow insecure certificate",
+        "کلید عمومی (pbk)" to "Public key (pbk)",
+        "شناسه کوتاه (sid)" to "Short ID (sid)",
+        "نشانی سرور" to "Server address",
+        "رمز عبور" to "Password",
+        "رمزنگاری" to "Encryption",
+        "حالت جریان (flow)" to "Flow mode",
+        "مبهم‌سازی (obfs)" to "Obfuscation (obfs)",
+        "بدون" to "None"
+    )
+
+    fun translate(text: String, language: String): String {
+        return dialogTranslations[language]?.get(text)
+            ?: homeTranslations[language]?.get(text)
+            ?: runtimeTranslations[language]?.get(text)
+            ?: actionTranslations[language]?.get(text)
+            ?: translations[language]?.get(text)
+            ?: englishFallback[text]
+            ?: text
+    }
 
     fun showChooser(context: Context) {
         val current = code(context)
