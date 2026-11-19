@@ -45,9 +45,9 @@ jobs:
           if (-not $xray -or -not $wintun) { throw "Xray or Wintun binary missing from official release archive" }
           Copy-Item $xray.FullName "windows/TakVPN.Windows/tools/xray/xray.exe" -Force
           Copy-Item $wintun.FullName "windows/TakVPN.Windows/tools/xray/wintun.dll" -Force
-          Get-ChildItem $extract -File | Where-Object { $_.Name -match '^(geoip|geosite).*\.dat$|^LICENSE' } | ForEach-Object { Copy-Item $_.FullName "windows/TakVPN.Windows/tools/xray/$($_.Name)" -Force }
+          Get-ChildItem $extract -File | Where-Object { $_.Name -match "^(geoip|geosite).*\.dat$|^LICENSE" } | ForEach-Object { Copy-Item $_.FullName "windows/TakVPN.Windows/tools/xray/$($_.Name)" -Force }
 
-      - name: Restore and build
+      - name: Publish self-contained Windows x64 app
         run: dotnet publish windows/TakVPN.Windows/TakVPN.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
 
       - name: Smoke test bundled Xray
@@ -57,18 +57,35 @@ jobs:
           & $core version
           if ($LASTEXITCODE -ne 0) { throw "Xray binary smoke test failed" }
 
-      - name: Package preview
+      - name: Bundle Xray and Wintun
         shell: pwsh
         run: |
           $publish = "windows/TakVPN.Windows/bin/Release/net8.0-windows/win-x64/publish"
           $tools = Join-Path $publish "tools/xray"
           New-Item -ItemType Directory -Force -Path $tools | Out-Null
           Copy-Item "windows/TakVPN.Windows/tools/xray/*" $tools -Recurse -Force
-          Compress-Archive -Path "$publish/*" -DestinationPath "TakVPN-Windows-x64-preview.zip" -Force
 
-      - name: Upload Windows preview
+      - name: Create installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $iscc = "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found" }
+          & $iscc "windows/installer/TakVPN.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed" }
+          Copy-Item "TakVPN-Setup-x64.exe" "TakVPN-Windows-x64-preview.exe"
+
+      - name: Create portable ZIP
+        shell: pwsh
+        run: |
+          $publish = "windows/TakVPN.Windows/bin/Release/net8.0-windows/win-x64/publish"
+          Compress-Archive -Path "$publish/*" -DestinationPath "TakVPN-Windows-x64-portable.zip" -Force
+
+      - name: Upload Windows installer and portable build
         uses: actions/upload-artifact@v4
         with:
           name: TakVPN-Windows-x64-preview
-          path: TakVPN-Windows-x64-preview.zip
+          path: |
+            TakVPN-Windows-x64-preview.exe
+            TakVPN-Windows-x64-portable.zip
           if-no-files-found: error
