@@ -339,6 +339,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppLanguage.apply(this)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
@@ -532,6 +533,7 @@ class MainActivity : AppCompatActivity() {
         addSection(container, "سیستم")
         addGrid(
             container, dialog, R.color.act_sys, listOf(
+                Act("🌐", "زبان برنامه", AppLanguage.currentLabel(this)) { AppLanguage.showChooser(this) },
                 Act("🌗", "حالت تاریک", "تاریک / روشن") { toggleNight() },
                 Act(
                     "🔀", "پورت‌هاپینگ",
