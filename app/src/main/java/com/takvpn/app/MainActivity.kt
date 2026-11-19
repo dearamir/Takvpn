@@ -73,21 +73,45 @@ class MainActivity : AppCompatActivity() {
     )
 
     private val uiPalettes = listOf(
-        UiPalette("آبی اقیانوسی", Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
-        UiPalette("مشکی طلایی", Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
-        UiPalette("زمردی", Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
-        UiPalette("بنفش نئونی", Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
+        UiPalette(localizeUi("آبی اقیانوسی"), Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
+        UiPalette(localizeUi("مشکی طلایی"), Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
+        UiPalette(localizeUi("زمردی"), Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
+        UiPalette(localizeUi("بنفش نئونی"), Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
     )
     private val textColors = listOf(
-        "سفید یخی" to Color.rgb(245,248,255),
-        "طلایی" to Color.rgb(245,205,105),
-        "فیروزه‌ای" to Color.rgb(0,210,235),
-        "سبز زمردی" to Color.rgb(65,220,165),
-        "بنفش" to Color.rgb(190,145,255),
-        "نقره‌ای" to Color.rgb(190,200,215),
-        "نارنجی" to Color.rgb(255,165,70),
-        "پیش‌فرض پوسته" to Color.TRANSPARENT
+        localizeUi("سفید یخی") to Color.rgb(245,248,255),
+        localizeUi("طلایی") to Color.rgb(245,205,105),
+        localizeUi("فیروزه‌ای") to Color.rgb(0,210,235),
+        localizeUi("سبز زمردی") to Color.rgb(65,220,165),
+        localizeUi("بنفش") to Color.rgb(190,145,255),
+        localizeUi("نقره‌ای") to Color.rgb(190,200,215),
+        localizeUi("نارنجی") to Color.rgb(255,165,70),
+        localizeUi("پیش‌فرض پوسته") to Color.TRANSPARENT
     )
+    private fun localizeUi(text: String): String {
+        val language = AppLanguage.code(this)
+        val translations = when (text) {
+            "آبی اقیانوسی" -> mapOf("en" to "Ocean Blue", "fr" to "Bleu océan", "ru" to "Океанский синий", "zh" to "海洋蓝", "tr" to "Okyanus mavisi", "de" to "Ozeanblau", "ar" to "أزرق المحيط", "es" to "Azul océano", "it" to "Blu oceano", "fa" to "آبی اقیانوسی")
+            "مشکی طلایی" -> mapOf("en" to "Black Gold", "fr" to "Noir et or", "ru" to "Чёрно-золотой", "zh" to "黑金", "tr" to "Siyah-altın", "de" to "Schwarz-Gold", "ar" to "أسود وذهبي", "es" to "Negro y oro", "it" to "Nero e oro", "fa" to "مشکی طلایی")
+            "زمردی" -> mapOf("en" to "Emerald", "fr" to "Émeraude", "ru" to "Изумрудный", "zh" to "翡翠绿", "tr" to "Zümrüt", "de" to "Smaragd", "ar" to "زمردي", "es" to "Esmeralda", "it" to "Smeraldo", "fa" to "زمردی")
+            "بنفش نئونی" -> mapOf("en" to "Neon Purple", "fr" to "Violet néon", "ru" to "Неоновый фиолетовый", "zh" to "霓虹紫", "tr" to "Neon mor", "de" to "Neonviolett", "ar" to "بنفسجي نيون", "es" to "Morado neón", "it" to "Viola neon", "fa" to "بنفش نئونی")
+            "سفید یخی" -> mapOf("en" to "Ice White", "fr" to "Blanc glacé", "ru" to "Ледяной белый", "zh" to "冰白", "tr" to "Buz beyazı", "de" to "Eisweiß", "ar" to "أبيض جليدي", "es" to "Blanco hielo", "it" to "Bianco ghiaccio", "fa" to "سفید یخی")
+            "طلایی" -> mapOf("en" to "Gold", "fr" to "Or", "ru" to "Золотой", "zh" to "金色", "tr" to "Altın", "de" to "Gold", "ar" to "ذهبي", "es" to "Dorado", "it" to "Oro", "fa" to "طلایی")
+            "فیروزه‌ای" -> mapOf("en" to "Turquoise", "fr" to "Turquoise", "ru" to "Бирюзовый", "zh" to "青绿", "tr" to "Turkuaz", "de" to "Türkis", "ar" to "فيروزي", "es" to "Turquesa", "it" to "Turchese", "fa" to "فیروزه‌ای")
+            "سبز زمردی" -> mapOf("en" to "Emerald Green", "fr" to "Vert émeraude", "ru" to "Изумрудный", "zh" to "翡翠绿", "tr" to "Zümrüt yeşili", "de" to "Smaragdgrün", "ar" to "أخضر زمردي", "es" to "Verde esmeralda", "it" to "Verde smeraldo", "fa" to "سبز زمردی")
+            "نقره‌ای" -> mapOf("en" to "Silver", "fr" to "Argent", "ru" to "Серебряный", "zh" to "银色", "tr" to "Gümüş", "de" to "Silber", "ar" to "فضي", "es" to "Plateado", "it" to "Argento", "fa" to "نقره‌ای")
+            "نارنجی" -> mapOf("en" to "Orange", "fr" to "Orange", "ru" to "Оранжевый", "zh" to "橙色", "tr" to "Turuncu", "de" to "Orange", "ar" to "برتقالي", "es" to "Naranja", "it" to "Arancione", "fa" to "نارنجی")
+            "پیش‌فرض پوسته" -> mapOf("en" to "Theme default", "fr" to "Par défaut du thème", "ru" to "По теме", "zh" to "主题默认", "tr" to "Tema varsayılanı", "de" to "Designstandard", "ar" to "افتراضي المظهر", "es" to "Predeterminado del tema", "it" to "Predefinito tema", "fa" to "پیش‌فرض پوسته")
+            "انتخاب پوسته" -> mapOf("en" to "Choose theme", "fr" to "Choisir le thème", "ru" to "Выбрать тему", "zh" to "选择主题", "tr" to "Tema seç", "de" to "Design wählen", "ar" to "اختيار المظهر", "es" to "Elegir tema", "it" to "Scegli tema", "fa" to "انتخاب پوسته")
+            "رنگ نوشته‌ها" -> mapOf("en" to "Text colors", "fr" to "Couleurs du texte", "ru" to "Цвет текста", "zh" to "文字颜色", "tr" to "Yazı renkleri", "de" to "Textfarben", "ar" to "ألوان النص", "es" to "Colores del texto", "it" to "Colori testo", "fa" to "رنگ نوشته‌ها")
+            "تغییر رنگ پس‌زمینه و کارت‌ها" -> mapOf("en" to "Change background and cards", "fr" to "Changer le fond et les cartes", "ru" to "Изменить фон и карточки", "zh" to "更改背景和卡片", "tr" to "Arka plan ve kartları değiştir", "de" to "Hintergrund und Karten ändern", "ar" to "تغيير الخلفية والبطاقات", "es" to "Cambiar fondo y tarjetas", "it" to "Cambia sfondo e schede", "fa" to "تغییر رنگ پس‌زمینه و کارت‌ها")
+            "تغییر مستقل رنگ متن‌ها" -> mapOf("en" to "Change text colors separately", "fr" to "Changer les couleurs du texte séparément", "ru" to "Отдельно изменить цвет текста", "zh" to "单独调整文字颜色", "tr" to "Metin renklerini ayrı değiştir", "de" to "Textfarben separat ändern", "ar" to "تغيير ألوان النص بشكل مستقل", "es" to "Cambiar colores del texto por separado", "it" to "Modifica colori testo separatamente", "fa" to "تغییر مستقل رنگ متن‌ها")
+            "تاریک / روشن" -> mapOf("en" to "Dark / light", "fr" to "Sombre / clair", "ru" to "Тёмный / светлый", "zh" to "深色 / 浅色", "tr" to "Koyu / açık", "de" to "Dunkel / hell", "ar" to "داكن / فاتح", "es" to "Oscuro / claro", "it" to "Scuro / chiaro", "fa" to "تاریک / روشن")
+            else -> emptyMap()
+        }
+        return translations[language] ?: text
+    }
+
     private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
 
     private fun isNightAppearance(): Boolean =
@@ -172,14 +196,14 @@ class MainActivity : AppCompatActivity() {
         val original = prefs.getString("ui_palette", null)
         var confirmed = false
         val dialog = AlertDialog.Builder(this)
-            .setTitle("انتخاب پوسته")
+            .setTitle(tr("انتخاب پوسته"))
             .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { _, which ->
                 prefs.edit().putString("ui_palette", names[which]).apply()
                 applyAppPalette()
             }
-            .setPositiveButton("تأیید", null)
-            .setNeutralButton("پیش‌فرض", null)
-            .setNegativeButton("لغو", null)
+            .setPositiveButton(tr("تأیید"), null)
+            .setNeutralButton(tr("پیش‌فرض"), null)
+            .setNegativeButton(tr("لغو"), null)
             .create()
 
         dialog.setOnShowListener {
@@ -213,7 +237,7 @@ class MainActivity : AppCompatActivity() {
         val selected = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
         var confirmed = false
         val dialog = AlertDialog.Builder(this)
-            .setTitle("رنگ نوشته‌ها")
+            .setTitle(tr("رنگ نوشته‌ها"))
             .setSingleChoiceItems(names, selected) { _, which ->
                 if (names[which] == "پیش‌فرض پوسته") {
                     prefs.edit().remove("ui_text_color").apply()
@@ -222,9 +246,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 applyAppPalette()
             }
-            .setPositiveButton("تأیید", null)
-            .setNeutralButton("پیش‌فرض نوشته", null)
-            .setNegativeButton("لغو", null)
+            .setPositiveButton(tr("تأیید"), null)
+            .setNeutralButton(tr("پیش‌فرض نوشته"), null)
+            .setNegativeButton(tr("لغو"), null)
             .create()
 
         dialog.setOnShowListener {
@@ -339,6 +363,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppLanguage.apply(this)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
@@ -532,6 +557,7 @@ class MainActivity : AppCompatActivity() {
         addSection(container, "سیستم")
         addGrid(
             container, dialog, R.color.act_sys, listOf(
+                Act("🌐", "زبان برنامه", AppLanguage.currentLabel(this)) { AppLanguage.showChooser(this) },
                 Act("🌗", "حالت تاریک", "تاریک / روشن") { toggleNight() },
                 Act(
                     "🔀", "پورت‌هاپینگ",
@@ -557,7 +583,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun addSection(container: LinearLayout, title: String) {
         val tv = TextView(this)
-        tv.text = title
+        tv.text = AppLanguage.translate(title, AppLanguage.code(this))
         tv.textSize = 14f
         tv.setTypeface(null, android.graphics.Typeface.BOLD)
         tv.setTextColor(c(R.color.ink_soft))
@@ -578,8 +604,8 @@ class MainActivity : AppCompatActivity() {
                     val v = layoutInflater.inflate(R.layout.item_action, row, false) as MaterialCardView
                     v.setCardBackgroundColor(c(colorRes))
                     v.findViewById<TextView>(R.id.actIcon).text = a.icon
-                    v.findViewById<TextView>(R.id.actTitle).text = a.title
-                    v.findViewById<TextView>(R.id.actSub).text = a.sub
+                    v.findViewById<TextView>(R.id.actTitle).text = AppLanguage.translate(a.title, AppLanguage.code(this))
+                    v.findViewById<TextView>(R.id.actSub).text = AppLanguage.translate(a.sub, AppLanguage.code(this))
                     v.setOnClickListener {
                         dialog.dismiss()
                         a.run()
@@ -613,9 +639,9 @@ class MainActivity : AppCompatActivity() {
             )
         )
         AlertDialog.Builder(this)
-            .setTitle("DNS (آدرس‌ها با ویرگول)")
+            .setTitle(tr("DNS (آدرس‌ها با ویرگول)"))
             .setView(box)
-            .setPositiveButton("ذخیره") { _, _ ->
+            .setPositiveButton(tr("ذخیره")) { _, _ ->
                 val list = TakVpnService.parseDns(input.text.toString())
                 if (list.isEmpty()) {
                     toast("آدرس IPv4 معتبری وارد نشد")
@@ -624,11 +650,11 @@ class MainActivity : AppCompatActivity() {
                     toast("DNS ذخیره شد. از اتصال بعدی اعمال می‌شه")
                 }
             }
-            .setNeutralButton("پیش‌فرض") { _, _ ->
+            .setNeutralButton(tr("پیش‌فرض")) { _, _ ->
                 prefs.edit().remove("dns").apply()
                 toast("DNS به پیش‌فرض برگشت")
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -641,7 +667,7 @@ class MainActivity : AppCompatActivity() {
     private fun launchScan() {
         scanLauncher.launch(
             ScanOptions()
-                .setPrompt("QR کانفیگ رو جلوی دوربین بگیرید")
+                .setPrompt(tr("QR کانفیگ رو جلوی دوربین بگیرید"))
                 .setBeepEnabled(false)
                 .setOrientationLocked(false)
                 .setCaptureActivity(PortraitCaptureActivity::class.java)
@@ -668,7 +694,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun backupAll() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -682,9 +708,9 @@ class MainActivity : AppCompatActivity() {
             .setMessage(
                 "نسخه‌ی برنامه: ${verName()}\nنسخه‌ی هسته Xray: ${BuildConfig.XRAY_CORE_VERSION}\nبروزرسانی مستقیم از داخل برنامه"
             )
-            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
-            .setNeutralButton("بررسی بروزرسانی هسته") { _, _ -> checkCoreUpdate() }
-            .setNegativeButton("بستن", null)
+            .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
+            .setNeutralButton(tr("بررسی بروزرسانی هسته")) { _, _ -> checkCoreUpdate() }
+            .setNegativeButton(tr("بستن"), null)
             .show()
     }
 
@@ -713,7 +739,7 @@ class MainActivity : AppCompatActivity() {
                             .setMessage(
                                 "هسته‌ی فعلی: $current\nآخرین هسته: $latest\n\nبرای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود."
                             )
-                            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
+                            .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
                             .setNegativeButton("بعداً", null)
                             .show()
                     } else {
@@ -928,7 +954,7 @@ class MainActivity : AppCompatActivity() {
                 val url = input.text.toString().trim()
                 if (url.isNotEmpty()) fetchSub(url)
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1018,10 +1044,10 @@ class MainActivity : AppCompatActivity() {
                             render()
                         }
                     }
-                    .setNegativeButton("لغو", null)
+                    .setNegativeButton(tr("لغو"), null)
                     .show()
             }
-            .setNegativeButton("بستن", null)
+            .setNegativeButton(tr("بستن"), null)
             .show()
     }
 
@@ -1062,15 +1088,15 @@ class MainActivity : AppCompatActivity() {
         val sv = ScrollView(this)
         sv.addView(tv)
         AlertDialog.Builder(this)
-            .setTitle("لاگ")
+            .setTitle(tr("لاگ"))
             .setView(sv)
-            .setPositiveButton("بستن", null)
-            .setNeutralButton("کپی") { _, _ ->
+            .setPositiveButton(tr("بستن"), null)
+            .setNeutralButton(tr("کپی")) { _, _ ->
                 val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("log", text))
                 toast("لاگ کپی شد")
             }
-            .setNegativeButton("پاک کردن") { _, _ ->
+            .setNegativeButton(tr("پاک کردن")) { _, _ ->
                 AppLog.clear()
                 AppLog.clearCore()
             }
@@ -1180,9 +1206,9 @@ class MainActivity : AppCompatActivity() {
         v.layoutParams = smartParams
         val card = v as MaterialCardView
         card.radius = dp(13).toFloat()
-        v.findViewById<TextView>(R.id.nameText).text = "⚡ سوییچ هوشمند"
+        v.findViewById<TextView>(R.id.nameText).text = AppLanguage.translate("⚡ سوییچ هوشمند", AppLanguage.code(this))
         val d = v.findViewById<TextView>(R.id.pingText)
-        d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"
+        d.text = AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", AppLanguage.code(this))
         d.setTextColor(c(R.color.ink_soft))
         d.setTypeface(null, Typeface.BOLD)
         v.findViewById<View>(R.id.subText).visibility = View.GONE
@@ -1346,7 +1372,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun pingAll() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         store.items.forEach { pings[it.id] = -2L }
@@ -1397,7 +1423,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         startConnectVisual()
@@ -1405,7 +1431,7 @@ class MainActivity : AppCompatActivity() {
         testAllThen { list ->
             val best = bestOf(list)
             if (best == null) {
-                toast("هیچ کانفیگی پینگ نداد")
+                toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
                 prefs.edit().putBoolean("smart_sel", false).apply()
                 store.select(best.id)
@@ -1418,18 +1444,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun connectSmart() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         startConnectVisual()
-        testText.text = "در حال پیدا کردن بهترین کانفیگ..."
+        testText.text = AppLanguage.translate("در حال پیدا کردن بهترین کانفیگ...", AppLanguage.code(this))
         fab.isEnabled = false
         testAllThen { list ->
             fab.isEnabled = true
             val best = bestOf(list)
             if (best == null) {
-                testText.text = "هیچ کانفیگی پینگ نداد"
-                toast("هیچ کانفیگی پینگ نداد")
+                testText.text = AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this))
+                toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
                 AppLog.add("سوییچ هوشمند: ${best.name} (${pings[best.id]} ms)")
                 connectWith(best, true)
@@ -1473,7 +1499,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 render()
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1485,7 +1511,7 @@ class MainActivity : AppCompatActivity() {
         } ?: return
         val smart = smartSelected()
         val name = TakVpnService.activeName
-        testText.text = "در حال تست اتصال..."
+        testText.text = AppLanguage.translate("در حال تست اتصال...", AppLanguage.code(this))
         pool.execute {
             val (ms, err) = measure(link)
             AppLog.add(if (ms > 0) "تست اتصال: $ms ms" else "تست اتصال ناموفق: $err")
@@ -1516,7 +1542,7 @@ class MainActivity : AppCompatActivity() {
                 errors.remove(cfg.id)
                 render()
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1560,7 +1586,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(cfg.name)
             .setView(box)
-            .setPositiveButton("بستن", null)
+            .setPositiveButton(tr("بستن"), null)
             .show()
     }
 
@@ -1617,7 +1643,7 @@ class MainActivity : AppCompatActivity() {
     private fun fetchConnectionInfo() {
         val requestId = ++connectionInfoRequest
         if (!TakVpnService.isRunning) return
-        connectionInfoText.text = "در حال دریافت IP خروجی واقعی تونل..."
+        connectionInfoText.text = AppLanguage.translate("در حال دریافت IP خروجی واقعی تونل...", AppLanguage.code(this))
         connectionInfoText.visibility = View.VISIBLE
         pool.execute {
             var connection: HttpURLConnection? = null
@@ -1662,7 +1688,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Throwable) {
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
-                        connectionInfoText.text = "تشخیص IP خروجی تونل ناموفق بود"
+                        connectionInfoText.text = AppLanguage.translate("تشخیص IP خروجی تونل ناموفق بود", AppLanguage.code(this))
                         connectionInfoText.visibility = View.VISIBLE
                     }
                 }
@@ -1701,7 +1727,7 @@ class MainActivity : AppCompatActivity() {
             if (lastRunning) AppLog.add("اتصال قطع شد")
             titleGlow.stop(c(R.color.header_title))
             statusGlow.stop(c(R.color.status_off))
-            testText.text = "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+            testText.text = AppLanguage.translate("قطع شده. برای اتصال دکمه‌ی پخش رو بزنید", AppLanguage.code(this))
             stopTracking()
         }
         lastRunning = running
@@ -1886,7 +1912,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    private fun tr(text: String): String = AppLanguage.translate(text, AppLanguage.code(this))
+
+    private fun toast(msg: String) = Toast.makeText(this, tr(msg), Toast.LENGTH_LONG).show()
 
     companion object {
         const val PING_URL = "https://www.gstatic.com/generate_204"
