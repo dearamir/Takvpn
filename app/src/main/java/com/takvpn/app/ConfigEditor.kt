@@ -27,6 +27,9 @@ object ConfigEditor {
 
     private fun tr(act: AppCompatActivity, text: String): String {
         val lang = AppLanguage.code(act)
+            "نوع کانفیگ" to mapOf("en" to "Config type", "fr" to "Type de config", "ru" to "Тип конфигурации", "zh" to "配置类型", "tr" to "Yapılandırma türü", "de" to "Konfigurationstyp", "ar" to "نوع الإعداد", "es" to "Tipo de configuración", "it" to "Tipo configurazione"),
+            "کانفیگ جدید" to mapOf("en" to "New config", "fr" to "Nouvelle config", "ru" to "Новая конфигурация", "zh" to "新配置", "tr" to "Yeni yapılandırma", "de" to "Neue Konfiguration", "ar" to "إعداد جديد", "es" to "Nueva configuración", "it" to "Nuova configurazione"),
+            "ویرایش کانفیگ" to mapOf("en" to "Edit config", "fr" to "Modifier la config", "ru" to "Редактировать конфигурацию", "zh" to "编辑配置", "tr" to "Yapılandırmayı düzenle", "de" to "Konfiguration bearbeiten", "ar" to "تعديل الإعداد", "es" to "Editar configuración", "it" to "Modifica configurazione"),
         val table = mapOf(
             "شبکه (Network)" to mapOf("en" to "Network", "fr" to "Réseau", "ru" to "Сеть", "zh" to "网络", "tr" to "Ağ", "de" to "Netzwerk", "ar" to "الشبكة", "es" to "Red", "it" to "Rete"),
             "نوع هدر" to mapOf("en" to "Header type", "fr" to "Type d’en-tête", "ru" to "Тип заголовка", "zh" to "头类型", "tr" to "Başlık türü", "de" to "Header-Typ", "ar" to "نوع الرأس", "es" to "Tipo de encabezado", "it" to "Tipo header"),
@@ -297,7 +300,7 @@ object ConfigEditor {
             Toast.makeText(act, tr(act, "این کانفیگ قابل ویرایش نیست"), Toast.LENGTH_LONG).show()
             return
         }
-        showForm(act, d.protocol, d.params, "ویرایش کانفیگ (${d.protocol.uppercase()})") { link ->
+        showForm(act, d.protocol, d.params, tr(act, "ویرایش کانفیگ") + " (${d.protocol.uppercase()})") { link ->
             val i = store.items.indexOfFirst { it.id == cfg.id }
             if (i >= 0) {
                 val name = ConfigStore.nameOf(link)
@@ -314,9 +317,9 @@ object ConfigEditor {
         val names = arrayOf("VLESS", "VMESS", "TROJAN", "HYSTERIA2")
         val protos = arrayOf("vless", "vmess", "trojan", "hysteria2")
         AlertDialog.Builder(act)
-            .setTitle("نوع کانفیگ")
+            .setTitle(tr(act, "نوع کانفیگ"))
             .setItems(names) { _, i ->
-                showForm(act, protos[i], defaults(protos[i]), "کانفیگ جدید (${names[i]})") { link ->
+                showForm(act, protos[i], defaults(protos[i]), tr(act, "کانفیگ جدید") + " (${names[i]})") { link ->
                     store.add(link)
                     AppLog.add("کانفیگ دستی ساخته شد")
                     onDone()
