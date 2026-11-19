@@ -27,6 +27,7 @@ import java.util.concurrent.Executors
 class TakVpnService : VpnService() {
 
     private val prefs by lazy { getSharedPreferences("takvpn", MODE_PRIVATE) }
+    private fun tr(text: String): String = AppLanguage.translate(text, AppLanguage.code(this))
     private var tun: ParcelFileDescriptor? = null
     private var core: CoreController? = null
     private var currentConfig: String? = null
@@ -51,7 +52,7 @@ class TakVpnService : VpnService() {
             ACTION_RESTART -> {
                 val cfg = currentConfig
                 if (cfg != null) {
-                    pingText = "راه‌اندازی مجدد..."
+                    pingText = tr("راه‌اندازی مجدد...")
                     notifyNow()
                     Thread { startVpn(cfg) }.start()
                 }
@@ -63,7 +64,7 @@ class TakVpnService : VpnService() {
             }
             ACTION_SMART -> {
                 smartMode = true
-                cfgName = "در حال پیدا کردن بهترین..."
+                cfgName = tr("در حال پیدا کردن بهترین...")
                 activeName = ""
                 activeLink = ""
                 pingText = ""
@@ -80,7 +81,7 @@ class TakVpnService : VpnService() {
             cfgName = intent.getStringExtra(EXTRA_NAME).orEmpty()
             activeName = cfgName
             activeLink = intent.getStringExtra(EXTRA_LINK).orEmpty()
-            pingText = if (wasRunning) "در حال تعویض کانفیگ..." else ""
+            pingText = if (wasRunning) tr("در حال تعویض کانفیگ...") else ""
             showForeground()
             Thread {
                 if (wasRunning) switchVpn(config) else startVpn(config)
@@ -96,7 +97,7 @@ class TakVpnService : VpnService() {
         foregroundOk = false
         try {
             if (Build.VERSION.SDK_INT >= 26) {
-                val ch = NotificationChannel(CHANNEL, "اتصال Takvpn", NotificationManager.IMPORTANCE_LOW)
+                val ch = NotificationChannel(CHANNEL, tr("اتصال Takvpn"), NotificationManager.IMPORTANCE_LOW)
                 ch.setShowBadge(false)
                 getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
             }
@@ -135,12 +136,12 @@ class TakVpnService : VpnService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val elapsed = SystemClock.elapsedRealtime() - startedAt
-        val label = if (smartMode) "هوشمند: $cfgName" else cfgName
+        val label = if (smartMode) tr("هوشمند: $cfgName") else cfgName
         val text = listOf(label, pingText).filter { it.isNotBlank() }.joinToString("  •  ")
         return NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_t)
-            .setContentTitle("Takvpn متصل است")
-            .setContentText(text.ifEmpty { "در حال اتصال..." })
+            .setContentTitle(tr("Takvpn متصل است"))
+            .setContentText(text.ifEmpty { tr("در حال اتصال...") })
             .setColor(0xFF00C853.toInt())
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -148,9 +149,9 @@ class TakVpnService : VpnService() {
             .setUsesChronometer(true)
             .setWhen(System.currentTimeMillis() - elapsed)
             .setContentIntent(open)
-            .addAction(0, "توقف", act(ACTION_STOP, 1))
-            .addAction(0, "راه‌اندازی مجدد", act(ACTION_RESTART, 2))
-            .addAction(0, "پینگ", act(ACTION_PING, 3))
+            .addAction(0, tr("توقف"), act(ACTION_STOP, 1))
+            .addAction(0, tr("راه‌اندازی مجدد"), act(ACTION_RESTART, 2))
+            .addAction(0, tr("پینگ"), act(ACTION_PING, 3))
             .build()
     }
 
@@ -186,11 +187,11 @@ class TakVpnService : VpnService() {
     private fun doPing() {
         val cfg = currentConfig ?: return
         if (!isRunning) return
-        pingText = "پینگ: در حال تست..."
+        pingText = tr("پینگ: در حال تست...")
         notifyNow()
         Thread {
             val ms = measureMs(cfg)
-            pingText = if (ms > 0) "پینگ: $ms ms" else "پینگ ناموفق"
+            pingText = if (ms > 0) tr("پینگ: $ms ms") else tr("پینگ ناموفق")
             handler.post { notifyNow() }
         }.start()
     }
@@ -226,7 +227,7 @@ class TakVpnService : VpnService() {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
             handler.post {
                 shutdownForeground()
-                onError?.invoke("کانفیگ سالمی پیدا نشد")
+                onError?.invoke(tr("کانفیگ سالمی پیدا نشد"))
             }
             return
         }
@@ -292,7 +293,7 @@ class TakVpnService : VpnService() {
         cfgName = best.name
         activeName = best.name
         activeLink = best.link
-        pingText = "جابه‌جا شد"
+        pingText = tr("جابه‌جا شد")
         AppLog.add("سوییچ هوشمند: جابه‌جایی به ${best.name}")
         startVpn(json)
         main.post { onSwitched?.invoke() }

@@ -61,7 +61,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:gravity="center"
-                        android:text="قطع"
+                        android:text="Disconnected"
                         android:textColor="@color/status_off"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -85,7 +85,7 @@
                             android:gravity="center"
                             android:paddingStart="11dp"
                             android:paddingEnd="11dp"
-                            android:text="⌁  پینگ همه"
+                            android:text="⌁  Ping all"
                             android:textColor="@android:color/white"
                             android:textSize="11sp"
                             android:textStyle="bold" />
@@ -154,7 +154,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="48dp"
                 android:gravity="center"
-                android:text="هنوز کانفیگی اضافه نشده.\nعلامت + بالا سمت چپ رو بزنید."
+                android:text="No configs added yet.\nTap + in the upper left."
                 android:textColor="@color/ink_soft"
                 android:textSize="15sp" />
 
@@ -214,7 +214,7 @@
                 android:maxLines="2"
                 android:paddingStart="22dp"
                 android:paddingEnd="22dp"
-                android:text="قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+                android:text="Disconnected. Tap connect to start"
                 android:textColor="@color/bar_text"
                 android:textSize="14sp" />
         </com.google.android.material.card.MaterialCardView>
@@ -224,7 +224,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:contentDescription="اتصال"
+            android:contentDescription="Connect"
             app:backgroundTint="@color/fab_idle"
             app:elevation="6dp"
             app:fabCustomSize="64dp"

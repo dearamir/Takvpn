@@ -76,7 +76,7 @@
             android:elevation="3dp"
             android:padding="7dp"
             android:scaleType="centerInside"
-            android:contentDescription="ویرایش"
+            android:contentDescription="Edit"
             android:src="@drawable/ic_gold_edit"
             android:tint="#FFD36A" />
 
@@ -89,7 +89,7 @@
             android:elevation="0dp"
             android:padding="8dp"
             android:scaleType="centerInside"
-            android:contentDescription="حذف"
+            android:contentDescription="Delete"
             android:src="@drawable/ic_gold_delete"
             android:tint="#FFD36A" />
 
@@ -102,7 +102,7 @@
             android:elevation="0dp"
             android:padding="8dp"
             android:scaleType="centerInside"
-            android:contentDescription="اشتراک‌گذاری"
+            android:contentDescription="Share"
             android:src="@drawable/ic_gold_share"
             android:tint="#FFD36A" />
     </LinearLayout>
