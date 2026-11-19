@@ -311,8 +311,21 @@ object AppLanguage {
         )
     )
 
+    private val dialogTranslations = mapOf(
+        "en" to mapOf("App language / زبان برنامه" to "App language", "Cancel" to "Cancel"),
+        "fr" to mapOf("App language / زبان برنامه" to "Langue de l’application", "Cancel" to "Annuler"),
+        "ru" to mapOf("App language / زبان برنامه" to "Язык приложения", "Cancel" to "Отмена"),
+        "zh" to mapOf("App language / زبان برنامه" to "应用语言", "Cancel" to "取消"),
+        "tr" to mapOf("App language / زبان برنامه" to "Uygulama dili", "Cancel" to "İptal"),
+        "de" to mapOf("App language / زبان برنامه" to "App-Sprache", "Cancel" to "Abbrechen"),
+        "ar" to mapOf("App language / زبان برنامه" to "لغة التطبيق", "Cancel" to "إلغاء"),
+        "es" to mapOf("App language / زبان برنامه" to "Idioma de la aplicación", "Cancel" to "Cancelar"),
+        "it" to mapOf("App language / زبان برنامه" to "Lingua dell’app", "Cancel" to "Annulla"),
+        "fa" to mapOf("App language / زبان برنامه" to "زبان برنامه", "Cancel" to "لغو")
+    )
+
     fun translate(text: String, language: String): String =
-        actionTranslations[language]?.get(text) ?: translations[language]?.get(text) ?: text
+        dialogTranslations[language]?.get(text) ?: actionTranslations[language]?.get(text) ?: translations[language]?.get(text) ?: text
 
     fun showChooser(context: Context) {
         val current = code(context)
@@ -320,7 +333,7 @@ object AppLanguage {
         val selectedIndex = languages.indexOfFirst { it.first == current }.coerceAtLeast(0
 )
         AlertDialog.Builder(context)
-            .setTitle("App language / زبان برنامه")
+            .setTitle(translate("App language / زبان برنامه", current))
             .setSingleChoiceItems(labels, selectedIndex) { dialog, which ->
                 val selectedCode = languages[which].first
                 context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -328,7 +341,7 @@ object AppLanguage {
                 AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(selectedCode))
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(translate("Cancel", current), null)
             .show()
     }
 }
