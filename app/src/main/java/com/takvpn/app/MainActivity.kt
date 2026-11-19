@@ -73,21 +73,41 @@ class MainActivity : AppCompatActivity() {
     )
 
     private val uiPalettes = listOf(
-        UiPalette("آبی اقیانوسی", Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
-        UiPalette("مشکی طلایی", Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
-        UiPalette("زمردی", Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
-        UiPalette("بنفش نئونی", Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
+        UiPalette(localizeUi("آبی اقیانوسی"), Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
+        UiPalette(localizeUi("مشکی طلایی"), Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
+        UiPalette(localizeUi("زمردی"), Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
+        UiPalette(localizeUi("بنفش نئونی"), Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
     )
     private val textColors = listOf(
-        "سفید یخی" to Color.rgb(245,248,255),
-        "طلایی" to Color.rgb(245,205,105),
-        "فیروزه‌ای" to Color.rgb(0,210,235),
-        "سبز زمردی" to Color.rgb(65,220,165),
-        "بنفش" to Color.rgb(190,145,255),
-        "نقره‌ای" to Color.rgb(190,200,215),
-        "نارنجی" to Color.rgb(255,165,70),
-        "پیش‌فرض پوسته" to Color.TRANSPARENT
+        localizeUi("سفید یخی") to Color.rgb(245,248,255),
+        localizeUi("طلایی") to Color.rgb(245,205,105),
+        localizeUi("فیروزه‌ای") to Color.rgb(0,210,235),
+        localizeUi("سبز زمردی") to Color.rgb(65,220,165),
+        localizeUi("بنفش") to Color.rgb(190,145,255),
+        localizeUi("نقره‌ای") to Color.rgb(190,200,215),
+        localizeUi("نارنجی") to Color.rgb(255,165,70),
+        localizeUi("پیش‌فرض پوسته") to Color.TRANSPARENT
     )
+    private fun localizeUi(text: String): String = when (text) {
+        "آبی اقیانوسی" to mapOf("en" to "Ocean Blue", "fr" to "Bleu océan", "ru" to "Океанский синий", "zh" to "海洋蓝", "tr" to "Okyanus mavisi", "de" to "Ozeanblau", "ar" to "أزرق المحيط", "es" to "Azul océano", "it" to "Blu oceano"),
+        "مشکی طلایی" to mapOf("en" to "Black Gold", "fr" to "Noir et or", "ru" to "Чёрно-золотой", "zh" to "黑金", "tr" to "Siyah-altın", "de" to "Schwarz-Gold", "ar" to "أسود وذهبي", "es" to "Negro y oro", "it" to "Nero e oro"),
+        "زمردی" to mapOf("en" to "Emerald", "fr" to "Émeraude", "ru" to "Изумрудный", "zh" to "翡翠绿", "tr" to "Zümrüt", "de" to "Smaragd", "ar" to "زمردي", "es" to "Esmeralda", "it" to "Smeraldo"),
+        "بنفش نئونی" to mapOf("en" to "Neon Purple", "fr" to "Violet néon", "ru" to "Неоновый фиолетовый", "zh" to "霓虹紫", "tr" to "Neon mor", "de" to "Neonviolett", "ar" to "بنفسجي نيون", "es" to "Morado neón", "it" to "Viola neon"),
+        "سفید یخی" to mapOf("en" to "Ice White", "fr" to "Blanc glacé", "ru" to "Ледяной белый", "zh" to "冰白", "tr" to "Buz beyazı", "de" to "Eisweiß", "ar" to "أبيض جليدي", "es" to "Blanco hielo", "it" to "Bianco ghiaccio"),
+        "طلایی" to mapOf("en" to "Gold", "fr" to "Or", "ru" to "Золотой", "zh" to "金色", "tr" to "Altın", "de" to "Gold", "ar" to "ذهبي", "es" to "Dorado", "it" to "Oro"),
+        "فیروزه‌ای" to mapOf("en" to "Turquoise", "fr" to "Turquoise", "ru" to "Бирюзовый", "zh" to "青绿", "tr" to "Turkuaz", "de" to "Türkis", "ar" to "فيروزي", "es" to "Turquesa", "it" to "Turchese"),
+        "سبز زمردی" to mapOf("en" to "Emerald Green", "fr" to "Vert émeraude", "ru" to "Изумрудный", "zh" to "翡翠绿", "tr" to "Zümrüt yeşili", "de" to "Smaragdgrün", "ar" to "أخضر زمردي", "es" to "Verde esmeralda", "it" to "Verde smeraldo"),
+        "نقره‌ای" to mapOf("en" to "Silver", "fr" to "Argent", "ru" to "Серебряный", "zh" to "银色", "tr" to "Gümüş", "de" to "Silber", "ar" to "فضي", "es" to "Plateado", "it" to "Argento"),
+        "نارنجی" to mapOf("en" to "Orange", "fr" to "Orange", "ru" to "Оранжевый", "zh" to "橙色", "tr" to "Turuncu", "de" to "Orange", "ar" to "برتقالي", "es" to "Naranja", "it" to "Arancione"),
+        "پیش‌فرض پوسته" to mapOf("en" to "Theme default", "fr" to "Par défaut du thème", "ru" to "По теме", "zh" to "主题默认", "tr" to "Tema varsayılanı", "de" to "Designstandard", "ar" to "افتراضي المظهر", "es" to "Predeterminado del tema", "it" to "Predefinito tema"),
+        "انتخاب پوسته" to mapOf("en" to "Choose theme", "fr" to "Choisir le thème", "ru" to "Выбрать тему", "zh" to "选择主题", "tr" to "Tema seç", "de" to "Design wählen", "ar" to "اختيار المظهر", "es" to "Elegir tema", "it" to "Scegli tema"),
+        "رنگ نوشته‌ها" to mapOf("en" to "Text colors", "fr" to "Couleurs du texte", "ru" to "Цвет текста", "zh" to "文字颜色", "tr" to "Yazı renkleri", "de" to "Textfarben", "ar" to "ألوان النص", "es" to "Colores del texto", "it" to "Colori testo"),
+        "تغییر رنگ پس‌زمینه و کارت‌ها" to mapOf("en" to "Change background and cards", "fr" to "Changer le fond et les cartes", "ru" to "Изменить фон и карточки", "zh" to "更改背景和卡片", "tr" to "Arka plan ve kartları değiştir", "de" to "Hintergrund und Karten ändern", "ar" to "تغيير الخلفية والبطاقات", "es" to "Cambiar fondo y tarjetas", "it" to "Cambia sfondo e schede"),
+        "تغییر مستقل رنگ متن‌ها" to mapOf("en" to "Change text colors separately", "fr" to "Changer les couleurs du texte séparément", "ru" to "Отдельно изменить цвет текста", "zh" to "单独调整文字颜色", "tr" to "Metin renklerini ayrı değiştir", "de" to "Textfarben separat ändern", "ar" to "تغيير ألوان النص بشكل مستقل", "es" to "Cambiar colores del texto por separado", "it" to "Modifica colori testo separatamente"),
+        "تاریک / روشن" to mapOf("en" to "Dark / light", "fr" to "Sombre / clair", "ru" to "Тёмный / светлый", "zh" to "深色 / 浅色", "tr" to "Koyu / açık", "de" to "Dunkel / hell", "ar" to "داكن / فاتح", "es" to "Oscuro / claro", "it" to "Scuro / chiaro")
+        else -> AppLanguage.translate(text, AppLanguage.code(this))
+    }
+
     private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
 
     private fun isNightAppearance(): Boolean =
