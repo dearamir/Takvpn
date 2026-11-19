@@ -24,9 +24,32 @@ object AppPicker {
     fun summary(ctx: Context): String {
         val p = ctx.getSharedPreferences("takvpn", Context.MODE_PRIVATE)
         val n = (p.getStringSet("split_apps", emptySet()) ?: emptySet()).size
+        val lang = AppLanguage.code(ctx)
         return when (p.getInt("split_mode", 0)) {
-            1 -> tr(ctx, "فقط $n اپ با VPN")
-            2 -> tr(ctx, "$n اپ بدون VPN")
+            1 -> when (lang) {
+                "fa" -> "فقط $n اپ با VPN"
+                "fr" -> "$n applications via VPN"
+                "de" -> "$n Apps über VPN"
+                "ru" -> "$n приложений через VPN"
+                "zh" -> "$n 个应用使用 VPN"
+                "tr" -> "$n uygulama VPN kullanıyor"
+                "ar" -> "$n تطبيقات عبر VPN"
+                "es" -> "$n apps usan VPN"
+                "it" -> "$n app tramite VPN"
+                else -> "$n apps use VPN"
+            }
+            2 -> when (lang) {
+                "fa" -> "$n اپ بدون VPN"
+                "fr" -> "$n applications sans VPN"
+                "de" -> "$n Apps ohne VPN"
+                "ru" -> "$n приложений без VPN"
+                "zh" -> "$n 个应用绕过 VPN"
+                "tr" -> "$n uygulama VPN dışında"
+                "ar" -> "$n تطبيقات بدون VPN"
+                "es" -> "$n apps sin VPN"
+                "it" -> "$n app senza VPN"
+                else -> "$n apps bypass VPN"
+            }
             else -> tr(ctx, "همه‌ی اپ‌ها با VPN")
         }
     }
