@@ -196,14 +196,14 @@ class MainActivity : AppCompatActivity() {
         val original = prefs.getString("ui_palette", null)
         var confirmed = false
         val dialog = AlertDialog.Builder(this)
-            .setTitle("انتخاب پوسته")
+            .setTitle(tr("انتخاب پوسته"))
             .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { _, which ->
                 prefs.edit().putString("ui_palette", names[which]).apply()
                 applyAppPalette()
             }
-            .setPositiveButton("تأیید", null)
-            .setNeutralButton("پیش‌فرض", null)
-            .setNegativeButton("لغو", null)
+            .setPositiveButton(tr("تأیید"), null)
+            .setNeutralButton(tr("پیش‌فرض"), null)
+            .setNegativeButton(tr("لغو"), null)
             .create()
 
         dialog.setOnShowListener {
@@ -237,7 +237,7 @@ class MainActivity : AppCompatActivity() {
         val selected = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
         var confirmed = false
         val dialog = AlertDialog.Builder(this)
-            .setTitle("رنگ نوشته‌ها")
+            .setTitle(tr("رنگ نوشته‌ها"))
             .setSingleChoiceItems(names, selected) { _, which ->
                 if (names[which] == "پیش‌فرض پوسته") {
                     prefs.edit().remove("ui_text_color").apply()
@@ -246,9 +246,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 applyAppPalette()
             }
-            .setPositiveButton("تأیید", null)
-            .setNeutralButton("پیش‌فرض نوشته", null)
-            .setNegativeButton("لغو", null)
+            .setPositiveButton(tr("تأیید"), null)
+            .setNeutralButton(tr("پیش‌فرض نوشته"), null)
+            .setNegativeButton(tr("لغو"), null)
             .create()
 
         dialog.setOnShowListener {
@@ -639,9 +639,9 @@ class MainActivity : AppCompatActivity() {
             )
         )
         AlertDialog.Builder(this)
-            .setTitle("DNS (آدرس‌ها با ویرگول)")
+            .setTitle(tr("DNS (آدرس‌ها با ویرگول)"))
             .setView(box)
-            .setPositiveButton("ذخیره") { _, _ ->
+            .setPositiveButton(tr("ذخیره")) { _, _ ->
                 val list = TakVpnService.parseDns(input.text.toString())
                 if (list.isEmpty()) {
                     toast("آدرس IPv4 معتبری وارد نشد")
@@ -650,11 +650,11 @@ class MainActivity : AppCompatActivity() {
                     toast("DNS ذخیره شد. از اتصال بعدی اعمال می‌شه")
                 }
             }
-            .setNeutralButton("پیش‌فرض") { _, _ ->
+            .setNeutralButton(tr("پیش‌فرض")) { _, _ ->
                 prefs.edit().remove("dns").apply()
                 toast("DNS به پیش‌فرض برگشت")
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -667,7 +667,7 @@ class MainActivity : AppCompatActivity() {
     private fun launchScan() {
         scanLauncher.launch(
             ScanOptions()
-                .setPrompt("QR کانفیگ رو جلوی دوربین بگیرید")
+                .setPrompt(tr("QR کانفیگ رو جلوی دوربین بگیرید"))
                 .setBeepEnabled(false)
                 .setOrientationLocked(false)
                 .setCaptureActivity(PortraitCaptureActivity::class.java)
@@ -708,9 +708,9 @@ class MainActivity : AppCompatActivity() {
             .setMessage(
                 "نسخه‌ی برنامه: ${verName()}\nنسخه‌ی هسته Xray: ${BuildConfig.XRAY_CORE_VERSION}\nبروزرسانی مستقیم از داخل برنامه"
             )
-            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
-            .setNeutralButton("بررسی بروزرسانی هسته") { _, _ -> checkCoreUpdate() }
-            .setNegativeButton("بستن", null)
+            .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
+            .setNeutralButton(tr("بررسی بروزرسانی هسته")) { _, _ -> checkCoreUpdate() }
+            .setNegativeButton(tr("بستن"), null)
             .show()
     }
 
@@ -739,7 +739,7 @@ class MainActivity : AppCompatActivity() {
                             .setMessage(
                                 "هسته‌ی فعلی: $current\nآخرین هسته: $latest\n\nبرای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود."
                             )
-                            .setPositiveButton("بررسی بروزرسانی برنامه") { _, _ -> checkUpdate() }
+                            .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
                             .setNegativeButton("بعداً", null)
                             .show()
                     } else {
@@ -954,7 +954,7 @@ class MainActivity : AppCompatActivity() {
                 val url = input.text.toString().trim()
                 if (url.isNotEmpty()) fetchSub(url)
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1044,10 +1044,10 @@ class MainActivity : AppCompatActivity() {
                             render()
                         }
                     }
-                    .setNegativeButton("لغو", null)
+                    .setNegativeButton(tr("لغو"), null)
                     .show()
             }
-            .setNegativeButton("بستن", null)
+            .setNegativeButton(tr("بستن"), null)
             .show()
     }
 
@@ -1088,15 +1088,15 @@ class MainActivity : AppCompatActivity() {
         val sv = ScrollView(this)
         sv.addView(tv)
         AlertDialog.Builder(this)
-            .setTitle("لاگ")
+            .setTitle(tr("لاگ"))
             .setView(sv)
-            .setPositiveButton("بستن", null)
-            .setNeutralButton("کپی") { _, _ ->
+            .setPositiveButton(tr("بستن"), null)
+            .setNeutralButton(tr("کپی")) { _, _ ->
                 val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("log", text))
                 toast("لاگ کپی شد")
             }
-            .setNegativeButton("پاک کردن") { _, _ ->
+            .setNegativeButton(tr("پاک کردن")) { _, _ ->
                 AppLog.clear()
                 AppLog.clearCore()
             }
@@ -1499,7 +1499,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 render()
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1542,7 +1542,7 @@ class MainActivity : AppCompatActivity() {
                 errors.remove(cfg.id)
                 render()
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr("لغو"), null)
             .show()
     }
 
@@ -1586,7 +1586,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(cfg.name)
             .setView(box)
-            .setPositiveButton("بستن", null)
+            .setPositiveButton(tr("بستن"), null)
             .show()
     }
 
@@ -1912,7 +1912,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+    private fun tr(text: String): String = AppLanguage.translate(text, AppLanguage.code(this))
+
+    private fun toast(msg: String) = Toast.makeText(this, tr(msg), Toast.LENGTH_LONG).show()
 
     companion object {
         const val PING_URL = "https://www.gstatic.com/generate_204"
