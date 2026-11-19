@@ -25,6 +25,19 @@ import org.json.JSONObject
 
 object ConfigEditor {
 
+    private fun tr(act: AppCompatActivity, text: String): String = when (AppLanguage.code(act)) {
+        "en" -> mapOf("کانفیگ جدید" to "New config", "ویرایش کانفیگ" to "Edit config", "این کانفیگ قابل ویرایش نیست" to "This config cannot be edited", "ذخیره شد. از اتصال بعدی اعمال می‌شه" to "Saved. Applies on next connection", "نشانی سرور خالیه" to "Server address is empty", "پورت نامعتبره" to "Invalid port", "پورت باید بین ۱ تا ۶۵۵۳۵ باشه" to "Port must be between 1 and 65535", "شناسه (UUID) خالیه" to "UUID is empty", "رمز عبور خالیه" to "Password is empty", "ذخیره" to "Save", "لغو" to "Cancel", "افزودن کانفیگ" to "Add config", "ویرایش کانفیگ" to "Edit config").getOrDefault(text, text)
+        "fr" -> mapOf("کانفیگ جدید" to "Nouvelle config", "این کانفیگ قابل ویرایش نیست" to "Cette config ne peut pas être modifiée", "ذخیره" to "Enregistrer", "لغو" to "Annuler", "افزودن کانفیگ" to "Ajouter une config").getOrDefault(text, text)
+        "ru" -> mapOf("کانفیگ جدید" to "Новая конфигурация", "این کانفیگ قابل ویرایش نیست" to "Эту конфигурацию нельзя редактировать", "ذخیره" to "Сохранить", "لغو" to "Отмена", "افزودن کانفیگ" to "Добавить конфигурацию").getOrDefault(text, text)
+        "zh" -> mapOf("کانفیگ جدید" to "新配置", "این کانفیگ قابل ویرایش نیست" to "无法编辑此配置", "ذخیره" to "保存", "لغو" to "取消", "افزودن کانفیگ" to "添加配置").getOrDefault(text, text)
+        "tr" -> mapOf("کانفیگ جدید" to "Yeni yapılandırma", "این کانفیگ قابل ویرایش نیست" to "Bu yapılandırma düzenlenemez", "ذخیره" to "Kaydet", "لغو" to "İptal", "افزودن کانفیگ" to "Yapılandırma ekle").getOrDefault(text, text)
+        "de" -> mapOf("کانفیگ جدید" to "Neue Konfiguration", "این کانفیگ قابل ویرایش نیست" to "Diese Konfiguration kann nicht bearbeitet werden", "ذخیره" to "Speichern", "لغو" to "Abbrechen", "افزودن کانفیگ" to "Konfiguration hinzufügen").getOrDefault(text, text)
+        "ar" -> mapOf("کانفیگ جدید" to "إعداد جديد", "این کانفیگ قابل ویرایش نیست" to "لا يمكن تعديل هذا الإعداد", "ذخیره" to "حفظ", "لغو" to "إلغاء", "افزودن کانفیگ" to "إضافة إعداد").getOrDefault(text, text)
+        "es" -> mapOf("کانفیگ جدید" to "Nueva configuración", "این کانفیگ قابل ویرایش نیست" to "No se puede editar esta configuración", "ذخیره" to "Guardar", "لغو" to "Cancelar", "افزودن کانفیگ" to "Añadir configuración").getOrDefault(text, text)
+        "it" -> mapOf("کانفیگ جدید" to "Nuova configurazione", "این کانفیگ قابل ویرایش نیست" to "Impossibile modificare questa configurazione", "ذخیره" to "Salva", "لغو" to "Annulla", "افزودن کانفیگ" to "Aggiungi configurazione").getOrDefault(text, text)
+        else -> text
+    }
+
     private class F(
         val key: String,
         val label: String,
@@ -194,10 +207,10 @@ object ConfigEditor {
     private fun build(proto: String, m: Map<String, String>): String {
         val name = m["_name"].orEmpty().trim()
         val addr = m["_addr"].orEmpty().trim()
-        if (addr.isEmpty()) throw IllegalArgumentException("نشانی سرور خالیه")
+        if (addr.isEmpty()) throw IllegalArgumentException(trForError("نشانی سرور خالیه"))
         val port = m["_port"].orEmpty().trim().toIntOrNull()
-            ?: throw IllegalArgumentException("پورت نامعتبره")
-        if (port !in 1..65535) throw IllegalArgumentException("پورت باید بین ۱ تا ۶۵۵۳۵ باشه")
+            ?: throw IllegalArgumentException(trForError("پورت نامعتبره"))
+        if (port !in 1..65535) throw IllegalArgumentException(trForError("پورت باید بین ۱ تا ۶۵۵۳۵ باشه"))
         return if (proto == "vmess") buildVmess(name, addr, port, m) else buildUri(proto, name, addr, port, m)
     }
 
@@ -205,11 +218,11 @@ object ConfigEditor {
         val host = if (addr.contains(":") && !addr.startsWith("[")) "[$addr]" else addr
         val user = if (proto == "vless") {
             val id = m["_id"].orEmpty().trim()
-            if (id.isEmpty()) throw IllegalArgumentException("شناسه (UUID) خالیه")
+            if (id.isEmpty()) throw IllegalArgumentException(trForError("شناسه (UUID) خالیه"))
             id
         } else {
             val p = m["_pass"].orEmpty()
-            if (p.isEmpty()) throw IllegalArgumentException("رمز عبور خالیه")
+            if (p.isEmpty()) throw IllegalArgumentException(trForError("رمز عبور خالیه"))
             Uri.encode(p)
         }
         val q = StringBuilder()
@@ -253,7 +266,7 @@ object ConfigEditor {
     fun editConfig(act: AppCompatActivity, store: ConfigStore, cfg: Cfg, onDone: () -> Unit) {
         val d = parse(cfg.link)
         if (d == null) {
-            Toast.makeText(act, "این کانفیگ قابل ویرایش نیست", Toast.LENGTH_LONG).show()
+            Toast.makeText(act, tr(act, "این کانفیگ قابل ویرایش نیست"), Toast.LENGTH_LONG).show()
             return
         }
         showForm(act, d.protocol, d.params, "ویرایش کانفیگ (${d.protocol.uppercase()})") { link ->
@@ -263,7 +276,7 @@ object ConfigEditor {
                 store.items[i] = Cfg(cfg.id, link, name)
                 store.rename(cfg.id, name)
                 AppLog.add("کانفیگ ویرایش شد: $name")
-                Toast.makeText(act, "ذخیره شد. از اتصال بعدی اعمال می‌شه", Toast.LENGTH_LONG).show()
+                Toast.makeText(act, tr(act, "ذخیره شد. از اتصال بعدی اعمال می‌شه"), Toast.LENGTH_LONG).show()
                 onDone()
             }
         }
