@@ -511,7 +511,7 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- actions sheet ----------
 
-    private fun onOff(key: String) = if (prefs.getBoolean(key, false)) "روشن" else "خاموش"
+    private fun onOff(key: String) = tr(if (prefs.getBoolean(key, false)) "روشن" else "خاموش")
 
     private fun showActions() {
         val dialog = BottomSheetDialog(this)
@@ -565,7 +565,7 @@ class MainActivity : AppCompatActivity() {
                 Act("🌗", "حالت تاریک", "تاریک / روشن") { toggleNight() },
                 Act(
                     "🔀", "پورت‌هاپینگ",
-                    "Hysteria: " + (if (ConfigExtras.hopEnabled) "روشن" else "خاموش")
+                    "Hysteria: " + tr(if (ConfigExtras.hopEnabled) "روشن" else "خاموش")
                 ) { toggleHop() },
                 Act("📜", "لاگ", "رویدادها و خطاها") { showLog() },
                 Act("💾", "بکاپ", "کپی همه‌ی کانفیگ‌ها") { backupAll() },
@@ -625,7 +625,7 @@ class MainActivity : AppCompatActivity() {
     private fun toggleSetting(key: String, title: String, note: String = "از اتصال بعدی اعمال می‌شه") {
         val v = !prefs.getBoolean(key, false)
         prefs.edit().putBoolean(key, v).apply()
-        toast("$title " + (if (v) "روشن شد" else "خاموش شد") + "\n" + note)
+        toast("${tr(title)} ${tr(if (v) "روشن شد" else "خاموش شد")}\n${tr(note)}")
     }
 
     private fun dnsDialog() {
