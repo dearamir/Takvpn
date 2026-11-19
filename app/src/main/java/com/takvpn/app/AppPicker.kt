@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 
 object AppPicker {
+    private fun tr(context: Context, text: String): String = AppLanguage.translate(text, AppLanguage.code(context))
 
     private class AppItem(val label: String, val pkg: String)
 
@@ -24,9 +25,9 @@ object AppPicker {
         val p = ctx.getSharedPreferences("takvpn", Context.MODE_PRIVATE)
         val n = (p.getStringSet("split_apps", emptySet()) ?: emptySet()).size
         return when (p.getInt("split_mode", 0)) {
-            1 -> "فقط $n اپ با VPN"
-            2 -> "$n اپ بدون VPN"
-            else -> "همه‌ی اپ‌ها با VPN"
+            1 -> tr(context, "فقط $n اپ با VPN")
+            2 -> tr(context, "$n اپ بدون VPN")
+            else -> tr(context, "همه‌ی اپ‌ها با VPN")
         }
     }
 
@@ -54,9 +55,9 @@ object AppPicker {
 
         val group = RadioGroup(act)
         val labels = listOf(
-            "همه‌ی اپ‌ها با VPN (خاموش)",
-            "فقط اپ‌های انتخاب‌شده با VPN",
-            "اپ‌های انتخاب‌شده بدون VPN"
+            tr(context, "همه‌ی اپ‌ها با VPN (خاموش)"),
+            tr(context, "فقط اپ‌های انتخاب‌شده با VPN"),
+            tr(context, "اپ‌های انتخاب‌شده بدون VPN")
         )
         labels.forEachIndexed { i, t ->
             val rb = RadioButton(act)
@@ -69,7 +70,7 @@ object AppPicker {
         root.addView(group)
 
         val search = EditText(act)
-        search.hint = "جستجوی اپ"
+        search.hint = tr(context, "جستجوی اپ")
         search.setSingleLine()
         root.addView(
             search,
@@ -106,18 +107,18 @@ object AppPicker {
         root.addView(lv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(320)))
 
         AlertDialog.Builder(act)
-            .setTitle("انتخاب اپ‌ها")
+            .setTitle(tr(context, "انتخاب اپ‌ها"))
             .setView(root)
-            .setPositiveButton("ذخیره") { _, _ ->
+            .setPositiveButton(tr(context, "ذخیره")) { _, _ ->
                 p.edit().putInt("split_mode", mode)
                     .putStringSet("split_apps", HashSet(selected)).apply()
-                var msg = "ذخیره شد. از اتصال بعدی اعمال می‌شه"
+                var msg = tr(context, "ذخیره شد. از اتصال بعدی اعمال می‌شه")
                 if (mode != 0 && selected.isEmpty()) {
-                    msg += "\n(اپی انتخاب نشده، پس مثل حالت خاموش عمل می‌کنه)"
+                    msg += "\n" + tr(context, "(اپی انتخاب نشده، پس مثل حالت خاموش عمل می‌کنه)")
                 }
                 Toast.makeText(act, msg, Toast.LENGTH_LONG).show()
             }
-            .setNegativeButton("لغو", null)
+            .setNegativeButton(tr(context, "لغو"), null)
             .show()
     }
 }
