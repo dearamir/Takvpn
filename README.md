@@ -36,6 +36,8 @@
 
 - **Bitcoin (BTC) — Bitcoin Mainnet**
   `bc1qshme9kn9jxckdedfmmlq945ytafqtld3hs3t9a`
+- **Litecoin (LTC) — Litecoin Mainnet**
+  `ltc1qxlyz44ey50m05s0m66xt4twz7cymmu09eh5s76`
 - **TRON (TRX) — TRON Mainnet**
   `TFs2M1xLvPRCUjybb2QuPuNP4Tp1q7xKqs`
 - **BNB Smart Chain (BEP-20 / BSC)**
