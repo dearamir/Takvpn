@@ -1270,25 +1270,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lookupCountryFlag(cfg: Cfg) {
+        // Never label a profile by its first-hop server IP. Only show a country
+        // when this exact profile is the active tunnel and its real exit IP can
+        // be queried through the local Xray SOCKS probe.
+        if (!TakVpnService.isRunning || cfg.link != TakVpnService.activeLink) return
         synchronized(countryLookups) {
-            if (cfg.id in countryLookups || countryFlags.containsKey(cfg.id)) return
+            if (cfg.id in countryLookups) return
             countryLookups.add(cfg.id)
         }
         pool.execute {
             var connection: HttpURLConnection? = null
             try {
-                val host = ServerEndpoint.hostFromLink(cfg.link)
-                    ?: throw IllegalStateException("Server host not found")
-                val serverIp = try {
-                    java.net.InetAddress.getByName(host).hostAddress
-                } catch (_: Throwable) {
-                    host
+                val socks = java.net.Proxy(
+                    java.net.Proxy.Type.SOCKS,
+                    java.net.InetSocketAddress("127.0.0.1", TakVpnService.IP_PROBE_SOCKS_PORT)
+                )
+                connection = (URL("https://api.ipify.org").openConnection(socks) as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
                 }
-                val encodedIp = java.net.URLEncoder.encode(serverIp, "UTF-8")
-                connection = (URL("https://ipwho.is/$encodedIp").openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 5000
-                    readTimeout = 5000
-                    requestMethod = "GET"
+                val exitIp = connection.inputStream.bufferedReader().use { it.readText().trim() }
+                connection.disconnect()
+                connection = null
+                val encodedIp = java.net.URLEncoder.encode(exitIp, "UTF-8")
+                connection = (URL("https://ipwho.is/$encodedIp").openConnection(socks) as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
                 }
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
                 if (!json.optBoolean("success", false)) return@execute
@@ -1296,13 +1303,13 @@ class MainActivity : AppCompatActivity() {
                 if (code.length != 2 || !code.all { it in 'A'..'Z' }) return@execute
                 val flag = code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 runOnUiThread {
-                    if (!isDestroyed) {
+                    if (!isDestroyed && TakVpnService.isRunning && cfg.link == TakVpnService.activeLink) {
                         countryFlags[cfg.id] = flag
                         render()
                     }
                 }
-            } catch (_: Throwable) {
-                // Keep the ping result visible even if country lookup is unavailable.
+            } catch (e: Throwable) {
+                AppLog.add("تشخیص کشور خروجی برای پینگ ناموفق: ${e.message}")
             } finally {
                 connection?.disconnect()
             }
