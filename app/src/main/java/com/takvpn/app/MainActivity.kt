@@ -367,6 +367,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
+        findViewById<TextView>(R.id.pingAllLabel).text = tr("⌁  پینگ همه")
+        findViewById<TextView>(R.id.emptyText).text = tr("هنوز کانفیگی اضافه نشده.\\nعلامت + بالا سمت چپ رو بزنید.")
+        findViewById<TextView>(R.id.testText).text = tr("قطع شده. برای اتصال دکمه‌ی پخش رو بزنید")
+        findViewById<View>(R.id.connectFab).contentDescription = tr("اتصال")
 
         store = ConfigStore(this)
         subs = SubStore(this, store)
@@ -735,12 +739,12 @@ class MainActivity : AppCompatActivity() {
                     if (isDestroyed) return@runOnUiThread
                     if (newer) {
                         AlertDialog.Builder(this)
-                            .setTitle("هسته‌ی جدید موجود است")
+                            .setTitle(tr("هسته‌ی جدید موجود است"))
                             .setMessage(
                                 "هسته‌ی فعلی: $current\nآخرین هسته: $latest\n\nبرای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود."
                             )
                             .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
-                            .setNegativeButton("بعداً", null)
+                            .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else {
                         toast("هسته‌ی Xray به‌روزه ($current)")
@@ -789,8 +793,8 @@ class MainActivity : AppCompatActivity() {
                                 "نسخه‌ی فعلی: ${verName()}\nنسخه‌ی جدید: ${latest.tag}" +
                                     (if (notes.isNotBlank()) "\n\nتغییرات:\n$notes" else "")
                             )
-                            .setPositiveButton("دانلود و نصب") { _, _ -> downloadAndInstallUpdate(latest) }
-                            .setNegativeButton("بعداً", null)
+                            .setPositiveButton(tr("دانلود و نصب")) { _, _ -> downloadAndInstallUpdate(latest) }
+                            .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else if (!silent) {
                         toast("نسخه‌ی شما به‌روزه (${verName()})")
@@ -866,9 +870,9 @@ class MainActivity : AppCompatActivity() {
                     if (!isDestroyed) {
                         if (progress.isShowing) progress.dismiss()
                         AlertDialog.Builder(this)
-                            .setTitle("دانلود ناموفق بود")
+                            .setTitle(tr("دانلود ناموفق بود"))
                             .setMessage(message)
-                            .setPositiveButton("باشه", null)
+                            .setPositiveButton(tr("باشه"), null)
                             .show()
                     }
                 }
@@ -886,16 +890,16 @@ class MainActivity : AppCompatActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
             pendingInstallFile = file
             AlertDialog.Builder(this)
-                .setTitle("اجازه‌ی نصب برنامه")
-                .setMessage("برای نصب نسخه‌ی جدید، اجازه‌ی نصب برنامه از TakVPN را در تنظیمات فعال کنید.")
-                .setPositiveButton("رفتن به تنظیمات") { _, _ ->
+                .setTitle(tr("اجازه‌ی نصب برنامه"))
+                .setMessage(tr("برای نصب نسخه‌ی جدید، اجازه‌ی نصب برنامه از TakVPN را در تنظیمات فعال کنید."))
+                .setPositiveButton(tr("رفتن به تنظیمات")) { _, _ ->
                     val intent = Intent(
                         android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                         Uri.parse("package:$packageName")
                     )
                     startActivity(intent)
                 }
-                .setNegativeButton("بعداً", null)
+                .setNegativeButton(tr("بعداً"), null)
                 .show()
             return
         }
@@ -948,9 +952,9 @@ class MainActivity : AppCompatActivity() {
             )
         )
         AlertDialog.Builder(this)
-            .setTitle("لینک اشتراک")
+            .setTitle(tr("لینک اشتراک"))
             .setView(box)
-            .setPositiveButton("افزودن") { _, _ ->
+            .setPositiveButton(tr("افزودن")) { _, _ ->
                 val url = input.text.toString().trim()
                 if (url.isNotEmpty()) fetchSub(url)
             }
@@ -1030,13 +1034,13 @@ class MainActivity : AppCompatActivity() {
         }
         val labels = urls.map { "${hostOf(it)}  (${subs.count(it)} کانفیگ)" }.toTypedArray()
         AlertDialog.Builder(this)
-            .setTitle("برای حذف، روی اشتراک بزنید")
+            .setTitle(tr("برای حذف، روی اشتراک بزنید"))
             .setItems(labels) { _, i ->
                 val url = urls[i]
                 AlertDialog.Builder(this)
-                    .setTitle("حذف اشتراک")
-                    .setMessage("اشتراک ${hostOf(url)} و کانفیگ‌هاش حذف بشه؟")
-                    .setPositiveButton("حذف") { _, _ ->
+                    .setTitle(tr("حذف اشتراک"))
+                    .setMessage(tr("اشتراک ${hostOf(url)} و کانفیگ‌هاش حذف بشه؟"))
+                    .setPositiveButton(tr("حذف")) { _, _ ->
                         if (TakVpnService.isRunning) {
                             toast("اول اتصال رو قطع کنید")
                         } else {
@@ -1489,9 +1493,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("حذف ناموفق‌ها")
-            .setMessage("${dead.size} کانفیگ ناموفق حذف بشن؟")
-            .setPositiveButton("حذف") { _, _ ->
+            .setTitle(tr("حذف ناموفق‌ها"))
+            .setMessage(tr("${dead.size} کانفیگ ناموفق حذف بشن؟"))
+            .setPositiveButton(tr("حذف")) { _, _ ->
                 dead.forEach {
                     store.remove(it.id)
                     pings.remove(it.id)
@@ -1534,9 +1538,9 @@ class MainActivity : AppCompatActivity() {
             return
         }
         AlertDialog.Builder(this)
-            .setTitle("حذف کانفیگ")
-            .setMessage("«${cfg.name}» حذف بشه؟")
-            .setPositiveButton("حذف") { _, _ ->
+            .setTitle(tr("حذف کانفیگ"))
+            .setMessage(tr("«${cfg.name}» حذف بشه؟"))
+            .setPositiveButton(tr("حذف")) { _, _ ->
                 store.remove(cfg.id)
                 pings.remove(cfg.id)
                 errors.remove(cfg.id)
@@ -1705,7 +1709,7 @@ class MainActivity : AppCompatActivity() {
             connectIcon.setFlowing(true)
             if (connectColorAnimator == null) startConnectColorTransition()
         } else resetConnectVisual()
-        statusText.text = if (running) "متصل" else "قطع"
+        statusText.text = if (running) tr("متصل") else tr("قطع")
         if (running) {
             if (prefs.getLong("since", 0L) == 0L) {
                 prefs.edit().putLong("since", System.currentTimeMillis()).apply()
