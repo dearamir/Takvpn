@@ -25,17 +25,45 @@ import org.json.JSONObject
 
 object ConfigEditor {
 
-    private fun tr(act: AppCompatActivity, text: String): String = when (AppLanguage.code(act)) {
-        "en" -> mapOf("کانفیگ جدید" to "New config", "ویرایش کانفیگ" to "Edit config", "این کانفیگ قابل ویرایش نیست" to "This config cannot be edited", "ذخیره شد. از اتصال بعدی اعمال می‌شه" to "Saved. Applies on next connection", "نشانی سرور خالیه" to "Server address is empty", "پورت نامعتبره" to "Invalid port", "پورت باید بین ۱ تا ۶۵۵۳۵ باشه" to "Port must be between 1 and 65535", "شناسه (UUID) خالیه" to "UUID is empty", "رمز عبور خالیه" to "Password is empty", "ذخیره" to "Save", "لغو" to "Cancel", "افزودن کانفیگ" to "Add config", "ویرایش کانفیگ" to "Edit config").getOrDefault(text, text)
-        "fr" -> mapOf("کانفیگ جدید" to "Nouvelle config", "این کانفیگ قابل ویرایش نیست" to "Cette config ne peut pas être modifiée", "ذخیره" to "Enregistrer", "لغو" to "Annuler", "افزودن کانفیگ" to "Ajouter une config").getOrDefault(text, text)
-        "ru" -> mapOf("کانفیگ جدید" to "Новая конфигурация", "این کانفیگ قابل ویرایش نیست" to "Эту конфигурацию нельзя редактировать", "ذخیره" to "Сохранить", "لغو" to "Отмена", "افزودن کانفیگ" to "Добавить конфигурацию").getOrDefault(text, text)
-        "zh" -> mapOf("کانفیگ جدید" to "新配置", "این کانفیگ قابل ویرایش نیست" to "无法编辑此配置", "ذخیره" to "保存", "لغو" to "取消", "افزودن کانفیگ" to "添加配置").getOrDefault(text, text)
-        "tr" -> mapOf("کانفیگ جدید" to "Yeni yapılandırma", "این کانفیگ قابل ویرایش نیست" to "Bu yapılandırma düzenlenemez", "ذخیره" to "Kaydet", "لغو" to "İptal", "افزودن کانفیگ" to "Yapılandırma ekle").getOrDefault(text, text)
-        "de" -> mapOf("کانفیگ جدید" to "Neue Konfiguration", "این کانفیگ قابل ویرایش نیست" to "Diese Konfiguration kann nicht bearbeitet werden", "ذخیره" to "Speichern", "لغو" to "Abbrechen", "افزودن کانفیگ" to "Konfiguration hinzufügen").getOrDefault(text, text)
-        "ar" -> mapOf("کانفیگ جدید" to "إعداد جديد", "این کانفیگ قابل ویرایش نیست" to "لا يمكن تعديل هذا الإعداد", "ذخیره" to "حفظ", "لغو" to "إلغاء", "افزودن کانفیگ" to "إضافة إعداد").getOrDefault(text, text)
-        "es" -> mapOf("کانفیگ جدید" to "Nueva configuración", "این کانفیگ قابل ویرایش نیست" to "No se puede editar esta configuración", "ذخیره" to "Guardar", "لغو" to "Cancelar", "افزودن کانفیگ" to "Añadir configuración").getOrDefault(text, text)
-        "it" -> mapOf("کانفیگ جدید" to "Nuova configurazione", "این کانفیگ قابل ویرایش نیست" to "Impossibile modificare questa configurazione", "ذخیره" to "Salva", "لغو" to "Annulla", "افزودن کانفیگ" to "Aggiungi configurazione").getOrDefault(text, text)
-        else -> text
+    private fun tr(act: AppCompatActivity, text: String): String {
+        val lang = AppLanguage.code(act)
+        val table = mapOf(
+            "شبکه (Network)" to mapOf("en" to "Network", "fr" to "Réseau", "ru" to "Сеть", "zh" to "网络", "tr" to "Ağ", "de" to "Netzwerk", "ar" to "الشبكة", "es" to "Red", "it" to "Rete"),
+            "نوع هدر" to mapOf("en" to "Header type", "fr" to "Type d’en-tête", "ru" to "Тип заголовка", "zh" to "头类型", "tr" to "Başlık türü", "de" to "Header-Typ", "ar" to "نوع الرأس", "es" to "Tipo de encabezado", "it" to "Tipo header"),
+            "هاست (Host)" to mapOf("en" to "Host", "fr" to "Hôte", "ru" to "Хост", "zh" to "主机", "tr" to "Ana bilgisayar", "de" to "Host", "ar" to "المضيف", "es" to "Host", "it" to "Host"),
+            "مسیر (Path)" to mapOf("en" to "Path", "fr" to "Chemin", "ru" to "Путь", "zh" to "路径", "tr" to "Yol", "de" to "Pfad", "ar" to "المسار", "es" to "Ruta", "it" to "Percorso"),
+            "نام سرویس gRPC" to mapOf("en" to "gRPC service name", "fr" to "Nom du service gRPC", "ru" to "Имя службы gRPC", "zh" to "gRPC 服务名", "tr" to "gRPC hizmet adı", "de" to "gRPC-Dienstname", "ar" to "اسم خدمة gRPC", "es" to "Nombre del servicio gRPC", "it" to "Nome servizio gRPC"),
+            "حالت xhttp" to mapOf("en" to "xhttp mode", "fr" to "Mode xhttp", "ru" to "Режим xhttp", "zh" to "xhttp 模式", "tr" to "xhttp modu", "de" to "xhttp-Modus", "ar" to "وضع xhttp", "es" to "Modo xhttp", "it" to "Modalità xhttp"),
+            "extra (متن JSON)" to mapOf("en" to "extra (JSON text)", "fr" to "extra (texte JSON)", "ru" to "extra (текст JSON)", "zh" to "extra（JSON 文本）", "tr" to "extra (JSON metni)", "de" to "extra (JSON-Text)", "ar" to "extra (نص JSON)", "es" to "extra (texto JSON)", "it" to "extra (testo JSON)"),
+            "امنیت (TLS)" to mapOf("en" to "Security (TLS)", "fr" to "Sécurité (TLS)", "ru" to "Безопасность (TLS)", "zh" to "安全 (TLS)", "tr" to "Güvenlik (TLS)", "de" to "Sicherheit (TLS)", "ar" to "الأمان (TLS)", "es" to "Seguridad (TLS)", "it" to "Sicurezza (TLS)"),
+            "اثرانگشت (fp)" to mapOf("en" to "Fingerprint (fp)", "fr" to "Empreinte (fp)", "ru" to "Отпечаток (fp)", "zh" to "指纹 (fp)", "tr" to "Parmak izi (fp)", "de" to "Fingerabdruck (fp)", "ar" to "البصمة (fp)", "es" to "Huella (fp)", "it" to "Impronta (fp)"),
+            "ALPN (مثلاً h2,http/1.1)" to mapOf("en" to "ALPN (e.g. h2,http/1.1)", "fr" to "ALPN (ex. h2,http/1.1)", "ru" to "ALPN (например h2,http/1.1)", "zh" to "ALPN（例如 h2,http/1.1）", "tr" to "ALPN (örn. h2,http/1.1)", "de" to "ALPN (z. B. h2,http/1.1)", "ar" to "ALPN (مثل h2,http/1.1)", "es" to "ALPN (p. ej. h2,http/1.1)", "it" to "ALPN (es. h2,http/1.1)"),
+            "اجازه‌ی گواهی ناامن" to mapOf("en" to "Allow insecure certificate", "fr" to "Autoriser le certificat non sécurisé", "ru" to "Разрешить небезопасный сертификат", "zh" to "允许不安全证书", "tr" to "Güvensiz sertifikaya izin ver", "de" to "Unsicheres Zertifikat erlauben", "ar" to "السماح بشهادة غير آمنة", "es" to "Permitir certificado inseguro", "it" to "Consenti certificato non sicuro"),
+            "کلید عمومی (pbk)" to mapOf("en" to "Public key (pbk)", "fr" to "Clé publique (pbk)", "ru" to "Публичный ключ (pbk)", "zh" to "公钥 (pbk)", "tr" to "Genel anahtar (pbk)", "de" to "Öffentlicher Schlüssel (pbk)", "ar" to "المفتاح العام (pbk)", "es" to "Clave pública (pbk)", "it" to "Chiave pubblica (pbk)"),
+            "شناسه کوتاه (sid)" to mapOf("en" to "Short ID (sid)", "fr" to "ID court (sid)", "ru" to "Короткий ID (sid)", "zh" to "短 ID (sid)", "tr" to "Kısa kimlik (sid)", "de" to "Kurz-ID (sid)", "ar" to "معرّف قصير (sid)", "es" to "ID corto (sid)", "it" to "ID breve (sid)"),
+            "ملاحظات (نام)" to mapOf("en" to "Notes (name)", "fr" to "Notes (nom)", "ru" to "Примечание (имя)", "zh" to "备注（名称）", "tr" to "Notlar (ad)", "de" to "Notizen (Name)", "ar" to "ملاحظات (الاسم)", "es" to "Notas (nombre)", "it" to "Note (nome)"),
+            "نشانی سرور" to mapOf("en" to "Server address", "fr" to "Adresse du serveur", "ru" to "Адрес сервера", "zh" to "服务器地址", "tr" to "Sunucu adresi", "de" to "Serveradresse", "ar" to "عنوان الخادم", "es" to "Dirección del servidor", "it" to "Indirizzo server"),
+            "پورت" to mapOf("en" to "Port", "fr" to "Port", "ru" to "Порт", "zh" to "端口", "tr" to "Port", "de" to "Port", "ar" to "المنفذ", "es" to "Puerto", "it" to "Porta"),
+            "شناسه (UUID)" to mapOf("en" to "UUID", "fr" to "UUID", "ru" to "UUID", "zh" to "UUID", "tr" to "UUID", "de" to "UUID", "ar" to "UUID", "es" to "UUID", "it" to "UUID"),
+            "رمز عبور" to mapOf("en" to "Password", "fr" to "Mot de passe", "ru" to "Пароль", "zh" to "密码", "tr" to "Şifre", "de" to "Passwort", "ar" to "كلمة المرور", "es" to "Contraseña", "it" to "Password"),
+            "رمز عبور (Auth)" to mapOf("en" to "Password (Auth)", "fr" to "Mot de passe (Auth)", "ru" to "Пароль (Auth)", "zh" to "密码 (Auth)", "tr" to "Şifre (Auth)", "de" to "Passwort (Auth)", "ar" to "كلمة المرور (Auth)", "es" to "Contraseña (Auth)", "it" to "Password (Auth)"),
+            "رمزنگاری (encryption)" to mapOf("en" to "Encryption", "fr" to "Chiffrement", "ru" to "Шифрование", "zh" to "加密", "tr" to "Şifreleme", "de" to "Verschlüsselung", "ar" to "التشفير", "es" to "Cifrado", "it" to "Cifratura"),
+            "حالت جریان (flow)" to mapOf("en" to "Flow mode", "fr" to "Mode flow", "ru" to "Режим потока", "zh" to "流模式", "tr" to "Akış modu", "de" to "Flow-Modus", "ar" to "وضع التدفق", "es" to "Modo flow", "it" to "Modalità flow"),
+            "مبهم‌سازی (obfs)" to mapOf("en" to "Obfuscation (obfs)", "fr" to "Obfuscation (obfs)", "ru" to "Обфускация (obfs)", "zh" to "混淆 (obfs)", "tr" to "Gizleme (obfs)", "de" to "Verschleierung (obfs)", "ar" to "إخفاء (obfs)", "es" to "Ofuscación (obfs)", "it" to "Offuscamento (obfs)"),
+            "بازه‌ی پورت هاپینگ (مثلاً 20000-30000)" to mapOf("en" to "Port hopping range (e.g. 20000-30000)", "fr" to "Plage de ports hopping (ex. 20000-30000)", "ru" to "Диапазон port hopping (например 20000-30000)", "zh" to "端口跳跃范围（如 20000-30000）", "tr" to "Port atlama aralığı (örn. 20000-30000)", "de" to "Port-Hopping-Bereich (z. B. 20000-30000)", "ar" to "نطاق تبديل المنافذ (مثلاً 20000-30000)", "es" to "Rango de salto de puertos (ej. 20000-30000)", "it" to "Intervallo port hopping (es. 20000-30000)")
+        )
+        return table[text]?.get(lang) ?: when (lang) {
+            "en" -> mapOf("کانفیگ جدید" to "New config", "ویرایش کانفیگ" to "Edit config", "این کانفیگ قابل ویرایش نیست" to "This config cannot be edited", "ذخیره شد. از اتصال بعدی اعمال می‌شه" to "Saved. Applies on next connection", "ذخیره" to "Save", "لغو" to "Cancel", "افزودن کانفیگ" to "Add config").getOrDefault(text, text)
+            "fr" -> mapOf("کانفیگ جدید" to "Nouvelle config", "این کانفیگ قابل ویرایش نیست" to "Cette config ne peut pas être modifiée", "ذخیره" to "Enregistrer", "لغو" to "Annuler", "افزودن کانفیگ" to "Ajouter une config").getOrDefault(text, text)
+            "ru" -> mapOf("کانفیگ جدید" to "Новая конфигурация", "این کانفیگ قابل ویرایش نیست" to "Эту конфигурацию нельзя редактировать", "ذخیره" to "Сохранить", "لغو" to "Отмена", "افزودن کانفیگ" to "Добавить конфигурацию").getOrDefault(text, text)
+            "zh" -> mapOf("کانفیگ جدید" to "新配置", "این کانفیگ قابل ویرایش نیست" to "无法编辑此配置", "ذخیره" to "保存", "لغو" to "取消", "افزودن کانفیگ" to "添加配置").getOrDefault(text, text)
+            "tr" -> mapOf("کانفیگ جدید" to "Yeni yapılandırma", "این کانفیگ قابل ویرایش نیست" to "Bu yapılandırma düzenlenemez", "ذخیره" to "Kaydet", "لغو" to "İptal", "افزودن کانفیگ" to "Yapılandırma ekle").getOrDefault(text, text)
+            "de" -> mapOf("کانفیگ جدید" to "Neue Konfiguration", "این کانفیگ قابل ویرایش نیست" to "Diese Konfiguration kann nicht bearbeitet werden", "ذخیره" to "Speichern", "لغو" to "Abbrechen", "افزودن کانفیگ" to "Konfiguration hinzufügen").getOrDefault(text, text)
+            "ar" -> mapOf("کانفیگ جدید" to "إعداد جديد", "این کانفیگ قابل ویرایش نیست" to "لا يمكن تعديل هذا الإعداد", "ذخیره" to "حفظ", "لغو" to "إلغاء", "افزودن کانفیگ" to "إضافة إعداد").getOrDefault(text, text)
+            "es" -> mapOf("کانفیگ جدید" to "Nueva configuración", "این کانفیگ قابل ویرایش نیست" to "No se puede editar esta configuración", "ذخیره" to "Guardar", "لغو" to "Cancelar", "افزودن کانفیگ" to "Añadir configuración").getOrDefault(text, text)
+            "it" -> mapOf("کانفیگ جدید" to "Nuova configurazione", "این کانفیگ قابل ویرایش نیست" to "Impossibile modificare questa configurazione", "ذخیره" to "Salva", "لغو" to "Annulla", "افزودن کانفیگ" to "Aggiungi configurazione").getOrDefault(text, text)
+            else -> text
+        }
     }
 
     private class F(
@@ -348,7 +376,7 @@ object ConfigEditor {
             box.orientation = LinearLayout.VERTICAL
             box.setPadding(0, dp(6), 0, dp(2))
             val lab = TextView(act)
-            lab.text = f.label
+            lab.text = tr(act, f.label)
             lab.textSize = 12f
             lab.setTextColor(ContextCompat.getColor(act, R.color.ink_soft))
             box.addView(lab)
