@@ -74,14 +74,17 @@ class TakVpnService : VpnService() {
         }
         val config = intent?.getStringExtra(EXTRA_CONFIG)
         if (config != null) {
+            val wasRunning = isRunning
             currentConfig = config
             smartMode = intent.getBooleanExtra(EXTRA_SMART, false)
             cfgName = intent.getStringExtra(EXTRA_NAME).orEmpty()
             activeName = cfgName
             activeLink = intent.getStringExtra(EXTRA_LINK).orEmpty()
-            pingText = ""
+            pingText = if (wasRunning) "در حال تعویض کانفیگ..." else ""
             showForeground()
-            Thread { startVpn(config) }.start()
+            Thread {
+                if (wasRunning) switchVpn(config) else startVpn(config)
+            }.start()
             startWatchdog()
         }
         return START_NOT_STICKY
@@ -346,6 +349,27 @@ class TakVpnService : VpnService() {
                 }
             }
         }
+    }
+
+    // Tear down the previous tunnel and publish a disconnected state before
+    // establishing the selected profile. This makes manual profile changes a
+    // real VPN replacement instead of only changing the selected card.
+    @Synchronized
+    private fun switchVpn(config: String) {
+        AppLog.add("تعویض کانفیگ: قطع تونل قبلی")
+        updateState(false)
+        handler.post {
+            notifyNow()
+            refreshTile()
+        }
+        stopCore()
+        try {
+            Thread.sleep(350)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+            return
+        }
+        startVpn(config)
     }
 
     @Synchronized
