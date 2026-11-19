@@ -173,7 +173,146 @@ object AppLanguage {
         )
     )
 
-    fun translate(text: String, language: String): String = translations[language]?.get(text) ?: text
+    private val actionTranslations = mapOf(
+        "en" to mapOf(
+            "کلیپ‌بورد" to "Clipboard", "چسباندن کانفیگ" to "Paste config", "لینک سابسکریپشن" to "Subscription link",
+            "ساخت دستی" to "Manual config", "فرم خالی کانفیگ" to "Blank config form", "سریع‌ترین" to "Fastest",
+            "تست و اتصال خودکار" to "Test and connect automatically", "پینگ همه" to "Ping all", "تست همه‌ی کانفیگ‌ها" to "Test all configs",
+            "مرتب‌سازی" to "Sort", "بر اساس پینگ" to "By ping", "حذف ناموفق‌ها" to "Remove failed",
+            "کانفیگ‌های بدون پینگ" to "Configs with no ping", "به‌روزرسانی" to "Update", "همه‌ی اشتراک‌ها" to "All subscriptions",
+            "مدیریت" to "Manage", "مشاهده و حذف" to "View and remove", "اتصال و شبکه" to "Connection & network",
+            "سایت‌های .ir مستقیم" to ".ir sites direct", "اتصال هنگام باز شدن" to "Connect on launch", "انتخاب اپ‌ها" to "Select apps",
+            "زبان برنامه" to "App language", "حالت تاریک" to "Dark mode", "تاریک / روشن" to "Dark / light",
+            "لاگ" to "Logs", "رویدادها و خطاها" to "Events and errors", "بکاپ" to "Backup", "کپی همه‌ی کانفیگ‌ها" to "Copy all configs",
+            "صفر کردن مصرف" to "Reset usage", "مصرف کل داده" to "Total data usage", "انتخاب پوسته" to "Choose theme",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Change background and card colors", "رنگ نوشته‌ها" to "Text colors",
+            "تغییر مستقل رنگ متن‌ها" to "Change text colors separately", "بررسی نسخه" to "Check version", "نسخه‌ی جدید؟" to "New version?",
+            "درباره" to "About", "نسخه و دانلود" to "Version and download"
+        ),
+        "fr" to mapOf(
+            "کلیپ‌بورد" to "Presse-papiers", "چسباندن کانفیگ" to "Coller une config", "لینک سابسکریپشن" to "Lien d’abonnement",
+            "ساخت دستی" to "Configuration manuelle", "فرم خالی کانفیگ" to "Formulaire vide", "سریع‌ترین" to "Le plus rapide",
+            "تست و اتصال خودکار" to "Tester et se connecter automatiquement", "پینگ همه" to "Tester tout", "تست همه‌ی کانفیگ‌ها" to "Tester toutes les configs",
+            "مرتب‌سازی" to "Trier", "بر اساس پینگ" to "Par ping", "حذف ناموفق‌ها" to "Supprimer les échecs",
+            "کانفیگ‌های بدون پینگ" to "Configs sans ping", "به‌روزرسانی" to "Mettre à jour", "همه‌ی اشتراک‌ها" to "Tous les abonnements",
+            "مدیریت" to "Gérer", "مشاهده و حذف" to "Afficher et supprimer", "اتصال و شبکه" to "Connexion et réseau",
+            "سایت‌های .ir مستقیم" to "Sites .ir en direct", "اتصال هنگام باز شدن" to "Connexion au lancement", "انتخاب اپ‌ها" to "Choisir les apps",
+            "زبان برنامه" to "Langue de l’application", "حالت تاریک" to "Mode sombre", "تاریک / روشن" to "Sombre / clair",
+            "لاگ" to "Journal", "رویدادها و خطاها" to "Événements et erreurs", "بکاپ" to "Sauvegarde", "کپی همه‌ی کانفیگ‌ها" to "Copier toutes les configs",
+            "صفر کردن مصرف" to "Réinitialiser l’utilisation", "مصرف کل داده" to "Consommation totale", "انتخاب پوسته" to "Choisir le thème",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Changer les couleurs du fond et des cartes", "رنگ نوشته‌ها" to "Couleurs du texte",
+            "تغییر مستقل رنگ متن‌ها" to "Modifier les couleurs du texte séparément", "بررسی نسخه" to "Vérifier la version", "نسخه‌ی جدید؟" to "Nouvelle version ?",
+            "درباره" to "À propos", "نسخه و دانلود" to "Version et téléchargement"
+        ),
+        "ru" to mapOf(
+            "کلیپ‌بورد" to "Буфер обмена", "چسباندن کانفیگ" to "Вставить конфиг", "لینک سابسکریپشن" to "Ссылка подписки",
+            "ساخت دستی" to "Создать вручную", "فرم خالی کانفیگ" to "Пустая форма конфига", "سریع‌ترین" to "Самый быстрый",
+            "تست و اتصال خودکار" to "Проверить и подключиться автоматически", "پینگ همه" to "Пинг всех", "تست همه‌ی کانفیگ‌ها" to "Проверить все конфиги",
+            "مرتب‌سازی" to "Сортировка", "بر اساس پینگ" to "По пингу", "حذف ناموفق‌ها" to "Удалить неудачные",
+            "کانفیگ‌های بدون پینگ" to "Конфиги без пинга", "به‌روزرسانی" to "Обновить", "همه‌ی اشتراک‌ها" to "Все подписки",
+            "مدیریت" to "Управление", "مشاهده و حذف" to "Просмотр и удаление", "اتصال و شبکه" to "Подключение и сеть",
+            "سایت‌های .ir مستقیم" to "Сайты .ir напрямую", "اتصال هنگام باز شدن" to "Подключать при запуске", "انتخاب اپ‌ها" to "Выбрать приложения",
+            "زبان برنامه" to "Язык приложения", "حالت تاریک" to "Тёмная тема", "تاریک / روشن" to "Тёмная / светлая",
+            "لاگ" to "Журнал", "رویدادها و خطاها" to "События и ошибки", "بکاپ" to "Резервная копия", "کپی همه‌ی کانفیگ‌ها" to "Копировать все конфиги",
+            "صفر کردن مصرف" to "Сбросить трафик", "مصرف کل داده" to "Общий расход", "انتخاب پوسته" to "Выбрать тему",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Изменить фон и карточки", "رنگ نوشته‌ها" to "Цвет текста",
+            "تغییر مستقل رنگ متن‌ها" to "Отдельная настройка цвета текста", "بررسی نسخه" to "Проверить версию", "نسخه‌ی جدید؟" to "Новая версия?",
+            "درباره" to "О приложении", "نسخه و دانلود" to "Версия и загрузка"
+        ),
+        "zh" to mapOf(
+            "کلیپ‌بورد" to "剪贴板", "چسباندن کانفیگ" to "粘贴配置", "لینک سابسکریپشن" to "订阅链接",
+            "ساخت دستی" to "手动创建", "فرم خالی کانفیگ" to "空配置表单", "سریع‌ترین" to "最快",
+            "تست و اتصال خودکار" to "测试并自动连接", "پینگ همه" to "全部测速", "تست همه‌ی کانفیگ‌ها" to "测试所有配置",
+            "مرتب‌سازی" to "排序", "بر اساس پینگ" to "按延迟", "حذف ناموفق‌ها" to "删除失败项",
+            "کانفیگ‌های بدون پینگ" to "无延迟结果的配置", "به‌روزرسانی" to "更新", "همه‌ی اشتراک‌ها" to "所有订阅",
+            "مدیریت" to "管理", "مشاهده و حذف" to "查看和删除", "اتصال و شبکه" to "连接与网络",
+            "سایت‌های .ir مستقیم" to "直连 .ir 网站", "اتصال هنگام باز شدن" to "启动时连接", "انتخاب اپ‌ها" to "选择应用",
+            "زبان برنامه" to "应用语言", "حالت تاریک" to "深色模式", "تاریک / روشن" to "深色 / 浅色",
+            "لاگ" to "日志", "رویدادها و خطاها" to "事件和错误", "بکاپ" to "备份", "کپی همه‌ی کانفیگ‌ها" to "复制所有配置",
+            "صفر کردن مصرف" to "重置流量", "مصرف کل داده" to "总流量", "انتخاب پوسته" to "选择主题",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "更改背景和卡片颜色", "رنگ نوشته‌ها" to "文字颜色",
+            "تغییر مستقل رنگ متن‌ها" to "单独调整文字颜色", "بررسی نسخه" to "检查版本", "نسخه‌ی جدید؟" to "有新版本吗？",
+            "درباره" to "关于", "نسخه و دانلود" to "版本与下载"
+        ),
+        "tr" to mapOf(
+            "کلیپ‌بورد" to "Pano", "چسباندن کانفیگ" to "Yapılandırma yapıştır", "لینک سابسکریپشن" to "Abonelik bağlantısı",
+            "ساخت دستی" to "Manuel oluştur", "فرم خالی کانفیگ" to "Boş yapılandırma formu", "سریع‌ترین" to "En hızlı",
+            "تست و اتصال خودکار" to "Test et ve otomatik bağlan", "پینگ همه" to "Hepsini ping", "تست همه‌ی کانفیگ‌ها" to "Tüm yapılandırmaları test et",
+            "مرتب‌سازی" to "Sırala", "بر اساس پینگ" to "Ping'e göre", "حذف ناموفق‌ها" to "Başarısızları sil",
+            "کانفیگ‌های بدون پینگ" to "Ping alınamayan yapılandırmalar", "به‌روزرسانی" to "Güncelle", "همه‌ی اشتراک‌ها" to "Tüm abonelikler",
+            "مدیریت" to "Yönet", "مشاهده و حذف" to "Görüntüle ve sil", "اتصال و شبکه" to "Bağlantı ve ağ",
+            "سایت‌های .ir مستقیم" to ".ir sitelerine doğrudan", "اتصال هنگام باز شدن" to "Açılışta bağlan", "انتخاب اپ‌ها" to "Uygulamaları seç",
+            "زبان برنامه" to "Uygulama dili", "حالت تاریک" to "Karanlık mod", "تاریک / روشن" to "Karanlık / aydınlık",
+            "لاگ" to "Günlük", "رویدادها و خطاها" to "Olaylar ve hatalar", "بکاپ" to "Yedek", "کپی همه‌ی کانفیگ‌ها" to "Tüm yapılandırmaları kopyala",
+            "صفر کردن مصرف" to "Kullanımı sıfırla", "مصرف کل داده" to "Toplam veri kullanımı", "انتخاب پوسته" to "Tema seç",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Arka plan ve kart renklerini değiştir", "رنگ نوشته‌ها" to "Yazı renkleri",
+            "تغییر مستقل رنگ متن‌ها" to "Metin renklerini ayrı ayarla", "بررسی نسخه" to "Sürümü kontrol et", "نسخه‌ی جدید؟" to "Yeni sürüm?",
+            "درباره" to "Hakkında", "نسخه و دانلود" to "Sürüm ve indirme"
+        ),
+        "de" to mapOf(
+            "کلیپ‌بورد" to "Zwischenablage", "چسباندن کانفیگ" to "Konfiguration einfügen", "لینک سابسکریپشن" to "Abonnement-Link",
+            "ساخت دستی" to "Manuell erstellen", "فرم خالی کانفیگ" to "Leeres Konfigurationsformular", "سریع‌ترین" to "Am schnellsten",
+            "تست و اتصال خودکار" to "Testen und automatisch verbinden", "پینگ همه" to "Alle pingen", "تست همه‌ی کانفیگ‌ها" to "Alle Konfigurationen testen",
+            "مرتب‌سازی" to "Sortieren", "بر اساس پینگ" to "Nach Ping", "حذف ناموفق‌ها" to "Fehlgeschlagene entfernen",
+            "کانفیگ‌های بدون پینگ" to "Konfigurationen ohne Ping", "به‌روزرسانی" to "Aktualisieren", "همه‌ی اشتراک‌ها" to "Alle Abonnements",
+            "مدیریت" to "Verwalten", "مشاهده و حذف" to "Anzeigen und löschen", "اتصال و شبکه" to "Verbindung und Netzwerk",
+            "سایت‌های .ir مستقیم" to ".ir-Websites direkt", "اتصال هنگام باز شدن" to "Beim Start verbinden", "انتخاب اپ‌ها" to "Apps auswählen",
+            "زبان برنامه" to "App-Sprache", "حالت تاریک" to "Dunkelmodus", "تاریک / روشن" to "Dunkel / hell",
+            "لاگ" to "Protokoll", "رویدادها و خطاها" to "Ereignisse und Fehler", "بکاپ" to "Backup", "کپی همه‌ی کانفیگ‌ها" to "Alle Konfigurationen kopieren",
+            "صفر کردن مصرف" to "Nutzung zurücksetzen", "مصرف کل داده" to "Gesamter Datenverbrauch", "انتخاب پوسته" to "Design wählen",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Hintergrund- und Kartenfarben ändern", "رنگ نوشته‌ها" to "Textfarben",
+            "تغییر مستقل رنگ متن‌ها" to "Textfarben separat ändern", "بررسی نسخه" to "Version prüfen", "نسخه‌ی جدید؟" to "Neue Version?",
+            "درباره" to "Über", "نسخه و دانلود" to "Version und Download"
+        ),
+        "ar" to mapOf(
+            "کلیپ‌بورد" to "الحافظة", "چسباندن کانفیگ" to "لصق الإعداد", "لینک سابسکریپشن" to "رابط الاشتراك",
+            "ساخت دستی" to "إنشاء يدوي", "فرم خالی کانفیگ" to "نموذج إعداد فارغ", "سریع‌ترین" to "الأسرع",
+            "تست و اتصال خودکار" to "اختبار والاتصال تلقائيًا", "پینگ همه" to "اختبار الجميع", "تست همه‌ی کانفیگ‌ها" to "اختبار جميع الإعدادات",
+            "مرتب‌سازی" to "ترتيب", "بر اساس پینگ" to "حسب زمن الاستجابة", "حذف ناموفق‌ها" to "حذف الفاشل",
+            "کانفیگ‌های بدون پینگ" to "إعدادات بلا استجابة", "به‌روزرسانی" to "تحديث", "همه‌ی اشتراک‌ها" to "كل الاشتراكات",
+            "مدیریت" to "إدارة", "مشاهده و حذف" to "عرض وحذف", "اتصال و شبکه" to "الاتصال والشبكة",
+            "سایت‌های .ir مستقیم" to "مواقع .ir مباشرة", "اتصال هنگام باز شدن" to "الاتصال عند بدء التشغيل", "انتخاب اپ‌ها" to "اختيار التطبيقات",
+            "زبان برنامه" to "لغة التطبيق", "حالت تاریک" to "الوضع الداكن", "تاریک / روشن" to "داكن / فاتح",
+            "لاگ" to "السجل", "رویدادها و خطاها" to "الأحداث والأخطاء", "بکاپ" to "نسخة احتياطية", "کپی همه‌ی کانفیگ‌ها" to "نسخ جميع الإعدادات",
+            "صفر کردن مصرف" to "إعادة تعيين الاستخدام", "مصرف کل داده" to "إجمالي البيانات", "انتخاب پوسته" to "اختيار المظهر",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "تغيير لون الخلفية والبطاقات", "رنگ نوشته‌ها" to "ألوان النص",
+            "تغییر مستقل رنگ متن‌ها" to "تغيير ألوان النص بشكل مستقل", "بررسی نسخه" to "التحقق من الإصدار", "نسخه‌ی جدید؟" to "إصدار جديد؟",
+            "درباره" to "حول", "نسخه و دانلود" to "الإصدار والتنزيل"
+        ),
+        "es" to mapOf(
+            "کلیپ‌بورد" to "Portapapeles", "چسباندن کانفیگ" to "Pegar configuración", "لینک سابسکریپشن" to "Enlace de suscripción",
+            "ساخت دستی" to "Crear manualmente", "فرم خالی کانفیگ" to "Formulario vacío", "سریع‌ترین" to "Más rápido",
+            "تست و اتصال خودکار" to "Probar y conectar automáticamente", "پینگ همه" to "Probar todos", "تست همه‌ی کانفیگ‌ها" to "Probar todas las configs",
+            "مرتب‌سازی" to "Ordenar", "بر اساس پینگ" to "Por ping", "حذف ناموفق‌ها" to "Eliminar fallidos",
+            "کانفیگ‌های بدون پینگ" to "Configs sin ping", "به‌روزرسانی" to "Actualizar", "همه‌ی اشتراک‌ها" to "Todas las suscripciones",
+            "مدیریت" to "Gestionar", "مشاهده و حذف" to "Ver y eliminar", "اتصال و شبکه" to "Conexión y red",
+            "سایت‌های .ir مستقیم" to "Sitios .ir directos", "اتصال هنگام باز شدن" to "Conectar al iniciar", "انتخاب اپ‌ها" to "Elegir apps",
+            "زبان برنامه" to "Idioma de la app", "حالت تاریک" to "Modo oscuro", "تاریک / روشن" to "Oscuro / claro",
+            "لاگ" to "Registro", "رویدادها و خطاها" to "Eventos y errores", "بکاپ" to "Copia de seguridad", "کپی همه‌ی کانفیگ‌ها" to "Copiar todas las configs",
+            "صفر کردن مصرف" to "Restablecer uso", "مصرف کل داده" to "Uso total de datos", "انتخاب پوسته" to "Elegir tema",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Cambiar colores de fondo y tarjetas", "رنگ نوشته‌ها" to "Colores del texto",
+            "تغییر مستقل رنگ متن‌ها" to "Cambiar colores del texto por separado", "بررسی نسخه" to "Comprobar versión", "نسخه‌ی جدید؟" to "¿Nueva versión?",
+            "درباره" to "Acerca de", "نسخه و دانلود" to "Versión y descarga"
+        ),
+        "it" to mapOf(
+            "کلیپ‌بورد" to "Clipboard", "چسباندن کانفیگ" to "Incolla configurazione", "لینک سابسکریپشن" to "Link abbonamento",
+            "ساخت دستی" to "Crea manualmente", "فرم خالی کانفیگ" to "Modulo vuoto", "سریع‌ترین" to "Più veloce",
+            "تست و اتصال خودکار" to "Test e connessione automatica", "پینگ همه" to "Ping tutti", "تست همه‌ی کانفیگ‌ها" to "Testa tutte le config",
+            "مرتب‌سازی" to "Ordina", "بر اساس پینگ" to "Per ping", "حذف ناموفق‌ها" to "Rimuovi non riusciti",
+            "کانفیگ‌های بدون پینگ" to "Config senza ping", "به‌روزرسانی" to "Aggiorna", "همه‌ی اشتراک‌ها" to "Tutti gli abbonamenti",
+            "مدیریت" to "Gestisci", "مشاهده و حذف" to "Visualizza ed elimina", "اتصال و شبکه" to "Connessione e rete",
+            "سایت‌های .ir مستقیم" to "Siti .ir diretti", "اتصال هنگام باز شدن" to "Connetti all’avvio", "انتخاب اپ‌ها" to "Seleziona app",
+            "زبان برنامه" to "Lingua app", "حالت تاریک" to "Tema scuro", "تاریک / روشن" to "Scuro / chiaro",
+            "لاگ" to "Registro", "رویدادها و خطاها" to "Eventi ed errori", "بکاپ" to "Backup", "کپی همه‌ی کانفیگ‌ها" to "Copia tutte le config",
+            "صفر کردن مصرف" to "Azzera utilizzo", "مصرف کل داده" to "Consumo totale", "انتخاب پوسته" to "Scegli tema",
+            "تغییر رنگ پس‌زمینه و کارت‌ها" to "Cambia colori sfondo e schede", "رنگ نوشته‌ها" to "Colori testo",
+            "تغییر مستقل رنگ متن‌ها" to "Modifica colori testo separatamente", "بررسی نسخه" to "Controlla versione", "نسخه‌ی جدید؟" to "Nuova versione?",
+            "درباره" to "Info", "نسخه و دانلود" to "Versione e download"
+        )
+    )
+
+    fun translate(text: String, language: String): String =
+        actionTranslations[language]?.get(text) ?: translations[language]?.get(text) ?: text
 
     fun showChooser(context: Context) {
         val current = code(context)
