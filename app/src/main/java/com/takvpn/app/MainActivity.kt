@@ -694,7 +694,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun backupAll() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -1206,9 +1206,9 @@ class MainActivity : AppCompatActivity() {
         v.layoutParams = smartParams
         val card = v as MaterialCardView
         card.radius = dp(13).toFloat()
-        v.findViewById<TextView>(R.id.nameText).text = "⚡ سوییچ هوشمند"
+        v.findViewById<TextView>(R.id.nameText).text = AppLanguage.translate("⚡ سوییچ هوشمند", AppLanguage.code(this))
         val d = v.findViewById<TextView>(R.id.pingText)
-        d.text = "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه"
+        d.text = AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", AppLanguage.code(this))
         d.setTextColor(c(R.color.ink_soft))
         d.setTypeface(null, Typeface.BOLD)
         v.findViewById<View>(R.id.subText).visibility = View.GONE
@@ -1372,7 +1372,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun pingAll() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         store.items.forEach { pings[it.id] = -2L }
@@ -1423,7 +1423,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         startConnectVisual()
@@ -1431,7 +1431,7 @@ class MainActivity : AppCompatActivity() {
         testAllThen { list ->
             val best = bestOf(list)
             if (best == null) {
-                toast("هیچ کانفیگی پینگ نداد")
+                toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
                 prefs.edit().putBoolean("smart_sel", false).apply()
                 store.select(best.id)
@@ -1444,18 +1444,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun connectSmart() {
         if (store.items.isEmpty()) {
-            toast("کانفیگی وجود نداره")
+            toast(AppLanguage.translate("کانفیگی وجود نداره", AppLanguage.code(this)))
             return
         }
         startConnectVisual()
-        testText.text = "در حال پیدا کردن بهترین کانفیگ..."
+        testText.text = AppLanguage.translate("در حال پیدا کردن بهترین کانفیگ...", AppLanguage.code(this))
         fab.isEnabled = false
         testAllThen { list ->
             fab.isEnabled = true
             val best = bestOf(list)
             if (best == null) {
-                testText.text = "هیچ کانفیگی پینگ نداد"
-                toast("هیچ کانفیگی پینگ نداد")
+                testText.text = AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this))
+                toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
                 AppLog.add("سوییچ هوشمند: ${best.name} (${pings[best.id]} ms)")
                 connectWith(best, true)
@@ -1511,7 +1511,7 @@ class MainActivity : AppCompatActivity() {
         } ?: return
         val smart = smartSelected()
         val name = TakVpnService.activeName
-        testText.text = "در حال تست اتصال..."
+        testText.text = AppLanguage.translate("در حال تست اتصال...", AppLanguage.code(this))
         pool.execute {
             val (ms, err) = measure(link)
             AppLog.add(if (ms > 0) "تست اتصال: $ms ms" else "تست اتصال ناموفق: $err")
@@ -1643,7 +1643,7 @@ class MainActivity : AppCompatActivity() {
     private fun fetchConnectionInfo() {
         val requestId = ++connectionInfoRequest
         if (!TakVpnService.isRunning) return
-        connectionInfoText.text = "در حال دریافت IP خروجی واقعی تونل..."
+        connectionInfoText.text = AppLanguage.translate("در حال دریافت IP خروجی واقعی تونل...", AppLanguage.code(this))
         connectionInfoText.visibility = View.VISIBLE
         pool.execute {
             var connection: HttpURLConnection? = null
@@ -1688,7 +1688,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Throwable) {
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
-                        connectionInfoText.text = "تشخیص IP خروجی تونل ناموفق بود"
+                        connectionInfoText.text = AppLanguage.translate("تشخیص IP خروجی تونل ناموفق بود", AppLanguage.code(this))
                         connectionInfoText.visibility = View.VISIBLE
                     }
                 }
@@ -1727,7 +1727,7 @@ class MainActivity : AppCompatActivity() {
             if (lastRunning) AppLog.add("اتصال قطع شد")
             titleGlow.stop(c(R.color.header_title))
             statusGlow.stop(c(R.color.status_off))
-            testText.text = "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید"
+            testText.text = AppLanguage.translate("قطع شده. برای اتصال دکمه‌ی پخش رو بزنید", AppLanguage.code(this))
             stopTracking()
         }
         lastRunning = running
