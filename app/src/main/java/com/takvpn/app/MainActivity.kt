@@ -1227,9 +1227,15 @@ class MainActivity : AppCompatActivity() {
             card.strokeWidth = if (selected) dp(3) else 0
             card.setCardBackgroundColor(c(if (selected) R.color.card_selected else R.color.card))
             card.setOnClickListener {
+                val switchWhileConnected = TakVpnService.isRunning &&
+                    TakVpnService.activeLink != cfg.link
                 prefs.edit().putBoolean("smart_sel", false).apply()
                 store.select(cfg.id)
                 render()
+                if (switchWhileConnected) {
+                    // Selecting another card while connected must replace the active VPN profile.
+                    connectWith(cfg, false)
+                }
             }
             v.findViewById<View>(R.id.editBtn).setOnClickListener {
                 ConfigEditor.editConfig(this, store, cfg) { render() }
