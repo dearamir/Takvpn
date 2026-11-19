@@ -726,8 +726,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun compareCoreVersions(first: String, second: String): Int {
-        val a = first.split(".").map { it.toIntOrNull() ?: 0 }
-        val b = second.split(".").map { it.toIntOrNull() ?: 0 }
+        // GitHub release tags include a leading "v" (for example v2.08),
+        // while Android versionName is stored without it (2.07).
+        // Normalize both before numeric comparison or "v2" is parsed as zero.
+        val a = first.trim().removePrefix("v").removePrefix("V").split(".").map { it.toIntOrNull() ?: 0 }
+        val b = second.trim().removePrefix("v").removePrefix("V").split(".").map { it.toIntOrNull() ?: 0 }
         for (i in 0 until maxOf(a.size, b.size)) {
             val left = a.getOrElse(i) { 0 }
             val right = b.getOrElse(i) { 0 }
