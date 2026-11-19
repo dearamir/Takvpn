@@ -69,6 +69,37 @@ public partial class MainWindow : Window
         finally { RefreshSelected(); SaveProfiles(); SetBusy(false); }
     }
 
+    private async void TestAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (_busy || _engine.IsRunning || _profiles.Count == 0) return;
+        SetBusy(true, "آغاز تست گروهی؛ هر کانفیگ جداگانه از مسیر Xray بررسی می‌شود…");
+        var passed = 0;
+        try
+        {
+            foreach (var profile in _profiles)
+            {
+                StatusText.Text = $"در حال تست: {profile.Name}";
+                StatusHint.Text = "در حال برقراری اتصال آزمایشی امن…";
+                try
+                {
+                    profile.LatencyMs = await _engine.MeasureProxyLatencyAsync(profile);
+                    passed++;
+                }
+                catch (Exception ex)
+                {
+                    profile.LatencyMs = null;
+                    Debug.WriteLine($"Group test failed for {profile.Name}: {ex}");
+                }
+                ProfilesList.Items.Refresh();
+                if (ProfilesList.SelectedItem == profile) RefreshSelected();
+            }
+            StatusText.Text = $"تست گروهی تمام شد: {passed} از {_profiles.Count} موفق";
+            StatusHint.Text = "مقادیر، زمان درخواست HTTPS از مسیر Xray هستند؛ نه پینگ ICMP.";
+            SaveProfiles();
+        }
+        finally { SetBusy(false); UpdateButtons(); }
+    }
+
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
         if (ProfilesList.SelectedItem is not VpnProfile profile || _busy) return;
@@ -108,7 +139,7 @@ public partial class MainWindow : Window
         if (hint is not null) StatusHint.Text = hint;
         ConnectButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;
         DisconnectButton.IsEnabled = !busy && _engine.IsRunning;
-        TestButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;
+        TestButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;\n        TestAllButton.IsEnabled = !busy && !_engine.IsRunning && _profiles.Count > 0;
         ProfilesList.IsEnabled = !busy && !_engine.IsRunning;
     }
 
