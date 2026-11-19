@@ -89,7 +89,25 @@ class MainActivity : AppCompatActivity() {
         "پیش‌فرض پوسته" to Color.TRANSPARENT
     )
     private fun activePalette() = uiPalettes.find { it.name == prefs.getString("ui_palette", "طلایی") } ?: uiPalettes.first()
-    private fun activeTextColor(p: UiPalette = activePalette()): Int =
+
+    private fun isNightAppearance(): Boolean =
+        (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+    // Keep the selected color identity, but give Light and Dark genuinely different surfaces.
+    private fun displayPalette(base: UiPalette = activePalette()): UiPalette =
+        if (isNightAppearance()) base else base.copy(
+            bg = Color.rgb(246, 248, 251),
+            card = Color.WHITE,
+            selected = Color.rgb(255, 239, 218),
+            header = Color.WHITE,
+            text = Color.rgb(28, 32, 39),
+            soft = Color.rgb(91, 101, 114),
+            bar = Color.WHITE,
+            barText = Color.rgb(34, 38, 45),
+            fab = base.accent
+        )
+
+    private fun activeTextColor(p: UiPalette = displayPalette()): Int =
         textColors.find { it.first == prefs.getString("ui_text_color", "پیش‌فرض پوسته") }?.second
             ?.takeIf { it != Color.TRANSPARENT } ?: p.text
 
@@ -136,14 +154,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyAppPalette() {
-        val p = activePalette()
+        val p = displayPalette()
         findViewById<View>(android.R.id.content)?.let {
             it.setBackgroundColor(p.bg)
             applyPaletteToTree(it, p)
         }
         window.statusBarColor = p.header
         window.navigationBarColor = p.header
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !isNightAppearance()
+            isAppearanceLightNavigationBars = !isNightAppearance()
+        }
     }
 
     private fun showAppearanceDialog() {
@@ -622,9 +643,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun toggleNight() {
-        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        val mode = if (isNight) AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
+        val mode = if (isNightAppearance()) AppCompatDelegate.MODE_NIGHT_NO else AppCompatDelegate.MODE_NIGHT_YES
         prefs.edit().putInt("night", mode).apply()
         AppCompatDelegate.setDefaultNightMode(mode)
     }
