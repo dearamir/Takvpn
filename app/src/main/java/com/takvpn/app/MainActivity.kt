@@ -559,7 +559,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun addSection(container: LinearLayout, title: String) {
         val tv = TextView(this)
-        tv.text = title
+        tv.text = AppLanguage.translate(title, AppLanguage.code(this))
         tv.textSize = 14f
         tv.setTypeface(null, android.graphics.Typeface.BOLD)
         tv.setTextColor(c(R.color.ink_soft))
@@ -580,8 +580,8 @@ class MainActivity : AppCompatActivity() {
                     val v = layoutInflater.inflate(R.layout.item_action, row, false) as MaterialCardView
                     v.setCardBackgroundColor(c(colorRes))
                     v.findViewById<TextView>(R.id.actIcon).text = a.icon
-                    v.findViewById<TextView>(R.id.actTitle).text = a.title
-                    v.findViewById<TextView>(R.id.actSub).text = a.sub
+                    v.findViewById<TextView>(R.id.actTitle).text = AppLanguage.translate(a.title, AppLanguage.code(this))
+                    v.findViewById<TextView>(R.id.actSub).text = AppLanguage.translate(a.sub, AppLanguage.code(this))
                     v.setOnClickListener {
                         dialog.dismiss()
                         a.run()
