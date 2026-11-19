@@ -1193,10 +1193,65 @@ class MainActivity : AppCompatActivity() {
         listContainer.addView(v)
     }
 
+    private fun drawersJson(): org.json.JSONArray {
+        return try { org.json.JSONArray(prefs.getString("config_drawers", "[]")) } catch (_: Exception) { org.json.JSONArray() }
+    }
+    private fun saveDrawers(arr: org.json.JSONArray) { prefs.edit().putString("config_drawers", arr.toString()).apply() }
+    private fun createDrawer() {
+        val input = EditText(this).apply { hint = "نام کشو"; setSingleLine(true) }
+        AlertDialog.Builder(this).setTitle("کشوی جدید").setView(input)
+            .setPositiveButton("ایجاد") { _, _ ->
+                val arr = drawersJson()
+                val name = input.text.toString().trim().ifEmpty { "کشو ${arr.length() + 1}" }
+                val obj = org.json.JSONObject().put("id", java.util.UUID.randomUUID().toString()).put("name", name).put("configs", org.json.JSONArray())
+                arr.put(obj); saveDrawers(arr); render(); openDrawer(obj.getString("id"))
+            }.setNegativeButton("لغو", null).show()
+    }
+    private fun renderDrawers() {
+        val arr = drawersJson()
+        val add = TextView(this).apply { text = "＋  ساخت کشوی کانفیگ"; textSize = 15f; setTypeface(null, Typeface.BOLD); setTextColor(activeTextColor()); gravity = Gravity.CENTER; setPadding(dp(12), dp(14), dp(12), dp(14)) }
+        val addCard = MaterialCardView(this).apply { setCardBackgroundColor(c(R.color.card)); radius = dp(14).toFloat(); strokeWidth = dp(1); strokeColor = activePalette().accent; addView(add) }
+        addCard.setOnClickListener { createDrawer() }
+        listContainer.addView(addCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) })
+        for (i in 0 until arr.length()) {
+            val obj = arr.optJSONObject(i) ?: continue
+            val configs = obj.optJSONArray("configs")?.length() ?: 0
+            val card = MaterialCardView(this).apply { setCardBackgroundColor(c(R.color.card)); radius = dp(14).toFloat(); strokeWidth = dp(1); strokeColor = activePalette().accent }
+            val label = TextView(this).apply { text = "🗂️  ${obj.optString("name")}  ·  $configs کانفیگ"; textSize = 14f; setTypeface(null, Typeface.BOLD); setTextColor(activeTextColor()); setPadding(dp(14), dp(14), dp(14), dp(14)) }
+            card.addView(label); card.setOnClickListener { openDrawer(obj.optString("id")) }
+            listContainer.addView(card, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) })
+        }
+    }
+    private fun openDrawer(id: String) {
+        val arr = drawersJson(); var index = -1
+        for (i in 0 until arr.length()) if (arr.optJSONObject(i)?.optString("id") == id) { index = i; break }
+        if (index < 0) return
+        val obj = arr.getJSONObject(index); val configs = obj.optJSONArray("configs") ?: org.json.JSONArray()
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(6), dp(12), dp(6)) }
+        fun rebuild() {
+            list.removeAllViews()
+            if (configs.length() == 0) list.addView(TextView(this).apply { text = "این کشو خالی است."; setTextColor(activeTextColor()); setPadding(0, dp(8), 0, dp(8)) })
+            for (j in 0 until configs.length()) {
+                val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+                val txt = TextView(this).apply { text = configs.optString(j); setTextColor(activeTextColor()); textSize = 12f; setPadding(dp(4), dp(8), dp(4), dp(8)); layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
+                val del = TextView(this).apply { text = "حذف"; setTextColor(Color.RED); setPadding(dp(8), dp(8), dp(8), dp(8)) }
+                del.setOnClickListener { val n = org.json.JSONArray(); for (x in 0 until configs.length()) if (x != j) n.put(configs.optString(x)); while (configs.length() > 0) configs.remove(0); for (x in 0 until n.length()) configs.put(n.optString(x)); obj.put("configs", configs); saveDrawers(arr); rebuild() }
+                row.addView(txt); row.addView(del); list.addView(row)
+            }
+        }
+        rebuild()
+        val linkInput = EditText(this).apply { hint = "لینک کانفیگ"; setSingleLine(false) }
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; addView(list); addView(linkInput, LinearLayout.LayoutParams(-1, -2)) }
+        AlertDialog.Builder(this).setTitle(obj.optString("name", "کشو")).setView(box)
+            .setPositiveButton("افزودن") { _, _ -> val link = linkInput.text.toString().trim(); if (link.isNotEmpty()) { configs.put(link); obj.put("configs", configs); saveDrawers(arr); render(); toast("به کشو اضافه شد") } }
+            .setNeutralButton("حذف کشو") { _, _ -> val n = org.json.JSONArray(); for (x in 0 until arr.length()) if (x != index) n.put(arr.getJSONObject(x)); saveDrawers(n); render() }
+            .setNegativeButton("بستن", null).show()
+    }
     private fun render() {
         listContainer.removeAllViews()
         emptyText.visibility = if (store.items.isEmpty()) View.VISIBLE else View.GONE
         if (store.items.isNotEmpty()) addSmartCard()
+        renderDrawers()
         val smartSel = smartSelected()
         for (cfg in store.items) {
             val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
