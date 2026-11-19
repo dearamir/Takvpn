@@ -1209,17 +1209,63 @@ class MainActivity : AppCompatActivity() {
     }
     private fun renderDrawers() {
         val arr = drawersJson()
-        val add = TextView(this).apply { text = "＋  ساخت کشوی کانفیگ"; textSize = 15f; setTypeface(null, Typeface.BOLD); setTextColor(activeTextColor()); gravity = Gravity.CENTER; setPadding(dp(12), dp(14), dp(12), dp(14)) }
-        val addCard = MaterialCardView(this).apply { setCardBackgroundColor(c(R.color.card)); radius = dp(14).toFloat(); strokeWidth = dp(1); strokeColor = activePalette().accent; addView(add) }
-        addCard.setOnClickListener { createDrawer() }
-        listContainer.addView(addCard, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) })
+        val strip = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val scroll = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(strip) }
+        fun addSubscriptionIcon(id: String, label: String, emoji: String, count: Int, selected: Boolean, click: () -> Unit) {
+            val item = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(dp(7), dp(4), dp(7), dp(4)) }
+            val icon = TextView(this).apply {
+                text = emoji; textSize = 22f; gravity = Gravity.CENTER
+                setBackgroundColor(if (selected) activePalette().accent else c(R.color.card))
+                setTextColor(if (selected) Color.WHITE else activeTextColor())
+                setPadding(dp(10), dp(8), dp(10), dp(8))
+            }
+            val title = TextView(this).apply { text = label; textSize = 10f; gravity = Gravity.CENTER; setTextColor(activeTextColor()); maxLines = 1 }
+            item.addView(icon, LinearLayout.LayoutParams(dp(48), dp(44)))
+            item.addView(title)
+            item.setOnClickListener(click)
+            strip.addView(item)
+        }
+        addSubscriptionIcon("all", "همه", "🌐", store.items.size, prefs.getString("subscription_selected", "all") == "all") {
+            prefs.edit().putString("subscription_selected", "all").apply(); render()
+        }
         for (i in 0 until arr.length()) {
             val obj = arr.optJSONObject(i) ?: continue
-            val configs = obj.optJSONArray("configs")?.length() ?: 0
+            val id = obj.optString("id")
+            val count = obj.optJSONArray("configs")?.length() ?: 0
+            addSubscriptionIcon(id, obj.optString("name", "سابسکریپشن"), "📁", count, prefs.getString("subscription_selected", "all") == id) {
+                prefs.edit().putString("subscription_selected", id).apply(); render()
+            }
+            // Long press opens subscription management without changing the current filter.
+            strip.getChildAt(strip.childCount - 1)?.setOnLongClickListener { openDrawer(id); true }
+        }
+        val plus = TextView(this).apply { text = "＋"; textSize = 28f; gravity = Gravity.CENTER; setTextColor(activePalette().accent); setPadding(dp(8), dp(4), dp(8), dp(4)) }
+        plus.setOnClickListener { createDrawer() }
+        strip.addView(plus, LinearLayout.LayoutParams(dp(48), dp(52)))
+        listContainer.addView(scroll, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(8), dp(3), dp(8), dp(8)) })
+    }
+
+    private fun renderSubscriptionConfigs(subscriptionId: String) {
+        val arr = drawersJson()
+        var sub: org.json.JSONObject? = null
+        for (i in 0 until arr.length()) if (arr.optJSONObject(i)?.optString("id") == subscriptionId) { sub = arr.optJSONObject(i); break }
+        val configs = sub?.optJSONArray("configs") ?: org.json.JSONArray()
+        if (configs.length() == 0) {
+            listContainer.addView(TextView(this).apply { text = "این سابسکریپشن خالی است؛ برای افزودن کانفیگ روی آیکون آن لمس طولانی کنید."; setTextColor(activeTextColor()); gravity = Gravity.CENTER; setPadding(dp(12), dp(24), dp(12), dp(24)) })
+            return
+        }
+        for (i in 0 until configs.length()) {
+            val link = configs.optString(i)
             val card = MaterialCardView(this).apply { setCardBackgroundColor(c(R.color.card)); radius = dp(14).toFloat(); strokeWidth = dp(1); strokeColor = activePalette().accent }
-            val label = TextView(this).apply { text = "🗂️  ${obj.optString("name")}  ·  $configs کانفیگ"; textSize = 14f; setTypeface(null, Typeface.BOLD); setTextColor(activeTextColor()); setPadding(dp(14), dp(14), dp(14), dp(14)) }
-            card.addView(label); card.setOnClickListener { openDrawer(obj.optString("id")) }
-            listContainer.addView(card, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(12), dp(5), dp(12), dp(5)) })
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(10), dp(12), dp(10)) }
+            val info = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
+            info.addView(TextView(this).apply { text = ConfigStore.nameOf(link); textSize = 14f; setTypeface(null, Typeface.BOLD); setTextColor(activeTextColor()) })
+            info.addView(TextView(this).apply { text = ConfigStore.typeOf(link); textSize = 11f; setTextColor(c(R.color.ink_soft)) })
+            val connect = TextView(this).apply { text = "اتصال"; textSize = 13f; setTypeface(null, Typeface.BOLD); setTextColor(activePalette().accent); setPadding(dp(10), dp(8), dp(10), dp(8)) }
+            connect.setOnClickListener { connectWith(Cfg(java.util.UUID.randomUUID().toString(), link, ConfigStore.nameOf(link)), false) }
+            val manage = TextView(this).apply { text = "⋮"; textSize = 22f; setTextColor(activeTextColor()); setPadding(dp(8), dp(6), dp(8), dp(6)) }
+            manage.setOnClickListener { openDrawer(subscriptionId) }
+            row.addView(info); row.addView(connect); row.addView(manage); card.addView(row)
+            listContainer.addView(card, LinearLayout.LayoutParams(-1, -2).apply { setMargins(dp(12), dp(4), dp(12), dp(4)) })
         }
     }
     private fun openDrawer(id: String) {
@@ -1252,11 +1298,14 @@ class MainActivity : AppCompatActivity() {
     }
     private fun render() {
         listContainer.removeAllViews()
-        emptyText.visibility = if (store.items.isEmpty()) View.VISIBLE else View.GONE
-        if (store.items.isNotEmpty()) addSmartCard()
         renderDrawers()
+        val selectedSubscription = prefs.getString("subscription_selected", "all") ?: "all"
+        val showingMainConfigs = selectedSubscription == "all"
+        emptyText.visibility = if (showingMainConfigs && store.items.isEmpty()) View.VISIBLE else View.GONE
+        if (showingMainConfigs && store.items.isNotEmpty()) addSmartCard()
+        if (!showingMainConfigs) renderSubscriptionConfigs(selectedSubscription)
         val smartSel = smartSelected()
-        for (cfg in store.items) {
+        for (cfg in if (showingMainConfigs) store.items else emptyList()) {
             val v = layoutInflater.inflate(R.layout.item_config, listContainer, false)
             val card = v as MaterialCardView
             v.findViewById<TextView>(R.id.nameText).text = cfg.name
