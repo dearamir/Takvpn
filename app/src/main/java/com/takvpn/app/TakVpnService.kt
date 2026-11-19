@@ -322,6 +322,27 @@ class TakVpnService : VpnService() {
             }
             j.put("inbounds", inbounds)
 
+            // Force the diagnostic SOCKS inbound through the profile's proxy
+            // outbound. Existing routing rules must not send the probe direct.
+            val routing = j.optJSONObject("routing") ?: JSONObject()
+            val oldRules = routing.optJSONArray("rules") ?: JSONArray()
+            val rules = JSONArray().put(
+                JSONObject()
+                    .put("type", "field")
+                    .put("inboundTag", JSONArray().put("takvpn-ip-probe"))
+                    .put("outboundTag", "proxy")
+            )
+            for (i in 0 until oldRules.length()) {
+                val rule = oldRules.optJSONObject(i) ?: continue
+                val inboundTags = rule.optJSONArray("inboundTag")
+                val isProbeRule = inboundTags != null &&
+                    (0 until inboundTags.length()).any { inboundTags.optString(it) == "takvpn-ip-probe" }
+                if (!isProbeRule) rules.put(rule)
+            }
+            routing.put("rules", rules)
+            if (!routing.has("domainStrategy")) routing.put("domainStrategy", "AsIs")
+            j.put("routing", routing)
+
             if (prefs.getBoolean("direct_ir", false)) {
                 val rule = JSONObject()
                     .put("type", "field")
