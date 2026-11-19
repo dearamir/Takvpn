@@ -400,6 +400,7 @@ class MainActivity : AppCompatActivity() {
         TakVpnService.onSwitched = {
             runOnUiThread {
                 render()
+                fetchConnectionInfo()
                 runConnectionTest()
             }
         }
@@ -1543,28 +1544,43 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchConnectionInfo() {
         val requestId = ++connectionInfoRequest
-        connectionInfoText.text = "در حال دریافت IP..."
+        val activeLink = TakVpnService.activeLink
+        if (activeLink.isBlank()) {
+            connectionInfoText.text = "آدرس سرور کانفیگ در دسترس نیست"
+            connectionInfoText.visibility = View.VISIBLE
+            return
+        }
+        connectionInfoText.text = "در حال دریافت IP سرور..."
         connectionInfoText.visibility = View.VISIBLE
         pool.execute {
             var connection: HttpURLConnection? = null
             try {
-                connection = (URL("https://ipwho.is/").openConnection() as HttpURLConnection).apply {
+                val host = ServerEndpoint.hostFromLink(activeLink)
+                    ?: throw IllegalStateException("Server host not found")
+                val serverIp = try {
+                    java.net.InetAddress.getByName(host).hostAddress
+                } catch (_: Throwable) {
+                    host
+                }
+                val encodedIp = java.net.URLEncoder.encode(serverIp, "UTF-8")
+                connection = (URL("https://ipwho.is/$encodedIp").openConnection() as HttpURLConnection).apply {
                     connectTimeout = 7000
                     readTimeout = 7000
                     requestMethod = "GET"
                 }
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-                if (!json.optBoolean("success", false)) throw IllegalStateException("IP lookup failed")
-                val ip = json.optString("ip")
+                if (!json.optBoolean("success", false)) throw IllegalStateException("Server IP lookup failed")
+                val ip = json.optString("ip", serverIp)
                 val country = json.optString("country")
                 val code = json.optString("country_code").uppercase(Locale.US)
                 val flag = if (code.length == 2 && code.all { it in 'A'..'Z' }) {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
-                val result = listOf("IP: $ip", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                val result = listOf("IP سرور: $ip", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
-                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
+                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest &&
+                        activeLink == TakVpnService.activeLink) {
                         connectionInfoText.text = result
                         connectionInfoText.visibility = View.VISIBLE
                     }
@@ -1572,7 +1588,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Throwable) {
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
-                        connectionInfoText.text = "IP و کشور در دسترس نیست"
+                        connectionInfoText.text = "IP سرور و کشور در دسترس نیست"
                         connectionInfoText.visibility = View.VISIBLE
                     }
                 }
