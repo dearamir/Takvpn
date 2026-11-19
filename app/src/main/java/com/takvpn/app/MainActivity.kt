@@ -1599,43 +1599,45 @@ class MainActivity : AppCompatActivity() {
 
     private fun fetchConnectionInfo() {
         val requestId = ++connectionInfoRequest
-        val activeLink = TakVpnService.activeLink
-        if (activeLink.isBlank()) {
-            connectionInfoText.text = "آدرس سرور کانفیگ در دسترس نیست"
-            connectionInfoText.visibility = View.VISIBLE
-            return
-        }
-        connectionInfoText.text = "در حال دریافت IP سرور..."
+        if (!TakVpnService.isRunning) return
+        connectionInfoText.text = "در حال دریافت IP خروجی واقعی تونل..."
         connectionInfoText.visibility = View.VISIBLE
         pool.execute {
             var connection: HttpURLConnection? = null
             try {
-                val host = ServerEndpoint.hostFromLink(activeLink)
-                    ?: throw IllegalStateException("Server host not found")
-                val serverIp = try {
-                    java.net.InetAddress.getByName(host).hostAddress
-                } catch (_: Throwable) {
-                    host
+                val socks = java.net.Proxy(
+                    java.net.Proxy.Type.SOCKS,
+                    java.net.InetSocketAddress("127.0.0.1", TakVpnService.IP_PROBE_SOCKS_PORT)
+                )
+                // Resolve the public IP through the active Xray outbound, not the
+                // server address embedded in the imported profile.
+                connection = (URL("https://api.ipify.org").openConnection(socks) as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
+                    requestMethod = "GET"
                 }
-                val encodedIp = java.net.URLEncoder.encode(serverIp, "UTF-8")
-                connection = (URL("https://ipwho.is/$encodedIp").openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 7000
-                    readTimeout = 7000
+                val exitIp = connection.inputStream.bufferedReader().use { it.readText().trim() }
+                if (exitIp.isBlank()) throw IllegalStateException("Empty exit IP")
+                connection.disconnect()
+                connection = null
+
+                val encodedIp = java.net.URLEncoder.encode(exitIp, "UTF-8")
+                connection = (URL("https://ipwho.is/$encodedIp").openConnection(socks) as HttpURLConnection).apply {
+                    connectTimeout = 10000
+                    readTimeout = 10000
                     requestMethod = "GET"
                 }
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-                if (!json.optBoolean("success", false)) throw IllegalStateException("Server IP lookup failed")
-                val ip = json.optString("ip", serverIp)
-                val country = json.optString("country")
+                if (!json.optBoolean("success", false)) throw IllegalStateException("Exit IP lookup failed")
                 val code = json.optString("country_code").uppercase(Locale.US)
                 val flag = if (code.length == 2 && code.all { it in 'A'..'Z' }) {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
-                val result = listOf("IP سرور: $ip", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                val country = json.optString("country")
+                val result = listOf("IP خروجی: $exitIp", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
-                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest &&
-                        activeLink == TakVpnService.activeLink) {
+                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
                         connectionInfoText.text = result
                         connectionInfoText.visibility = View.VISIBLE
                     }
@@ -1643,10 +1645,11 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Throwable) {
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
-                        connectionInfoText.text = "IP سرور و کشور در دسترس نیست"
+                        connectionInfoText.text = "تشخیص IP خروجی تونل ناموفق بود"
                         connectionInfoText.visibility = View.VISIBLE
                     }
                 }
+                AppLog.add("تشخیص IP خروجی ناموفق: ${e.message}")
             } finally {
                 connection?.disconnect()
             }
