@@ -207,10 +207,10 @@ object ConfigEditor {
     private fun build(proto: String, m: Map<String, String>): String {
         val name = m["_name"].orEmpty().trim()
         val addr = m["_addr"].orEmpty().trim()
-        if (addr.isEmpty()) throw IllegalArgumentException(trForError("نشانی سرور خالیه"))
+        if (addr.isEmpty()) throw IllegalArgumentException("نشانی سرور خالیه")
         val port = m["_port"].orEmpty().trim().toIntOrNull()
-            ?: throw IllegalArgumentException(trForError("پورت نامعتبره"))
-        if (port !in 1..65535) throw IllegalArgumentException(trForError("پورت باید بین ۱ تا ۶۵۵۳۵ باشه"))
+            ?: throw IllegalArgumentException("پورت نامعتبره")
+        if (port !in 1..65535) throw IllegalArgumentException("پورت باید بین ۱ تا ۶۵۵۳۵ باشه")
         return if (proto == "vmess") buildVmess(name, addr, port, m) else buildUri(proto, name, addr, port, m)
     }
 
@@ -218,11 +218,11 @@ object ConfigEditor {
         val host = if (addr.contains(":") && !addr.startsWith("[")) "[$addr]" else addr
         val user = if (proto == "vless") {
             val id = m["_id"].orEmpty().trim()
-            if (id.isEmpty()) throw IllegalArgumentException(trForError("شناسه (UUID) خالیه"))
+            if (id.isEmpty()) throw IllegalArgumentException("شناسه (UUID) خالیه")
             id
         } else {
             val p = m["_pass"].orEmpty()
-            if (p.isEmpty()) throw IllegalArgumentException(trForError("رمز عبور خالیه"))
+            if (p.isEmpty()) throw IllegalArgumentException("رمز عبور خالیه")
             Uri.encode(p)
         }
         val q = StringBuilder()
