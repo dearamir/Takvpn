@@ -368,7 +368,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
         findViewById<TextView>(R.id.pingAllLabel).text = tr("⌁  پینگ همه")
-        findViewById<TextView>(R.id.emptyText).text = tr("هنوز کانفیگی اضافه نشده.\\nعلامت + بالا سمت چپ رو بزنید.")
+        findViewById<TextView>(R.id.emptyText).text = tr("هنوز کانفیگی اضافه نشده.\nعلامت + بالا سمت چپ رو بزنید.")
         findViewById<TextView>(R.id.testText).text = tr("قطع شده. برای اتصال دکمه‌ی پخش رو بزنید")
         findViewById<View>(R.id.connectFab).contentDescription = tr("اتصال")
 
@@ -751,7 +751,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Throwable) {
-                val message = (e.message ?: e.toString()).replace("\\n", " ").take(80)
+                val message = (e.message ?: e.toString()).replace("\n", " ").take(80)
                 runOnUiThread {
                     if (!isDestroyed) toast("بررسی هسته ناموفق بود: $message")
                 }
@@ -801,7 +801,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Throwable) {
-                val message = (e.message ?: e.toString()).replace("\\n", " ").take(100)
+                val message = (e.message ?: e.toString()).replace("\n", " ").take(100)
                 AppLog.add("بررسی نسخه ناموفق: $message")
                 if (!silent) runOnUiThread {
                     if (!isDestroyed) toast("بررسی نسخه ناموفق: $message")
