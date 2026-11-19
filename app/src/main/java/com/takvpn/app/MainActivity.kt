@@ -280,6 +280,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var subs: SubStore
     private lateinit var titleText: TextView
     private lateinit var statusText: TextView
+    private lateinit var connectionInfoText: TextView
+    private var connectionInfoRequest = 0
     private lateinit var emptyText: TextView
     private lateinit var testText: TextView
     private lateinit var usageText: TextView
@@ -344,6 +346,7 @@ class MainActivity : AppCompatActivity() {
         totalBytes = prefs.getLong("total", 0L)
         titleText = findViewById(R.id.titleText)
         statusText = findViewById(R.id.statusText)
+        connectionInfoText = findViewById(R.id.connectionInfoText)
         emptyText = findViewById(R.id.emptyText)
         testText = findViewById(R.id.testText)
         usageText = findViewById(R.id.usageText)
@@ -1538,6 +1541,47 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun fetchConnectionInfo() {
+        val requestId = ++connectionInfoRequest
+        connectionInfoText.text = "در حال دریافت IP..."
+        connectionInfoText.visibility = View.VISIBLE
+        pool.execute {
+            var connection: HttpURLConnection? = null
+            try {
+                connection = (URL("https://ipwho.is/").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 7000
+                    readTimeout = 7000
+                    requestMethod = "GET"
+                }
+                val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                if (!json.optBoolean("success", false)) throw IllegalStateException("IP lookup failed")
+                val ip = json.optString("ip")
+                val country = json.optString("country")
+                val code = json.optString("country_code").uppercase(Locale.US)
+                val flag = if (code.length == 2 && code.all { it in 'A'..'Z' }) {
+                    code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
+                } else ""
+                val result = listOf("IP: $ip", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                    .filter { it.isNotBlank() }.joinToString("  ·  ")
+                runOnUiThread {
+                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
+                        connectionInfoText.text = result
+                        connectionInfoText.visibility = View.VISIBLE
+                    }
+                }
+            } catch (e: Throwable) {
+                runOnUiThread {
+                    if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
+                        connectionInfoText.text = "IP و کشور در دسترس نیست"
+                        connectionInfoText.visibility = View.VISIBLE
+                    }
+                }
+            } finally {
+                connection?.disconnect()
+            }
+        }
+    }
+
     private fun updateUi(running: Boolean) {
         connectIcon.setConnected(running)
         if (running) {
@@ -1553,12 +1597,16 @@ class MainActivity : AppCompatActivity() {
                 AppLog.add("متصل شد: ${TakVpnService.activeName}")
                 runConnectionTest()
                 refreshSubInfo()
+                fetchConnectionInfo()
             }
             titleGlow.start()
             statusGlow.start()
             startTracking()
         } else {
             prefs.edit().putLong("since", 0L).apply()
+            connectionInfoRequest++
+            connectionInfoText.visibility = View.GONE
+            connectionInfoText.text = ""
             if (lastRunning) AppLog.add("اتصال قطع شد")
             titleGlow.stop(c(R.color.header_title))
             statusGlow.stop(c(R.color.status_off))
