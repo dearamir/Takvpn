@@ -1233,10 +1233,13 @@ class MainActivity : AppCompatActivity() {
             if (configs.length() == 0) list.addView(TextView(this).apply { text = "این کشو خالی است."; setTextColor(activeTextColor()); setPadding(0, dp(8), 0, dp(8)) })
             for (j in 0 until configs.length()) {
                 val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-                val txt = TextView(this).apply { text = configs.optString(j); setTextColor(activeTextColor()); textSize = 12f; setPadding(dp(4), dp(8), dp(4), dp(8)); layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
+                val link = configs.optString(j)
+                val txt = TextView(this).apply { text = ConfigStore.nameOf(link) + "\\n" + link; setTextColor(activeTextColor()); textSize = 12f; maxLines = 3; setPadding(dp(4), dp(8), dp(4), dp(8)); layoutParams = LinearLayout.LayoutParams(0, -2, 1f) }
+                val connect = TextView(this).apply { text = "اتصال"; setTextColor(activePalette().accent); setTypeface(null, Typeface.BOLD); setPadding(dp(8), dp(8), dp(8), dp(8)) }
+                connect.setOnClickListener { connectWith(Cfg(java.util.UUID.randomUUID().toString(), link, ConfigStore.nameOf(link)), false) }
                 val del = TextView(this).apply { text = "حذف"; setTextColor(Color.RED); setPadding(dp(8), dp(8), dp(8), dp(8)) }
                 del.setOnClickListener { val n = org.json.JSONArray(); for (x in 0 until configs.length()) if (x != j) n.put(configs.optString(x)); while (configs.length() > 0) configs.remove(0); for (x in 0 until n.length()) configs.put(n.optString(x)); obj.put("configs", configs); saveDrawers(arr); rebuild() }
-                row.addView(txt); row.addView(del); list.addView(row)
+                row.addView(txt); row.addView(connect); row.addView(del); list.addView(row)
             }
         }
         rebuild()
