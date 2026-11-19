@@ -18,15 +18,57 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish Windows x64
+
+      - name: Download official Xray core and Wintun
+        shell: pwsh
+        run: |
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/XTLS/Xray-core/releases/latest" -Headers @{ "User-Agent" = "TakVPN-Windows-CI" }
+          $asset = $release.assets | Where-Object { $_.name -eq "Xray-windows-64.zip" } | Select-Object -First 1
+          if (-not $asset) { throw "Official Xray release does not contain Xray-windows-64.zip" }
+          New-Item -ItemType Directory -Force -Path "windows/TakVPN.Windows/tools/xray" | Out-Null
+          $zip = Join-Path $env:RUNNER_TEMP "xray-windows-64.zip"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zip
+          if ($asset.digest -and $asset.digest.StartsWith("sha256:")) {
+            $actual = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+            $expected = $asset.digest.Substring(7).ToLowerInvariant()
+            if ($actual -ne $expected) { throw "Xray archive SHA-256 mismatch" }
+          }
+          $extract = Join-Path $env:RUNNER_TEMP "xray-extract"
+          Expand-Archive -Path $zip -DestinationPath $extract -Force
+          $xray = Get-ChildItem $extract -Filter "xray.exe" -Recurse | Select-Object -First 1
+          $wintun = Get-ChildItem $extract -Filter "wintun.dll" -Recurse | Select-Object -First 1
+          if (-not $xray -or -not $wintun) { throw "Xray or Wintun binary missing from official release archive" }
+          Copy-Item $xray.FullName "windows/TakVPN.Windows/tools/xray/xray.exe" -Force
+          Copy-Item $wintun.FullName "windows/TakVPN.Windows/tools/xray/wintun.dll" -Force
+          Get-ChildItem $extract -File | Where-Object { $_.Name -match '^(geoip|geosite).*\.dat$|^LICENSE' } | ForEach-Object { Copy-Item $_.FullName "windows/TakVPN.Windows/tools/xray/$($_.Name)" -Force }
+
+      - name: Restore and build
         run: dotnet publish windows/TakVPN.Windows/TakVPN.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
-      - name: Upload preview artifact
+
+      - name: Smoke test bundled Xray
+        shell: pwsh
+        run: |
+          $core = "windows/TakVPN.Windows/tools/xray/xray.exe"
+          & $core version
+          if ($LASTEXITCODE -ne 0) { throw "Xray binary smoke test failed" }
+
+      - name: Package preview
+        shell: pwsh
+        run: |
+          $publish = "windows/TakVPN.Windows/bin/Release/net8.0-windows/win-x64/publish"
+          $tools = Join-Path $publish "tools/xray"
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+          Copy-Item "windows/TakVPN.Windows/tools/xray/*" $tools -Recurse -Force
+          Compress-Archive -Path "$publish/*" -DestinationPath "TakVPN-Windows-x64-preview.zip" -Force
+
+      - name: Upload Windows preview
         uses: actions/upload-artifact@v4
         with:
           name: TakVPN-Windows-x64-preview
-          path: windows/TakVPN.Windows/bin/Release/net8.0-windows/win-x64/publish/
+          path: TakVPN-Windows-x64-preview.zip
           if-no-files-found: error
