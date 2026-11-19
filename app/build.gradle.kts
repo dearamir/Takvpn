@@ -37,24 +37,29 @@ android {
     }
 
     val keystoreFile = rootProject.file("release.keystore")
+    val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
+    val releaseRequested = gradle.startParameter.taskNames.any {
+        it.contains("assembleRelease", ignoreCase = true) ||
+            it.contains("bundleRelease", ignoreCase = true)
+    }
+    if (releaseRequested) {
+        check(keystoreFile.exists() && !keystorePassword.isNullOrBlank()) {
+            "Release build blocked: release.keystore and KEYSTORE_PASSWORD are required. Debug signing is never used for Release."
+        }
+    }
+
     signingConfigs {
-        if (keystoreFile.exists()) {
-            create("release") {
-                storeFile = keystoreFile
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = "takvpn"
-                keyPassword = System.getenv("KEYSTORE_PASSWORD")
-            }
+        create("release") {
+            storeFile = keystoreFile
+            storePassword = keystorePassword ?: ""
+            keyAlias = "takvpn"
+            keyPassword = keystorePassword ?: ""
         }
     }
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = if (keystoreFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
