@@ -665,17 +665,109 @@ object AppLanguage {
         "رمزنگاری" to "Encryption",
         "حالت جریان (flow)" to "Flow mode",
         "مبهم‌سازی (obfs)" to "Obfuscation (obfs)",
+        "هنوز کانفیگی اضافه نشده.\nعلامت + بالا سمت چپ رو بزنید." to "No configs added yet.\nTap + in the upper left.",
+        "افزودن کانفیگ" to "Add config",
+        "ابزارها" to "Tools",
+        "اشتراک‌ها" to "Subscriptions",
+        "سیستم" to "System",
+        "تأیید" to "Confirm",
+        "پیش‌فرض" to "Default",
+        "پیش‌فرض نوشته" to "Default text",
+        "پوسته ذخیره شد" to "Theme saved",
+        "رنگ نوشته‌ها ذخیره شد" to "Text colors saved",
+        "بستن" to "Close",
+        "کپی" to "Copy",
+        "پاک کردن" to "Clear",
+        "آدرس IPv4 معتبری وارد نشد" to "No valid IPv4 address was entered",
+        "DNS ذخیره شد. از اتصال بعدی اعمال می‌شه" to "DNS saved. Applies on next connection",
+        "QR کانفیگ رو جلوی دوربین بگیرید" to "Point the camera at the config QR code",
+        "پورت‌هاپینگ" to "Port hopping",
+        "از اتصال بعدی اعمال می‌شه" to "Applies on next connection",
+        "نسخه‌ی برنامه:" to "App version:",
+        "نسخه‌ی هسته Xray:" to "Xray core version:",
+        "بروزرسانی مستقیم از داخل برنامه" to "Update directly in the app",
+        "هسته‌ی فعلی:" to "Current core:",
+        "آخرین هسته:" to "Latest core:",
+        "برای حفظ امنیت و سازگاری، هسته همراه نسخه‌ی جدید Takvpn نصب می‌شود." to "For security and compatibility, the core is installed with the new TakVPN version.",
+        "نسخه‌ی فعلی:" to "Current version:",
+        "نسخه‌ی جدید:" to "New version:",
+        "تغییرات:" to "What's new:",
+        "فایل دانلودشده خالی است" to "Downloaded file is empty",
+        "اعتبارسنجی فایل نصب ناموفق بود" to "Installer validation failed",
+        "فایل نصب پیدا نشد؛ دوباره بروزرسانی را بررسی کنید" to "Installer not found; check for updates again",
+        "برای نصب نسخه‌ی جدید، اجازه‌ی نصب برنامه از TakVPN را در تنظیمات فعال کنید." to "Allow TakVPN to install apps in Settings to install the new version.",
+        "باز کردن نصب‌کننده ناموفق بود:" to "Could not open installer:",
+        "کانفیگ پشتیبانی‌شده‌ای توی اشتراک پیدا نشد" to "No supported configs found in subscription",
+        "همه‌ی اشتراک‌ها" to "All subscriptions",
+        "تست همه‌ی کانفیگ‌ها" to "Test all configs",
+        "کانفیگ‌های بدون پینگ" to "Configs without ping",
+        "همه‌ی اپ‌ها با VPN (خاموش)" to "All apps use VPN (off)",
+        "فقط اپ‌های انتخاب‌شده با VPN" to "Only selected apps use VPN",
+        "اپ‌های انتخاب‌شده بدون VPN" to "Selected apps bypass VPN",
+        "هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه" to "Automatically finds and connects to the best config",
+        "در حال پیدا کردن بهترین کانفیگ..." to "Finding the best config...",
+        "هیچ کانفیگی پینگ نداد" to "No config responded to ping",
+        "در حال تست اتصال..." to "Testing connection...",
+        "قطع شده. برای اتصال دکمه‌ی پخش رو بزنید" to "Disconnected. Tap connect to start",
+        "⚡ سوییچ هوشمند" to "⚡ Smart switch",
+        "در حال دریافت IP خروجی واقعی تونل..." to "Getting the real tunnel exit IP...",
+        "تشخیص IP خروجی تونل ناموفق بود" to "Could not detect the tunnel exit IP",
+        "کانفیگی وجود نداره" to "No configs available",
+        "کانفیگ اضافه شد" to "Config added",
+        "کانفیگی معتبر اضافه نشد" to "No valid config was added",
+        "پینگ: برای تست اینجا بزنید" to "Tap here to test ping",
+        "در حال پیدا کردن سریع‌ترین کانفیگ..." to "Finding the fastest config...",
+        "بر اساس پینگ مرتب شد (اول «پینگ همه» رو بزنید)" to "Sorted by ping (tap “Ping all” first)",
+        "کانفیگ ناموفقی نیست (اول «پینگ همه» رو بزنید)" to "No failed configs (tap “Ping all” first)",
+        "لینک کپی شد" to "Link copied",
+        "ساخت QR ناموفق بود (لینک خیلی بلنده)" to "Could not create QR code (link is too long)",
+        "اشتراک‌گذاری کانفیگ" to "Share config",
+        "در حال اتصال..." to "Connecting...",
+        "راه‌اندازی مجدد..." to "Restarting...",
+        "در حال پیدا کردن بهترین..." to "Finding the best config...",
+        "در حال تعویض کانفیگ..." to "Switching config...",
+        "اتصال Takvpn" to "TakVPN connection",
+        "Takvpn متصل است" to "TakVPN is connected",
+        "پینگ: در حال تست..." to "Ping: testing...",
+        "جابه‌جا شد" to "Switched",
+        "کانفیگ سالمی پیدا نشد" to "No working config found",
+        "ناموفق" to "Failed",
+        "بدون پاسخ" to "No response",
+        "کمتر از ۱ روز" to "Less than 1 day",
+        "منقضی شده" to "Expired",
+        "نامحدود" to "Unlimited",
+        "تمام شده" to "Used up",
+        "مصرف: روی این گوشی در دسترس نیست" to "Usage is unavailable on this device",
         "بدون" to "None"
     )
 
+    private val englishPrefixes = mapOf(
+        "خطا: " to "Error: ",
+        "خطای اتصال: " to "Connection error: ",
+        "بررسی نسخه ناموفق: " to "Update check failed: ",
+        "بررسی هسته ناموفق بود: " to "Core update check failed: ",
+        "دریافت اشتراک ناموفق: " to "Subscription download failed: ",
+        "دانلود بروزرسانی ناموفق: " to "Update download failed: ",
+        "نسخه‌ی فعلی: " to "Current version: ",
+        "نسخه‌ی جدید: " to "New version: ",
+        "در حال دریافت TakVPN " to "Downloading TakVPN ",
+        "هوشمند: " to "Smart: ",
+        "پینگ: " to "Ping: ",
+        "مصرف کل: " to "Total usage: ",
+        "مصرف: " to "Usage: ",
+        "کانفیگ نامعتبر: " to "Invalid config: "
+    )
+
     fun translate(text: String, language: String): String {
-        return dialogTranslations[language]?.get(text)
+        val translated = dialogTranslations[language]?.get(text)
             ?: homeTranslations[language]?.get(text)
             ?: runtimeTranslations[language]?.get(text)
             ?: actionTranslations[language]?.get(text)
             ?: translations[language]?.get(text)
             ?: englishFallback[text]
-            ?: text
+        if (translated != null) return translated
+        val prefix = englishPrefixes.entries.firstOrNull { text.startsWith(it.key) }
+        return if (prefix != null) prefix.value + text.removePrefix(prefix.key) else text
     }
 
     fun showChooser(context: Context) {
