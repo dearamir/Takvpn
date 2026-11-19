@@ -1270,10 +1270,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lookupCountryFlag(cfg: Cfg) {
-        // Never label a profile by its first-hop server IP. Only show a country
-        // when this exact profile is the active tunnel and its real exit IP can
-        // be queried through the local Xray SOCKS probe.
-        if (!TakVpnService.isRunning || cfg.link != TakVpnService.activeLink) return
+        val isActiveProfile = TakVpnService.isRunning && cfg.link == TakVpnService.activeLink
         synchronized(countryLookups) {
             if (cfg.id in countryLookups) return
             countryLookups.add(cfg.id)
@@ -1281,35 +1278,48 @@ class MainActivity : AppCompatActivity() {
         pool.execute {
             var connection: HttpURLConnection? = null
             try {
-                val socks = java.net.Proxy(
-                    java.net.Proxy.Type.SOCKS,
-                    java.net.InetSocketAddress("127.0.0.1", TakVpnService.IP_PROBE_SOCKS_PORT)
-                )
-                connection = (URL("https://api.ipify.org").openConnection(socks) as HttpURLConnection).apply {
-                    connectTimeout = 10000
-                    readTimeout = 10000
+                // For the connected profile, use its real tunnel exit IP.
+                // For other profiles, show the configured server's country so
+                // every ping result can still have a flag beside it.
+                val lookupProxy: java.net.Proxy?
+                val lookupIp: String
+                if (isActiveProfile) {
+                    lookupProxy = java.net.Proxy(
+                        java.net.Proxy.Type.SOCKS,
+                        java.net.InetSocketAddress("127.0.0.1", TakVpnService.IP_PROBE_SOCKS_PORT)
+                    )
+                    connection = (URL("https://api.ipify.org").openConnection(lookupProxy) as HttpURLConnection).apply {
+                        connectTimeout = 10000
+                        readTimeout = 10000
+                    }
+                    lookupIp = connection.inputStream.bufferedReader().use { it.readText().trim() }
+                    connection.disconnect()
+                    connection = null
+                } else {
+                    lookupProxy = null
+                    val host = ServerEndpoint.hostFromLink(cfg.link)
+                        ?: throw IllegalArgumentException("آدرس سرور پیدا نشد")
+                    lookupIp = java.net.InetAddress.getByName(host).hostAddress
+                        ?: throw IllegalArgumentException("IP سرور پیدا نشد")
                 }
-                val exitIp = connection.inputStream.bufferedReader().use { it.readText().trim() }
-                connection.disconnect()
-                connection = null
-                val encodedIp = java.net.URLEncoder.encode(exitIp, "UTF-8")
-                connection = (URL("https://ipwho.is/$encodedIp").openConnection(socks) as HttpURLConnection).apply {
-                    connectTimeout = 10000
-                    readTimeout = 10000
-                }
+                val encodedIp = java.net.URLEncoder.encode(lookupIp, "UTF-8")
+                val geoUrl = URL("https://ipwho.is/$encodedIp")
+                connection = (if (lookupProxy != null) geoUrl.openConnection(lookupProxy) else geoUrl.openConnection()) as HttpURLConnection
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
                 if (!json.optBoolean("success", false)) return@execute
                 val code = json.optString("country_code").uppercase(Locale.US)
                 if (code.length != 2 || !code.all { it in 'A'..'Z' }) return@execute
                 val flag = code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 runOnUiThread {
-                    if (!isDestroyed && TakVpnService.isRunning && cfg.link == TakVpnService.activeLink) {
+                    if (!isDestroyed) {
                         countryFlags[cfg.id] = flag
                         render()
                     }
                 }
             } catch (e: Throwable) {
-                AppLog.add("تشخیص کشور خروجی برای پینگ ناموفق: ${e.message}")
+                AppLog.add("تشخیص کشور برای پینگ ناموفق: ${e.message}")
             } finally {
                 connection?.disconnect()
             }
