@@ -8,9 +8,9 @@ Windows 10/11 x64 desktop client. This is an isolated workstream and does not mo
 - Xray-core process integration with the official Windows x64 binary
 - Wintun TUN inbound, automatic system routes and outbound interface binding
 - DNS and misconfigured-tunnel leak protection options
-- Real proxy latency test: temporary local SOCKS inbound plus HTTPS request through Xray (not a raw TCP port check)
+- Real proxy latency test and sequential group testing: temporary local SOCKS inbound plus HTTPS request through Xray (not a raw TCP port check)
 - Connect/disconnect lifecycle and cleanup on app close
-- Windows GitHub Actions build that downloads the official Xray release, verifies its SHA-256 when supplied by GitHub, bundles Xray + Wintun, and publishes a ZIP preview
+- Windows GitHub Actions build that downloads the official Xray release, verifies its SHA-256 when supplied by GitHub, bundles Xray + Wintun, and produces an installer EXE plus portable ZIP
 
 ## Important limitations
 This is an early integration and has **not yet been validated on a physical Windows machine**. VPN routing, UAC elevation, IPv4/IPv6 behavior, Wintun adapter creation/removal, captive portals, sleep/resume, and every supported transport must be tested before calling it production-ready. The app manifest requests administrator approval because Xray configures system routes and DNS.
@@ -24,4 +24,4 @@ Requires .NET 8 SDK on Windows. The CI workflow downloads the official Xray Wind
 dotnet publish .\TakVPN.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
 ```
 
-The CI artifact is a ZIP preview. It is not an MSI installer yet.
+The CI artifacts are a setup EXE and a portable ZIP. The installer is not digitally signed yet, so Windows SmartScreen may show a publisher warning.
