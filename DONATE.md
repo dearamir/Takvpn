@@ -11,6 +11,13 @@
 
 [باز کردن کیف پول با لینک Bitcoin](bitcoin:bc1qshme9kn9jxckdedfmmlq945ytafqtld3hs3t9a)
 
+## Litecoin (LTC)
+
+- **شبکه:** Litecoin Mainnet
+- **آدرس دریافت:**
+
+`ltc1qxlyz44ey50m05s0m66xt4twz7cymmu09eh5s76`
+
 ## TRON (TRX)
 
 - **شبکه:** TRON Mainnet
