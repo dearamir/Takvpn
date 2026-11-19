@@ -72,13 +72,13 @@ class MainActivity : AppCompatActivity() {
         val bar: Int, val barText: Int, val fab: Int
     )
 
-    private val uiPalettes = listOf(
+    private val uiPalettes by lazy { listOf(
         UiPalette(localizeUi("آبی اقیانوسی"), Color.rgb(12,22,38), Color.rgb(23,39,61), Color.rgb(35,62,91), Color.rgb(8,16,29), Color.rgb(0,205,235), Color.rgb(241,247,255), Color.rgb(157,178,202), Color.rgb(8,16,29), Color.rgb(220,239,250), Color.rgb(10,105,145)),
         UiPalette(localizeUi("مشکی طلایی"), Color.rgb(16,16,18), Color.rgb(35,35,40), Color.rgb(61,56,43), Color.rgb(8,8,10), Color.rgb(212,175,55), Color.rgb(248,244,232), Color.rgb(184,180,169), Color.rgb(8,8,10), Color.rgb(245,220,165), Color.rgb(65,55,30)),
         UiPalette(localizeUi("زمردی"), Color.rgb(10,25,22), Color.rgb(21,48,41), Color.rgb(32,76,62), Color.rgb(5,17,14), Color.rgb(0,210,145), Color.rgb(239,250,245), Color.rgb(158,193,178), Color.rgb(5,17,14), Color.rgb(218,245,232), Color.rgb(12,105,75)),
         UiPalette(localizeUi("بنفش نئونی"), Color.rgb(23,18,39), Color.rgb(43,34,66), Color.rgb(67,52,99), Color.rgb(14,10,27), Color.rgb(170,115,255), Color.rgb(248,244,255), Color.rgb(190,176,216), Color.rgb(14,10,27), Color.rgb(235,224,255), Color.rgb(92,55,150))
-    )
-    private val textColors = listOf(
+    ) }
+    private val textColors by lazy { listOf(
         localizeUi("سفید یخی") to Color.rgb(245,248,255),
         localizeUi("طلایی") to Color.rgb(245,205,105),
         localizeUi("فیروزه‌ای") to Color.rgb(0,210,235),
@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         localizeUi("نقره‌ای") to Color.rgb(190,200,215),
         localizeUi("نارنجی") to Color.rgb(255,165,70),
         localizeUi("پیش‌فرض پوسته") to Color.TRANSPARENT
-    )
+    ) }
     private fun localizeUi(text: String): String {
         val language = AppLanguage.code(this)
         val translations = when (text) {
