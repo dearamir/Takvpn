@@ -139,7 +139,8 @@ public partial class MainWindow : Window
         if (hint is not null) StatusHint.Text = hint;
         ConnectButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;
         DisconnectButton.IsEnabled = !busy && _engine.IsRunning;
-        TestButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;\n        TestAllButton.IsEnabled = !busy && !_engine.IsRunning && _profiles.Count > 0;
+        TestButton.IsEnabled = !busy && !_engine.IsRunning && ProfilesList.SelectedItem is VpnProfile;
+        TestAllButton.IsEnabled = !busy && !_engine.IsRunning && _profiles.Count > 0;
         ProfilesList.IsEnabled = !busy && !_engine.IsRunning;
     }
 
