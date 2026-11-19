@@ -38,7 +38,7 @@
   `bc1qshme9kn9jxckdedfmmlq945ytafqtld3hs3t9a`
 - **TRON (TRX) — TRON Mainnet**
   `TFs2M1xLvPRCUjybb2QuPuNP4Tp1q7xKqs`
-- **Ethereum / EVM — شبکه را در کیف پول بررسی کنید**
+- **BNB Smart Chain (BEP-20 / BSC)**
   `0x37926FC3f9ca85D96BEfBe9b45F80986Bd612629`
 
 [مشاهده صفحه کامل حمایت و آدرس‌های کیف پول](https://github.com/dearamir/Takvpn/blob/main/DONATE.md)
