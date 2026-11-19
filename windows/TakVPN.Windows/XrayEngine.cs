@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -101,14 +103,10 @@ public sealed class XrayEngine : IDisposable
             if (!process.Start()) throw new InvalidOperationException("Could not start Xray for latency test.");
             process.BeginOutputReadLine(); process.BeginErrorReadLine();
             await WaitForPortAsync(port, process, cancellationToken);
-            var proxy = new WebProxy($"socks5://127.0.0.1:{port}");
-            using var handler = new HttpClientHandler { Proxy = proxy, UseProxy = true };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(12) };
-            using var request = new HttpRequestMessage(HttpMethod.Get, "https://www.gstatic.com/generate_204");
             var sw = Stopwatch.StartNew();
-            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var status = await ProbeHttpsThroughSocksAsync(port, "www.gstatic.com", "/generate_204", cancellationToken);
             sw.Stop();
-            if ((int)response.StatusCode is not (200 or 204)) throw new HttpRequestException($"Latency endpoint returned HTTP {(int)response.StatusCode}.");
+            if (status is not (200 or 204)) throw new HttpRequestException($"Latency endpoint returned HTTP {status}.");
             return (int)sw.ElapsedMilliseconds;
         }
         finally
@@ -117,6 +115,71 @@ public sealed class XrayEngine : IDisposable
             try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5), cancellationToken); } catch { }
             try { Directory.Delete(temp, true); } catch { }
         }
+    }
+
+    private static async Task<int> ProbeHttpsThroughSocksAsync(int proxyPort, string host, string path, CancellationToken ct)
+    {
+        using var tcp = new TcpClient();
+        await tcp.ConnectAsync(IPAddress.Loopback, proxyPort, ct);
+        await using var network = tcp.GetStream();
+
+        await network.WriteAsync(new byte[] { 5, 1, 0 }, ct);
+        var greeting = new byte[2];
+        await network.ReadExactlyAsync(greeting, ct);
+        if (greeting[0] != 5 || greeting[1] != 0) throw new IOException("Local SOCKS5 proxy rejected no-auth mode.");
+
+        var hostBytes = Encoding.ASCII.GetBytes(host);
+        var connect = new byte[7 + hostBytes.Length];
+        connect[0] = 5; connect[1] = 1; connect[2] = 0; connect[3] = 3; connect[4] = (byte)hostBytes.Length;
+        Buffer.BlockCopy(hostBytes, 0, connect, 5, hostBytes.Length);
+        connect[^2] = 1; connect[^1] = 187; // TCP 443
+        await network.WriteAsync(connect, ct);
+
+        var replyHead = new byte[4];
+        await network.ReadExactlyAsync(replyHead, ct);
+        if (replyHead[0] != 5 || replyHead[1] != 0) throw new IOException($"SOCKS5 CONNECT failed (code {replyHead[1]}).");
+        var addressLength = replyHead[3] switch
+        {
+            1 => 4,
+            4 => 16,
+            3 => (await ReadOneAsync(network, ct))[0],
+            _ => throw new IOException("Invalid SOCKS5 address type.")
+        };
+        var tail = new byte[addressLength + 2];
+        await network.ReadExactlyAsync(tail, ct);
+
+        await using var tls = new SslStream(network, leaveInnerStreamOpen: true);
+        await tls.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
+        {
+            TargetHost = host,
+            EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+        }, ct);
+        var request = Encoding.ASCII.GetBytes($"GET {path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\nUser-Agent: TakVPN-Windows\r\n\r\n");
+        await tls.WriteAsync(request, ct);
+        using var response = new MemoryStream();
+        var buffer = new byte[1024];
+        while (response.Length < 8192)
+        {
+            var count = await tls.ReadAsync(buffer, ct);
+            if (count == 0) break;
+            response.Write(buffer, 0, count);
+            var data = Encoding.ASCII.GetString(response.GetBuffer(), 0, (int)response.Length);
+            var end = data.IndexOf("\r\n", StringComparison.Ordinal);
+            if (end >= 0)
+            {
+                var firstLine = data[..end].Split(' ');
+                if (firstLine.Length >= 2 && int.TryParse(firstLine[1], out var code)) return code;
+                throw new IOException("Invalid HTTP response from latency endpoint.");
+            }
+        }
+        throw new IOException("No HTTP response received through the Xray proxy.");
+    }
+
+    private static async Task<byte[]> ReadOneAsync(Stream stream, CancellationToken ct)
+    {
+        var value = new byte[1];
+        await stream.ReadExactlyAsync(value, ct);
+        return value;
     }
 
     private static async Task WaitForPortAsync(int port, Process process, CancellationToken ct)
