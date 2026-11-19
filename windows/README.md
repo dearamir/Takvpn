@@ -1,19 +1,27 @@
 # TakVPN for Windows
 
-This isolated workstream does not modify the Android application.
+Windows 10/11 x64 desktop client. This is an isolated workstream and does not modify the Android app.
 
-## Included in this preview
-- Persian RTL WPF interface for Windows 10/11
+## Current implementation
+- Persian RTL WPF desktop interface
 - Import and local storage for VLESS, VMess and Trojan share links
-- Protocol, host and port details
-- TCP reachability timing (not ICMP ping, not VPN handshake latency)
-- Local profile storage in %LOCALAPPDATA%\\TakVPN
+- Xray-core process integration with the official Windows x64 binary
+- Wintun TUN inbound, automatic system routes and outbound interface binding
+- DNS and misconfigured-tunnel leak protection options
+- Real proxy latency test: temporary local SOCKS inbound plus HTTPS request through Xray (not a raw TCP port check)
+- Connect/disconnect lifecycle and cleanup on app close
+- Windows GitHub Actions build that downloads the official Xray release, verifies its SHA-256 when supplied by GitHub, bundles Xray + Wintun, and publishes a ZIP preview
 
-## Not implemented
-This preview does **not** establish a VPN tunnel. The connect control remains disabled until a Windows-compatible Xray core, TUN adapter lifecycle, routing/DNS handling, privilege management and safe disconnect cleanup are integrated and tested.
+## Important limitations
+This is an early integration and has **not yet been validated on a physical Windows machine**. VPN routing, UAC elevation, IPv4/IPv6 behavior, Wintun adapter creation/removal, captive portals, sleep/resume, and every supported transport must be tested before calling it production-ready. The app manifest requests administrator approval because Xray configures system routes and DNS.
+
+The initial parser supports VLESS, VMess and Trojan. It does not yet support every protocol/URI variant accepted by the Android app (for example Hysteria2 and Shadowsocks).
 
 ## Build
-Requires .NET 8 SDK on Windows:
+Requires .NET 8 SDK on Windows. The CI workflow downloads the official Xray Windows x64 ZIP and bundles its `xray.exe` and `wintun.dll` beside the published app.
+
 ```powershell
-dotnet publish .\\TakVPN.Windows\\TakVPN.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
+dotnet publish .\TakVPN.Windows.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true
 ```
+
+The CI artifact is a ZIP preview. It is not an MSI installer yet.
