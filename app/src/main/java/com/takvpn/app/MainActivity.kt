@@ -334,6 +334,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingLink = ""
     private var pendingSmart = false
     private var lastRunning = false
+    private var sortAscending = true
 
     private var inited = false
     private var baseRx = 0L
@@ -402,6 +403,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.coreVersionCorner).text = "Xray " + BuildConfig.XRAY_CORE_VERSION
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.pingAllButton).setOnClickListener { pingAll() }
+        findViewById<View>(R.id.sortConfigsButton).setOnClickListener { sortByPing() }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
         }
@@ -1469,18 +1471,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sortByPing() {
-        val sel = store.selectedId
-        store.items.sortBy { cfg ->
-            when (val p = pings[cfg.id]) {
-                null -> Long.MAX_VALUE - 1
-                -2L -> Long.MAX_VALUE - 1
-                -1L -> Long.MAX_VALUE
-                else -> p ?: Long.MAX_VALUE
-            }
+        if (store.items.isEmpty()) {
+            toast("کانفیگی برای مرتب‌سازی وجود نداره")
+            return
         }
+        val sel = store.selectedId
+        val measured = store.items.filter { (pings[it.id] ?: -2L) >= 0L }
+        val unmeasured = store.items.filter { (pings[it.id] ?: -2L) < 0L }
+        val ordered = if (sortAscending) {
+            measured.sortedWith(compareBy<Cfg> { pings[it.id] ?: Long.MAX_VALUE }.thenBy { it.name.lowercase(Locale.ROOT) })
+        } else {
+            measured.sortedWith(compareByDescending<Cfg> { pings[it.id] ?: Long.MIN_VALUE }.thenBy { it.name.lowercase(Locale.ROOT) })
+        }
+        store.items.clear()
+        store.items.addAll(ordered)
+        store.items.addAll(unmeasured.sortedBy { it.name.lowercase(Locale.ROOT) })
         store.select(sel)
+        sortAscending = !sortAscending
         render()
-        toast("بر اساس پینگ مرتب شد (اول «پینگ همه» رو بزنید)")
+        toast(if (sortAscending) "مرتب‌سازی پینگ: کم به زیاد" else "مرتب‌سازی پینگ: زیاد به کم")
     }
 
     private fun deleteDead() {
