@@ -377,6 +377,7 @@ class MainActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContentView(R.layout.activity_main)
         findViewById<TextView>(R.id.pingAllLabel).text = tr("⌁  پینگ همه")
+        findViewById<View>(R.id.sortConfigsButton).contentDescription = if (AppLanguage.code(this) == "en") "Sort configurations by ping" else "مرتب‌سازی کانفیگ‌ها بر اساس پینگ"
         findViewById<TextView>(R.id.emptyText).text = tr("هنوز کانفیگی اضافه نشده.\nعلامت + بالا سمت چپ رو بزنید.")
         findViewById<TextView>(R.id.testText).text = tr("قطع شده. برای اتصال دکمه‌ی پخش رو بزنید")
         findViewById<View>(R.id.connectFab).contentDescription = tr("اتصال")
