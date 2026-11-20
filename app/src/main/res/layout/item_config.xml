@@ -78,6 +78,15 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/exitIpText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/ink_soft"
+                android:textSize="9sp"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/subText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
