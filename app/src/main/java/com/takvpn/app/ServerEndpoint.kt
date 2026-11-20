@@ -76,7 +76,7 @@ internal object ServerEndpoint {
 
     private fun formatAddressPort(host: String, port: Int): String {
         val displayHost = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
-        return "$displayHost : $port"
+        return "$displayHost:$port"
     }
 
     private fun decode(value: String): String? {
