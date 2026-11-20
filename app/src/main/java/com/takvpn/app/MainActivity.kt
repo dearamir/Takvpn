@@ -1291,7 +1291,7 @@ class MainActivity : AppCompatActivity() {
             endpointRow.visibility = if (endpoint.isNullOrBlank()) View.GONE else View.VISIBLE
             val exitIpText = v.findViewById<TextView>(R.id.exitIpText)
             val exitIp = exitIps[cfg.id]
-            exitIpText.text = exitIp?.let { "Exit IP: $it" }.orEmpty()
+            exitIpText.text = exitIp.orEmpty()
             exitIpText.visibility = if (showExitIps && !exitIp.isNullOrBlank()) View.VISIBLE else View.GONE
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
@@ -1550,12 +1550,12 @@ class MainActivity : AppCompatActivity() {
         testText.text = AppLanguage.translate("در حال تست اتصال...", AppLanguage.code(this))
         pool.execute {
             val result = measure(link)
-            AppLog.add(if (result.latencyMs > 0) "تست خروجی: ${result.latencyMs} ms, Exit IP: ${result.exitIp}" else "تست خروجی ناموفق: ${result.error}")
+            AppLog.add(if (result.latencyMs > 0) "تست خروجی: ${result.latencyMs} ms, ${result.exitIp}" else "تست خروجی ناموفق: ${result.error}")
             runOnUiThread {
                 if (!isDestroyed) {
                     val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
                     testText.text = if (result.latencyMs > 0) {
-                        prefix + (if (AppLanguage.code(this) == "en") "Real tunnel latency: ${result.latencyMs} ms\nExit IP: ${result.exitIp}" else "تأخیر واقعی تونل: ${result.latencyMs} میلی‌ثانیه\nIP خروجی: ${result.exitIp}")
+                        prefix + (if (AppLanguage.code(this) == "en") "Real tunnel latency: ${result.latencyMs} ms\n${result.exitIp}" else "تأخیر واقعی تونل: ${result.latencyMs} میلی‌ثانیه\nIP خروجی: ${result.exitIp}")
                     } else {
                         prefix + (if (AppLanguage.code(this) == "en") "Test failed" else "تست ناموفق") + (if (result.error.isNotEmpty()) ": ${result.error}" else "")
                     }
@@ -1713,7 +1713,7 @@ class MainActivity : AppCompatActivity() {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
                 val country = json.optString("country")
-                val result = listOf((if (AppLanguage.code(this) == "en") "Exit IP: $exitIp" else "IP خروجی: $exitIp"), listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                val result = listOf((if (AppLanguage.code(this) == "en") exitIp else "IP خروجی: $exitIp"), listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
