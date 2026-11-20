@@ -112,8 +112,7 @@ jobs:
         shell: pwsh
         run: |
           $releases = gh release list --limit 20 --json tagName,isDraft,isPrerelease,publishedAt | ConvertFrom-Json
-          $target = $releases | Where-Object { -not $_.isDraft -and -not $_.isPrerelease -and $_.tagName -match '^v\d+\.\d+(\.\d+)?
- } | Sort-Object { [DateTimeOffset]$_.publishedAt } -Descending | Select-Object -First 1
+          $target = $releases | Where-Object { -not $_.isDraft -and -not $_.isPrerelease -and $_.tagName -match '^v[0-9]+[.][0-9]+([.][0-9]+)?$' } | Sort-Object { [DateTimeOffset]$_.publishedAt } -Descending | Select-Object -First 1
           if (-not $target) { throw "No published Android version release found; refusing to create a separate release." }
           $tag = $target.tagName
           Write-Host "Publishing Windows assets to latest release: $tag"
