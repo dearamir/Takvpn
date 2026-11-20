@@ -186,6 +186,7 @@ class MainActivity : AppCompatActivity() {
             it.setBackgroundColor(p.bg)
             applyPaletteToTree(it, p)
         }
+        connectIcon.setThemeColor(p.accent)
         window.statusBarColor = p.header
         window.navigationBarColor = p.header
         WindowInsetsControllerCompat(window, window.decorView).apply {
@@ -1849,15 +1850,22 @@ class MainActivity : AppCompatActivity() {
         private var rotation = 0f
         private var connected = false
         private var offset = -240f
+        private var themeColor = Color.parseColor("#AA55FF")
+        private var themeLight = Color.parseColor("#E0B8FF")
+        private var themeDeep = Color.parseColor("#6633AA")
 
         init {
             badgeGradient = SweepGradient(0f, 0f,
                 intArrayOf(
-                    Color.parseColor("#9B32FF"), Color.parseColor("#F22DBB"),
-                    Color.parseColor("#FF5C9E"), Color.parseColor("#FFB52E"),
-                    Color.parseColor("#FFE45A"), Color.parseColor("#FF5C9E"),
-                    Color.parseColor("#9B32FF")
+                    themeDeep, themeColor, themeLight, themeColor, themeDeep
                 ), null)
+        }
+
+        fun setThemeColor(color: Int) {
+            themeColor = color
+            themeLight = androidx.core.graphics.ColorUtils.blendARGB(color, Color.WHITE, 0.42f)
+            themeDeep = androidx.core.graphics.ColorUtils.blendARGB(color, Color.BLACK, 0.38f)
+            invalidateSelf()
         }
 
         override fun draw(canvas: Canvas) {
@@ -1871,7 +1879,7 @@ class MainActivity : AppCompatActivity() {
             // Soft multicolor aura remains behind the rotating medallion.
             haloPaint.shader = android.graphics.RadialGradient(
                 cx, cy, radius * 1.85f,
-                intArrayOf(Color.parseColor("#669B20FF"), Color.parseColor("#33FF2DAD"), Color.TRANSPARENT),
+                intArrayOf((0x66000000.toInt() or (themeColor and 0x00FFFFFF)), (0x22000000.toInt() or (themeLight and 0x00FFFFFF)), Color.TRANSPARENT),
                 floatArrayOf(0f, 0.62f, 1f), Shader.TileMode.CLAMP
             )
             canvas.drawCircle(cx, cy, radius * 1.85f, haloPaint)
@@ -1883,9 +1891,9 @@ class MainActivity : AppCompatActivity() {
                     val phase = wavePhase + i * 2.08f
                     val trailRadius = radius * (1.23f + i * 0.10f)
                     glowPaint.color = when (i) {
-                        0 -> Color.parseColor("#CC8B22FF")
-                        1 -> Color.parseColor("#CCFF28B8")
-                        else -> Color.parseColor("#CCFF9D24")
+                        0 -> themeColor
+                        1 -> themeLight
+                        else -> themeDeep
                     }
                     glowPaint.strokeWidth = dp(if (i == 0) 2 else 1).toFloat()
                     glowPaint.alpha = 185 - i * 32
@@ -1912,13 +1920,13 @@ class MainActivity : AppCompatActivity() {
             gradientMatrix.setRotate(rotation, cx, cy)
             (badgeGradient as? SweepGradient)?.setLocalMatrix(gradientMatrix)
             badgePaint.shader = badgeGradient
-            badgePaint.setShadowLayer(dp(8).toFloat(), 0f, 0f, Color.parseColor("#D82A9DFF"))
+            badgePaint.setShadowLayer(dp(8).toFloat(), 0f, 0f, themeColor)
             canvas.drawPath(badge, badgePaint)
             badgePaint.clearShadowLayer()
             badgePaint.shader = null
 
             // Bright rim follows the rotating flower edge.
-            glowPaint.color = Color.parseColor("#FFFFD8FF")
+            glowPaint.color = themeLight
             glowPaint.alpha = 235
             glowPaint.strokeWidth = dp(1).toFloat()
             glowPaint.style = Paint.Style.STROKE
