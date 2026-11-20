@@ -335,6 +335,9 @@ class MainActivity : AppCompatActivity() {
     private var pendingSmart = false
     private var lastRunning = false
     private var sortAscending = true
+    private var showExitIps = false
+    private var exitIpRevealTapCount = 0
+    private val exitIpRevealReset = Runnable { exitIpRevealTapCount = 0 }
 
     private var inited = false
     private var baseRx = 0L
@@ -404,6 +407,23 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.plusButton).setOnClickListener { showActions() }
         findViewById<View>(R.id.pingAllButton).setOnClickListener { pingAll() }
         findViewById<View>(R.id.sortConfigsButton).setOnClickListener { sortByPing() }
+        findViewById<View>(R.id.speedIndicatorSlot).apply {
+            isClickable = true
+            isFocusable = true
+            contentDescription = tr("Tap three times to show or hide Exit IPs")
+            setOnClickListener {
+                exitIpRevealTapCount++
+                ui.removeCallbacks(exitIpRevealReset)
+                if (exitIpRevealTapCount >= 3) {
+                    exitIpRevealTapCount = 0
+                    showExitIps = !showExitIps
+                    render()
+                    toast(if (showExitIps) "نمایش IP خروجی فعال شد" else "نمایش IP خروجی مخفی شد")
+                } else {
+                    ui.postDelayed(exitIpRevealReset, 700L)
+                }
+            }
+        }
         findViewById<View>(R.id.testBar).setOnClickListener {
             if (TakVpnService.isRunning) runConnectionTest() else toast("اول وصل بشید")
         }
@@ -1271,7 +1291,7 @@ class MainActivity : AppCompatActivity() {
             val exitIpText = v.findViewById<TextView>(R.id.exitIpText)
             val exitIp = exitIps[cfg.id]
             exitIpText.text = exitIp?.let { "Exit IP: $it" }.orEmpty()
-            exitIpText.visibility = if (exitIp.isNullOrBlank()) View.GONE else View.VISIBLE
+            exitIpText.visibility = if (showExitIps && !exitIp.isNullOrBlank()) View.VISIBLE else View.GONE
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
