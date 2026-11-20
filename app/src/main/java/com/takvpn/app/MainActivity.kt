@@ -693,7 +693,7 @@ class MainActivity : AppCompatActivity() {
     private fun resetUsage() {
         totalBytes = 0L
         saveTotal()
-        if (!TakVpnService.isRunning) usageText.text = "مصرف کل: ${fmt(0)}"
+        if (!TakVpnService.isRunning) usageText.text = tr("مصرف کل: ") + fmt(0)
     }
 
     private fun backupAll() {
@@ -1114,7 +1114,7 @@ class MainActivity : AppCompatActivity() {
         val rx = TrafficStats.getUidRxBytes(uid)
         val tx = TrafficStats.getUidTxBytes(uid)
         if (rx < 0 || tx < 0) {
-            usageText.text = "مصرف: روی این گوشی در دسترس نیست"
+            usageText.text = tr("مصرف: روی این گوشی در دسترس نیست")
             return
         }
         val now = SystemClock.elapsedRealtime()
@@ -1141,7 +1141,7 @@ class MainActivity : AppCompatActivity() {
         val dur = String.format(Locale.US, "%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60)
         usageText.text =
             "⏱ $dur    ↓ ${fmt(rx - baseRx)} (${fmt((dRx / dt).toLong())}/s)    ↑ ${fmt(tx - baseTx)} (${fmt((dTx / dt).toLong())}/s)\n" +
-                "مصرف کل: ${fmt(totalBytes)}"
+                tr("مصرف کل: ") + fmt(totalBytes)
     }
 
     private fun startTracking() {
@@ -1153,7 +1153,7 @@ class MainActivity : AppCompatActivity() {
         ui.removeCallbacks(ticker)
         inited = false
         saveTotal()
-        usageText.text = "مصرف کل: ${fmt(totalBytes)}"
+        usageText.text = tr("مصرف کل: ") + fmt(totalBytes)
         flowSpeedView.setRate(0L)
     }
 
