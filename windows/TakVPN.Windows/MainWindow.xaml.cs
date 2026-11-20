@@ -207,6 +207,8 @@ public sealed class VpnProfile
     public string Link { get; set; } = "";
     public int? LatencyMs { get; set; }
     public string LatencyLabel => LatencyMs is null ? "—" : $"{LatencyMs} ms";
+    public string ProtocolDisplay => Protocol.ToUpperInvariant();
+    public string CompactLine => (LatencyMs is null ? "—" : $"{LatencyMs} ms") + "   " + Host + ":" + Port;
 
     public static bool TryParse(string link, out VpnProfile? profile, out string error)
     {
