@@ -1259,10 +1259,7 @@ class MainActivity : AppCompatActivity() {
             width = ViewGroup.LayoutParams.MATCH_PARENT
             height = ViewGroup.LayoutParams.WRAP_CONTENT
         }
-        v.findViewById<View>(R.id.endpointRow).apply {
-            visibility = View.VISIBLE
-            (this as? LinearLayout)?.orientation = LinearLayout.VERTICAL
-        }
+        v.findViewById<View>(R.id.endpointRow).visibility = View.GONE
         (v.getChildAt(0) as? LinearLayout)?.let { content ->
             content.setPadding(content.paddingLeft, dp(10), content.paddingRight, dp(10))
         }
