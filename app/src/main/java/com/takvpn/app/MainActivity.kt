@@ -816,60 +816,11 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
                     if (compareCoreVersions(latest.tag, verName()) > 0) {
-                        val notes = latest.notes.trim().take(4000)
-                        val dialogContent = LinearLayout(this).apply {
-                            orientation = LinearLayout.VERTICAL
-                            setPadding(dp(24), dp(8), dp(24), dp(8))
-                        }
-                        val versionInfo = TextView(this).apply {
-                            text = "${tr("نسخه‌ی فعلی:")} ${verName()}\n${tr("نسخه‌ی جدید:")} ${latest.tag}"
-                            textSize = 14f
-                            setTextColor(activeTextColor())
-                            setLineSpacing(dp(4).toFloat(), 1f)
-                        }
-                        dialogContent.addView(versionInfo, LinearLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                        ))
-
-                        if (notes.isNotBlank()) {
-                            val notesTitle = TextView(this).apply {
-                                text = tr("تغییرات این نسخه")
-                                textSize = 16f
-                                setTypeface(typeface, Typeface.BOLD)
-                                setTextColor(activePalette().accent)
-                                setPadding(0, dp(18), 0, dp(8))
-                            }
-                            dialogContent.addView(notesTitle)
-                            val formattedNotes = notes.lines().joinToString("\n") { line ->
-                                when {
-                                    line.startsWith("### ") -> line.removePrefix("### ").uppercase(Locale.getDefault())
-                                    line.startsWith("## ") -> line.removePrefix("## ").uppercase(Locale.getDefault())
-                                    line.startsWith("# ") -> line.removePrefix("# ")
-                                    line.startsWith("- ") || line.startsWith("* ") -> "• " + line.drop(2)
-                                    else -> line
-                                }
-                            }
-                            val notesText = TextView(this).apply {
-                                text = formattedNotes
-                                textSize = 14f
-                                setTextColor(activeTextColor())
-                                setLineSpacing(dp(3).toFloat(), 1f)
-                                setTextIsSelectable(true)
-                            }
-                            val notesScroll = ScrollView(this).apply {
-                                isFillViewport = false
-                                addView(notesText, ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                                ))
-                            }
-                            dialogContent.addView(notesScroll, LinearLayout.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT, dp(240)
-                            ))
-                        }
+                        val versionInfo = "${tr("نسخه‌ی فعلی:")} ${verName()}\n${tr("نسخه‌ی جدید:")} ${latest.tag}"
                         AlertDialog.Builder(this)
-                            .setTitle("${tr("نسخه‌ی جدید موجود است")} ${latest.tag}")
-                            .setView(dialogContent)
-                            .setPositiveButton(tr("دانلود و نصب")) { _, _ -> downloadAndInstallUpdate(latest) }
+                            .setTitle(tr("بروزرسانی موجود است"))
+                            .setMessage(versionInfo)
+                            .setPositiveButton(tr("بروزرسانی")) { _, _ -> downloadAndInstallUpdate(latest) }
                             .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else if (!silent) {
