@@ -1246,7 +1246,8 @@ class MainActivity : AppCompatActivity() {
         val smartTitle = v.findViewById<TextView>(R.id.nameText)
         val language = AppLanguage.code(this)
         smartTitle.text = if (language == "en") "⚡ Smart switch" else AppLanguage.translate("⚡ سوییچ هوشمند", language)
-        val d = v.findViewById<TextView>(R.id.pingText)
+        val d = v.findViewById<TextView>(R.id.smartDescription)
+        d.visibility = View.VISIBLE
         d.text = if (language == "en") "Automatically finds and connects to the best config" else AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", language)
         d.setTextColor(smartTitle.currentTextColor)
         d.setTypeface(null, Typeface.BOLD)
