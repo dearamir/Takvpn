@@ -1,0 +1,2 @@
+Release trigger for the TakVPN Android release workflow.
+Requested on 2026-11-20.
