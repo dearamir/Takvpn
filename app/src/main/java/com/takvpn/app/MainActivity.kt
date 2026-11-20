@@ -159,6 +159,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.titleText, R.id.versionText -> view.setTextColor(p.accent)
                 R.id.statusText -> view.setTextColor(if (TakVpnService.isRunning) Color.rgb(90,230,155) else p.soft)
                 R.id.pingText -> Unit
+                R.id.typeText -> view.setTextColor(Color.parseColor("#FFB347"))
                 R.id.subText, R.id.usageText, R.id.emptyText, R.id.actSub -> view.setTextColor(p.soft)
                 R.id.testText -> view.setTextColor(p.barText)
                 R.id.pingAllLabel -> {
@@ -1252,7 +1253,7 @@ class MainActivity : AppCompatActivity() {
             v.findViewById<TextView>(R.id.nameText).text = cfg.name
             v.findViewById<TextView>(R.id.typeText).apply {
                 text = ConfigStore.typeOf(cfg.link)
-                setTextColor(c(R.color.ink_soft))
+                setTextColor(Color.parseColor("#FFB347"))
                 setTypeface(null, Typeface.BOLD)
             }
             val endpointRow = v.findViewById<View>(R.id.endpointRow)
