@@ -106,12 +106,15 @@ jobs:
             TakVPN-Windows-x64-portable.zip
           if-no-files-found: error
 
-      - name: Publish Windows assets to the main v2.48 release
+      - name: Publish Windows assets to the latest Android release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          $tag = "v2.48"
-          gh release view $tag --json tagName
-          if ($LASTEXITCODE -ne 0) { throw "Main Android release v2.48 was not found; refusing to create a separate release." }
+          $releases = gh release list --limit 20 --json tagName,isDraft,isPrerelease,publishedAt | ConvertFrom-Json
+          $target = $releases | Where-Object { -not $_.isDraft -and -not $_.isPrerelease -and $_.tagName -match '^v\d+\.\d+(\.\d+)?
+ } | Sort-Object { [DateTimeOffset]$_.publishedAt } -Descending | Select-Object -First 1
+          if (-not $target) { throw "No published Android version release found; refusing to create a separate release." }
+          $tag = $target.tagName
+          Write-Host "Publishing Windows assets to latest release: $tag"
           gh release upload $tag "TakVPN-Windows-x64-preview.exe" "TakVPN-Windows-x64-portable.zip" --clobber
