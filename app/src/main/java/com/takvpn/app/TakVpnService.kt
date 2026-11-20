@@ -187,11 +187,11 @@ class TakVpnService : VpnService() {
     private fun doPing() {
         val cfg = currentConfig ?: return
         if (!isRunning) return
-        pingText = tr("پینگ: در حال تست...")
+        pingText = if (AppLanguage.code(this) == "en") "Testing ping..." else tr("پینگ: در حال تست...")
         notifyNow()
         Thread {
             val ms = measureMs(cfg)
-            pingText = if (ms > 0) tr("پینگ: $ms ms") else tr("پینگ ناموفق")
+            pingText = if (ms > 0) (if (AppLanguage.code(this) == "en") "Ping: $ms ms" else tr("پینگ: $ms ms")) else (if (AppLanguage.code(this) == "en") "Ping failed" else tr("پینگ ناموفق"))
             handler.post { notifyNow() }
         }.start()
     }
