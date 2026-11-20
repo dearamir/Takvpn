@@ -858,7 +858,7 @@ class MainActivity : AppCompatActivity() {
                             }
                             val notesScroll = ScrollView(this).apply {
                                 isFillViewport = false
-                                addView(notesText, ScrollView.LayoutParams(
+                                addView(notesText, ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                                 ))
                             }
