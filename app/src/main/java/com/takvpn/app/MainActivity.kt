@@ -1476,9 +1476,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val sel = store.selectedId
+        val ascending = sortAscending
         val measured = store.items.filter { (pings[it.id] ?: -2L) >= 0L }
         val unmeasured = store.items.filter { (pings[it.id] ?: -2L) < 0L }
-        val ordered = if (sortAscending) {
+        val ordered = if (ascending) {
             measured.sortedWith(compareBy<Cfg> { pings[it.id] ?: Long.MAX_VALUE }.thenBy { it.name.lowercase(Locale.ROOT) })
         } else {
             measured.sortedWith(compareByDescending<Cfg> { pings[it.id] ?: Long.MIN_VALUE }.thenBy { it.name.lowercase(Locale.ROOT) })
@@ -1489,7 +1490,7 @@ class MainActivity : AppCompatActivity() {
         store.select(sel)
         sortAscending = !sortAscending
         render()
-        toast(if (sortAscending) "مرتب‌سازی پینگ: کم به زیاد" else "مرتب‌سازی پینگ: زیاد به کم")
+        toast(if (ascending) "مرتب‌سازی پینگ: کم به زیاد" else "مرتب‌سازی پینگ: زیاد به کم")
     }
 
     private fun deleteDead() {
