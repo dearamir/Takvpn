@@ -1255,6 +1255,10 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(c(R.color.ink_soft))
                 setTypeface(null, Typeface.BOLD)
             }
+            val endpointText = v.findViewById<TextView>(R.id.endpointText)
+            val endpoint = ServerEndpoint.addressPortFromLink(cfg.link)
+            endpointText.text = endpoint.orEmpty()
+            endpointText.visibility = if (endpoint.isNullOrBlank()) View.GONE else View.VISIBLE
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
