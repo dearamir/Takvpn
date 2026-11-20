@@ -49,14 +49,6 @@
                 android:textSize="9sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/pingText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/ink_soft"
-                android:textSize="9sp" />
-
             <LinearLayout
                 android:id="@+id/endpointRow"
                 android:layout_width="match_parent"
@@ -68,9 +60,19 @@
 
                 <TextView
                     android:id="@+id/endpointText"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:ellipsize="middle"
+                    android:maxLines="1"
+                    android:textColor="@color/ink_soft"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/pingText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:maxLines="1"
                     android:textColor="@color/ink_soft"
                     android:textSize="9sp" />
