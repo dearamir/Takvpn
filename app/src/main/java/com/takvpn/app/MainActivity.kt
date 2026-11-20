@@ -19,6 +19,7 @@ import android.graphics.Typeface
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Shader
+import android.graphics.SweepGradient
 import android.net.TrafficStats
 import android.net.Uri
 import android.net.VpnService
@@ -438,6 +439,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         updateUi(TakVpnService.isRunning)
+        connectIcon.setFlowing(true)
         flowSpeedView.startFlow()
         maybeCheckForUpdates()
         versionShine?.takeIf { !it.isRunning }?.start()
@@ -453,6 +455,7 @@ class MainActivity : AppCompatActivity() {
         statusGlow.stop(c(if (TakVpnService.isRunning) R.color.status_on else R.color.status_off))
         versionShine?.cancel()
         connectIcon.stopShine()
+        connectIcon.setFlowing(false)
         connectColorAnimator?.cancel()
         connectColorAnimator = null
         flowSpeedView.stopFlow()
@@ -1769,7 +1772,6 @@ class MainActivity : AppCompatActivity() {
     private fun resetConnectVisual() {
         connectColorAnimator?.cancel()
         connectColorAnimator = null
-        connectIcon.setFlowing(false)
         fab.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#151515"))
     }
 
@@ -1828,102 +1830,162 @@ class MainActivity : AppCompatActivity() {
     }
 
     private inner class ConnectTDrawable : Drawable() {
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        private val tPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
             typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+            setShadowLayer(dp(5).toFloat(), 0f, 0f, Color.WHITE)
         }
+        private val badgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+        private val haloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         private val matrix = Matrix()
-        private val gradient = LinearGradient(
-            -72f, 0f, 72f, 0f,
-            intArrayOf(
-                Color.parseColor("#FFFFA000"),
-                Color.parseColor("#FFFFD45C"),
-                Color.WHITE,
-                Color.WHITE,
-                Color.parseColor("#FFFFD45C"),
-                Color.parseColor("#FFFFA000")
-            ),
-            floatArrayOf(0f, 0.32f, 0.44f, 0.56f, 0.68f, 1f),
-            Shader.TileMode.CLAMP
-        )
+        private val badgeGradient: Shader
         private var shine: ValueAnimator? = null
         private var waveAnimator: ValueAnimator? = null
-        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = dp(2).toFloat()
-            strokeJoin = Paint.Join.ROUND
-            strokeCap = Paint.Cap.ROUND
-        }
+        private var rotationAnimator: ValueAnimator? = null
         private var flowing = false
         private var wavePhase = 0f
+        private var rotation = 0f
         private var connected = false
         private var offset = -240f
+
+        init {
+            badgeGradient = SweepGradient(0f, 0f,
+                intArrayOf(
+                    Color.parseColor("#9B32FF"), Color.parseColor("#F22DBB"),
+                    Color.parseColor("#FF5C9E"), Color.parseColor("#FFB52E"),
+                    Color.parseColor("#FFE45A"), Color.parseColor("#FF5C9E"),
+                    Color.parseColor("#9B32FF")
+                ), null)
+        }
 
         override fun draw(canvas: Canvas) {
             val b = bounds
             if (b.isEmpty) return
+            val cx = b.exactCenterX()
+            val cy = b.exactCenterY()
+            val radius = minOf(b.width(), b.height()) * 0.405f
+            val save = canvas.save()
+
+            // Soft multicolor aura remains behind the rotating medallion.
+            haloPaint.shader = android.graphics.RadialGradient(
+                cx, cy, radius * 1.85f,
+                intArrayOf(Color.parseColor("#669B20FF"), Color.parseColor("#33FF2DAD"), Color.TRANSPARENT),
+                floatArrayOf(0f, 0.62f, 1f), Shader.TileMode.CLAMP
+            )
+            canvas.drawCircle(cx, cy, radius * 1.85f, haloPaint)
+            haloPaint.shader = null
+
+            // Moving neon energy trails orbit the badge.
             if (flowing) {
-                val cx = b.exactCenterX(); val cy = b.exactCenterY()
-                val radius = minOf(b.width(), b.height()) * 0.43f
-                val wave = Path()
-                for (i in 0..160) {
-                    val angle = i / 160.0 * Math.PI * 2.0
-                    val r = radius + sin(angle * 9.0 + wavePhase.toDouble()).toFloat() * dp(3).toFloat()
-                    val px = cx + kotlin.math.cos(angle).toFloat() * r
-                    val py = cy + sin(angle).toFloat() * r
-                    if (i == 0) wave.moveTo(px, py) else wave.lineTo(px, py)
+                for (i in 0..2) {
+                    val phase = wavePhase + i * 2.08f
+                    val trailRadius = radius * (1.23f + i * 0.10f)
+                    glowPaint.color = when (i) {
+                        0 -> Color.parseColor("#CC8B22FF")
+                        1 -> Color.parseColor("#CCFF28B8")
+                        else -> Color.parseColor("#CCFF9D24")
+                    }
+                    glowPaint.strokeWidth = dp(if (i == 0) 2 else 1).toFloat()
+                    glowPaint.alpha = 185 - i * 32
+                    val arc = android.graphics.RectF(cx-trailRadius, cy-trailRadius, cx+trailRadius, cy+trailRadius)
+                    canvas.drawArc(arc, Math.toDegrees(phase.toDouble()).toFloat(), 218f, false, glowPaint)
                 }
-                wave.close(); ringPaint.color = Color.parseColor("#FFFFA000"); canvas.drawPath(wave, ringPaint)
             }
-            paint.textSize = b.height() * 0.82f
-            paint.shader = if (connected) gradient else null
+
+            // Rotate only the scalloped badge; the central T is drawn afterward and stays upright.
+            canvas.save()
+            canvas.rotate(rotation, cx, cy)
+            val badge = Path()
+            val lobes = 12
+            for (i in 0..(lobes * 8)) {
+                val angle = i.toDouble() / (lobes * 8) * Math.PI * 2.0
+                val wave = (1.0 + 0.105 * kotlin.math.cos(angle * lobes)).toFloat()
+                val r = radius * wave
+                val x = cx + kotlin.math.cos(angle).toFloat() * r
+                val y = cy + kotlin.math.sin(angle).toFloat() * r
+                if (i == 0) badge.moveTo(x, y) else badge.lineTo(x, y)
+            }
+            badge.close()
+            val gradientMatrix = Matrix()
+            gradientMatrix.setRotate(rotation, cx, cy)
+            (badgeGradient as? SweepGradient)?.setLocalMatrix(gradientMatrix)
+            badgePaint.shader = badgeGradient
+            badgePaint.setShadowLayer(dp(8).toFloat(), 0f, 0f, Color.parseColor("#D82A9DFF"))
+            canvas.drawPath(badge, badgePaint)
+            badgePaint.clearShadowLayer()
+            badgePaint.shader = null
+
+            // Bright rim follows the rotating flower edge.
+            glowPaint.color = Color.parseColor("#FFFFD8FF")
+            glowPaint.alpha = 235
+            glowPaint.strokeWidth = dp(1).toFloat()
+            glowPaint.style = Paint.Style.STROKE
+            canvas.drawPath(badge, glowPaint)
+            glowPaint.style = Paint.Style.STROKE
+            canvas.restore()
+
+            // Keep the T perfectly upright and centered while the badge spins.
+            tPaint.textSize = b.height() * 0.67f
+            tPaint.shader = null
+            val ty = cy - (tPaint.ascent() + tPaint.descent()) / 2f
+            canvas.drawText("T", cx, ty, tPaint)
+
+            // Existing connected-state light sweep across the fixed letter.
             if (connected) {
+                val sweep = LinearGradient(
+                    cx - radius, cy, cx + radius, cy,
+                    intArrayOf(Color.TRANSPARENT, Color.WHITE, Color.parseColor("#FFFFD45C"), Color.TRANSPARENT),
+                    floatArrayOf(0f, 0.44f, 0.56f, 1f), Shader.TileMode.CLAMP
+                )
                 matrix.setTranslate(offset, 0f)
-                gradient.setLocalMatrix(matrix)
+                sweep.setLocalMatrix(matrix)
+                tPaint.shader = sweep
+                canvas.drawText("T", cx, ty, tPaint)
+                tPaint.shader = null
             }
-            val y = b.exactCenterY() - (paint.ascent() + paint.descent()) / 2f
-            canvas.drawText("T", b.exactCenterX(), y, paint)
+            canvas.restoreToCount(save)
         }
 
         fun setConnected(value: Boolean) {
             connected = value
-            if (value) startShine() else stopShine()
+            if (value) startShine() else { shine?.cancel(); shine = null }
             invalidateSelf()
         }
+
         fun setFlowing(value: Boolean) {
             flowing = value
-            if (value && waveAnimator?.isRunning != true) waveAnimator = ValueAnimator.ofFloat(0f, (Math.PI*2).toFloat()).apply {
-                duration = 1600L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
-                addUpdateListener { wavePhase = it.animatedValue as Float; invalidateSelf() }; start()
-            } else if (!value) { waveAnimator?.cancel(); waveAnimator = null }
+            if (value) {
+                if (rotationAnimator?.isRunning != true) rotationAnimator = ValueAnimator.ofFloat(0f, 360f).apply {
+                    duration = 5200L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+                    addUpdateListener { rotation = it.animatedValue as Float; invalidateSelf() }; start()
+                }
+                if (waveAnimator?.isRunning != true) waveAnimator = ValueAnimator.ofFloat(0f, (Math.PI*2).toFloat()).apply {
+                    duration = 2100L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+                    addUpdateListener { wavePhase = it.animatedValue as Float; invalidateSelf() }; start()
+                }
+            } else {
+                rotationAnimator?.cancel(); rotationAnimator = null
+                waveAnimator?.cancel(); waveAnimator = null
+            }
             invalidateSelf()
         }
 
         fun startShine() {
             if (!connected || shine?.isRunning == true) return
             shine = ValueAnimator.ofFloat(-150f, bounds.width().coerceAtLeast(64).toFloat() + 150f).apply {
-                duration = 1250L
-                repeatCount = ValueAnimator.INFINITE
-                interpolator = LinearInterpolator()
-                addUpdateListener {
-                    offset = it.animatedValue as Float
-                    invalidateSelf()
-                }
-                start()
+                duration = 1250L; repeatCount = ValueAnimator.INFINITE; interpolator = LinearInterpolator()
+                addUpdateListener { offset = it.animatedValue as Float; invalidateSelf() }; start()
             }
         }
 
         fun stopShine() {
             shine?.cancel(); shine = null
-            waveAnimator?.cancel(); waveAnimator = null; flowing = false
         }
 
-        override fun setAlpha(alpha: Int) { paint.alpha = alpha; invalidateSelf() }
-        override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {
-            paint.colorFilter = colorFilter
-            invalidateSelf()
-        }
+        override fun setAlpha(alpha: Int) { tPaint.alpha = alpha; invalidateSelf() }
+        override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) { tPaint.colorFilter = colorFilter; invalidateSelf() }
         @Deprecated("Deprecated in Java")
         override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
     }
