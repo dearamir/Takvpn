@@ -24,17 +24,41 @@ public partial class MainWindow : Window
 
     private void AddConfig_Click(object sender, RoutedEventArgs e)
     {
-        var link = ConfigInput.Text.Trim();
-        if (!VpnProfile.TryParse(link, out var profile, out var error))
+        try
         {
-            MessageBox.Show(error, "TakVPN", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            var link = ConfigInput.Text.Trim();
+            if (string.IsNullOrWhiteSpace(link))
+            {
+                MessageBox.Show("ابتدا لینک کانفیگ VLESS را وارد کنید.", "TakVPN", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (!VpnProfile.TryParse(link, out var profile, out var error) || profile is null)
+            {
+                MessageBox.Show(error, "TakVPN", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (_profiles.Any(p => string.Equals(p.Link, link, StringComparison.Ordinal)))
+            {
+                MessageBox.Show("این کانفیگ قبلاً اضافه شده است.", "TakVPN", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            _profiles.Add(profile);
+            ProfilesList.SelectedItem = profile;
+            ConfigInput.Clear();
+            SaveProfiles();
         }
-        if (_profiles.Any(p => p.Link == link)) { MessageBox.Show("این کانفیگ قبلاً اضافه شده است."); return; }
-        _profiles.Add(profile!);
-        ProfilesList.SelectedItem = profile;
-        ConfigInput.Clear();
-        SaveProfiles();
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Add VLESS config failed: {ex}");
+            MessageBox.Show(
+                $"افزودن کانفیگ انجام نشد؛ برنامه نباید بسته شود.\n{ex.Message}",
+                "TakVPN - خطای افزودن کانفیگ",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void RemoveConfig_Click(object sender, RoutedEventArgs e)
