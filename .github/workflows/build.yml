@@ -1,4 +1,5 @@
 name: Build APK
+# Push commits containing [release] publish signed APKs as a GitHub Release.
 
 on:
   push:
