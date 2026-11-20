@@ -325,6 +325,7 @@ class MainActivity : AppCompatActivity() {
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
     private val countryFlags = mutableMapOf<String, String>()
+    private val exitIps = mutableMapOf<String, String>()
     private val countryLookups = mutableSetOf<String>()
     private val pool = Executors.newFixedThreadPool(4)
     private val ui = Handler(Looper.getMainLooper())
@@ -1265,6 +1266,10 @@ class MainActivity : AppCompatActivity() {
             val endpoint = ServerEndpoint.addressPortFromLink(cfg.link)
             endpointText.text = endpoint.orEmpty()
             endpointRow.visibility = if (endpoint.isNullOrBlank()) View.GONE else View.VISIBLE
+            val exitIpText = v.findViewById<TextView>(R.id.exitIpText)
+            val exitIp = exitIps[cfg.id]
+            exitIpText.text = exitIp?.let { "Exit IP: $it" }.orEmpty()
+            exitIpText.visibility = if (exitIp.isNullOrBlank()) View.GONE else View.VISIBLE
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
@@ -1318,7 +1323,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun lookupCountryFlag(cfg: Cfg) {
-        val isActiveProfile = TakVpnService.isRunning && cfg.link == TakVpnService.activeLink
+        val exitIp = exitIps[cfg.id] ?: return
         synchronized(countryLookups) {
             if (cfg.id in countryLookups) return
             countryLookups.add(cfg.id)
@@ -1326,35 +1331,11 @@ class MainActivity : AppCompatActivity() {
         pool.execute {
             var connection: HttpURLConnection? = null
             try {
-                // For the connected profile, use its real tunnel exit IP.
-                // For other profiles, show the configured server's country so
-                // every ping result can still have a flag beside it.
-                val lookupProxy: java.net.Proxy?
-                val lookupIp: String
-                if (isActiveProfile) {
-                    lookupProxy = java.net.Proxy(
-                        java.net.Proxy.Type.SOCKS,
-                        java.net.InetSocketAddress("127.0.0.1", TakVpnService.IP_PROBE_SOCKS_PORT)
-                    )
-                    connection = (URL("https://api.ipify.org").openConnection(lookupProxy) as HttpURLConnection).apply {
-                        connectTimeout = 10000
-                        readTimeout = 10000
-                    }
-                    lookupIp = connection.inputStream.bufferedReader().use { it.readText().trim() }
-                    connection.disconnect()
-                    connection = null
-                } else {
-                    lookupProxy = null
-                    val host = ServerEndpoint.hostFromLink(cfg.link)
-                        ?: throw IllegalArgumentException("آدرس سرور پیدا نشد")
-                    lookupIp = java.net.InetAddress.getByName(host).hostAddress
-                        ?: throw IllegalArgumentException("IP سرور پیدا نشد")
+                val encodedIp = java.net.URLEncoder.encode(exitIp, "UTF-8")
+                connection = (URL("https://ipwho.is/$encodedIp").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 8000
+                    readTimeout = 8000
                 }
-                val encodedIp = java.net.URLEncoder.encode(lookupIp, "UTF-8")
-                val geoUrl = URL("https://ipwho.is/$encodedIp")
-                connection = (if (lookupProxy != null) geoUrl.openConnection(lookupProxy) else geoUrl.openConnection()) as HttpURLConnection
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
                 val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
                 if (!json.optBoolean("success", false)) return@execute
                 val code = json.optString("country_code").uppercase(Locale.US)
@@ -1367,22 +1348,21 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Throwable) {
-                AppLog.add("تشخیص کشور برای پینگ ناموفق: ${e.message}")
+                AppLog.add("تشخیص کشور Exit IP ناموفق: ${e.message}")
             } finally {
                 connection?.disconnect()
             }
         }
     }
 
-    private fun measure(link: String): Pair<Long, String> {
+    private data class ProfileTest(val latencyMs: Long, val exitIp: String, val error: String = "")
+
+    private fun measure(link: String): ProfileTest {
         return try {
-            CoreEnv.init(applicationContext)
-            val j = JSONObject(ConfigParser.buildConfig(link))
-            j.remove("inbounds")
-            val ms = Libv2ray.measureOutboundDelay(j.toString(), PING_URL)
-            if (ms > 0) ms to "" else -1L to "بدون پاسخ"
+            val result = OutboundProbe.test(applicationContext, link)
+            ProfileTest(result.latencyMs, result.exitIp)
         } catch (e: Throwable) {
-            -1L to (e.message ?: e.toString()).replace("\n", " ").take(90)
+            ProfileTest(-1L, "", (e.message ?: e.toString()).replace("\n", " ").take(90))
         }
     }
 
@@ -1404,12 +1384,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun startPing(cfg: Cfg) {
         pool.execute {
-            val (ms, err) = measure(cfg.link)
-            if (ms <= 0) AppLog.add("پینگ ناموفق (${cfg.name}): $err")
+            val result = measure(cfg.link)
+            if (result.latencyMs <= 0) AppLog.add("تست خروجی ناموفق (${cfg.name}): ${result.error}")
             runOnUiThread {
                 if (!isDestroyed) {
-                    errors[cfg.id] = err
-                    pings[cfg.id] = ms
+                    errors[cfg.id] = result.error
+                    pings[cfg.id] = result.latencyMs
+                    if (result.exitIp.isNotBlank()) exitIps[cfg.id] = result.exitIp else exitIps.remove(cfg.id)
                     render()
                     lookupCountryFlag(cfg)
                 }
@@ -1424,12 +1405,14 @@ class MainActivity : AppCompatActivity() {
         val left = AtomicInteger(list.size)
         list.forEach { cfg ->
             pool.execute {
-                val (ms, err) = measure(cfg.link)
+                val result = measure(cfg.link)
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
-                    errors[cfg.id] = err
-                    pings[cfg.id] = ms
+                    errors[cfg.id] = result.error
+                    pings[cfg.id] = result.latencyMs
+                    if (result.exitIp.isNotBlank()) exitIps[cfg.id] = result.exitIp else exitIps.remove(cfg.id)
                     render()
+                    lookupCountryFlag(cfg)
                     if (left.decrementAndGet() == 0) done(list)
                 }
             }
@@ -1535,15 +1518,15 @@ class MainActivity : AppCompatActivity() {
         val name = TakVpnService.activeName
         testText.text = AppLanguage.translate("در حال تست اتصال...", AppLanguage.code(this))
         pool.execute {
-            val (ms, err) = measure(link)
-            AppLog.add(if (ms > 0) "تست اتصال: $ms ms" else "تست اتصال ناموفق: $err")
+            val result = measure(link)
+            AppLog.add(if (result.latencyMs > 0) "تست خروجی: ${result.latencyMs} ms, Exit IP: ${result.exitIp}" else "تست خروجی ناموفق: ${result.error}")
             runOnUiThread {
                 if (!isDestroyed) {
                     val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
-                    testText.text = if (ms > 0) {
-                        prefix + (if (AppLanguage.code(this) == "en") "Connected successfully in $ms ms" else "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد")
+                    testText.text = if (result.latencyMs > 0) {
+                        prefix + (if (AppLanguage.code(this) == "en") "Real tunnel latency: ${result.latencyMs} ms\nExit IP: ${result.exitIp}" else "تأخیر واقعی تونل: ${result.latencyMs} میلی‌ثانیه\nIP خروجی: ${result.exitIp}")
                     } else {
-                        prefix + (if (AppLanguage.code(this) == "en") "Test failed" else "تست ناموفق") + (if (err.isNotEmpty()) ": $err" else "")
+                        prefix + (if (AppLanguage.code(this) == "en") "Test failed" else "تست ناموفق") + (if (result.error.isNotEmpty()) ": ${result.error}" else "")
                     }
                 }
             }
