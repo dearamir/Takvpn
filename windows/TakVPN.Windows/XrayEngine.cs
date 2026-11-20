@@ -8,6 +8,7 @@ using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Collections.Concurrent;
 using System.Web;
 
 namespace TakVPN.Windows;
@@ -39,9 +40,29 @@ public sealed class XrayEngine : IDisposable
         start.ArgumentList.Add("run");
         start.ArgumentList.Add("-c");
         start.ArgumentList.Add(configPath);
-        _process = new Process { StartInfo = start, EnableRaisingEvents = true };
-        _process.OutputDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Debug.WriteLine("[Xray] " + e.Data); };
-        _process.ErrorDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Debug.WriteLine("[Xray] " + e.Data); };
+        var startupLines = new ConcurrentQueue<string>();
+        void Capture(string? line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return;
+            startupLines.Enqueue(line);
+            Debug.WriteLine("[Xray] " + line);
+            while (startupLines.Count > 100 && startupLines.TryDequeue(out _)) { }
+            try
+            {
+                File.AppendAllText(Path.Combine(_dataDir, "xray-startup.log"),
+                    $"[{DateTimeOffset.Now:O}] {line}{Environment.NewLine}", new UTF8Encoding(false));
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        _process = new Process { StartInfo =             var details = string.Join(Environment.NewLine, startupLines);
+            if (string.IsNullOrWhiteSpace(details))
+                details = "Xray closed without writing diagnostic output. Check the bundled Xray/Wintun files and run TakVPN as Administrator.";
+            throw new InvalidOperationException(
+                $"Xray exited during startup (code {code}).{Environment.NewLine}{Environment.NewLine}" +
+                $"{details}{Environment.NewLine}{Environment.NewLine}" +
+                $"Full log: {Path.Combine(_dataDir, "xray-startup.log")}");eived += (_, e) => Capture(e.Data);
         if (!_process.Start()) throw new InvalidOperationException("Xray process could not start.");
         _process.BeginOutputReadLine();
         _process.BeginErrorReadLine();
