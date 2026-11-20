@@ -1,5 +1,6 @@
 name: Build APK
 # Push commits containing [release] publish signed APKs as a GitHub Release.
+# The release job signs APKs with the repository encrypted keystore secret.
 
 on:
   push:
