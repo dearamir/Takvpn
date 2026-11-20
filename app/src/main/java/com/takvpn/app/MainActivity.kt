@@ -1288,11 +1288,11 @@ class MainActivity : AppCompatActivity() {
         val soft = c(R.color.ink_soft)
         val flag = countryFlags[id]?.let { "$it  " }.orEmpty()
         val (label, color) = when (val p = pings[id]) {
-            null -> "پینگ: برای تست اینجا بزنید" to Color.WHITE
-            -2L -> "در حال تست..." to soft
+            null -> (if (AppLanguage.code(this) == "en") "Tap here to test ping" else "پینگ: برای تست اینجا بزنید") to Color.WHITE
+            -2L -> (if (AppLanguage.code(this) == "en") "Testing..." else "در حال تست...") to soft
             -1L -> {
                 val e = errors[id].orEmpty()
-                (if (e.isBlank()) "ناموفق" else "ناموفق: $e") to c(R.color.ping_fail)
+                (if (AppLanguage.code(this) == "en") (if (e.isBlank()) "Failed" else "Failed: $e") else (if (e.isBlank()) "ناموفق" else "ناموفق: $e")) to c(R.color.ping_fail)
             }
             else -> "$p ms" to c(if ((p ?: 0L) < 400L) R.color.ping_good else R.color.ping_slow)
         }
@@ -1523,9 +1523,9 @@ class MainActivity : AppCompatActivity() {
                 if (!isDestroyed) {
                     val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
                     testText.text = if (ms > 0) {
-                        prefix + "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد"
+                        prefix + (if (AppLanguage.code(this) == "en") "Connected successfully in $ms ms" else "اتصال در $ms میلی‌ثانیه با موفقیت برقرار شد")
                     } else {
-                        prefix + "تست ناموفق" + (if (err.isNotEmpty()) ": $err" else "")
+                        prefix + (if (AppLanguage.code(this) == "en") "Test failed" else "تست ناموفق") + (if (err.isNotEmpty()) ": $err" else "")
                     }
                 }
             }
@@ -1681,7 +1681,7 @@ class MainActivity : AppCompatActivity() {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
                 val country = json.optString("country")
-                val result = listOf("IP خروجی: $exitIp", listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                val result = listOf((if (AppLanguage.code(this) == "en") "Exit IP: $exitIp" else "IP خروجی: $exitIp"), listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
