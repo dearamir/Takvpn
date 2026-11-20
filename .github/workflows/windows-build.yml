@@ -112,4 +112,9 @@ jobs:
         shell: pwsh
         run: |
           $tag = "windows-v1.0.0-preview"
-          gh release create $tag "TakVPN-Windows-x64-preview.exe" "TakVPN-Windows-x64-portable.zip" --title "TakVPN Windows v1.0.0 Preview" --notes "Initial Windows x64 preview release. Installer and portable ZIP are attached. This build is unsigned; Windows SmartScreen may show a warning." --latest=false
+          $existing = gh release view $tag --json tagName 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag "TakVPN-Windows-x64-preview.exe" "TakVPN-Windows-x64-portable.zip" --clobber
+          } else {
+            gh release create $tag "TakVPN-Windows-x64-preview.exe" "TakVPN-Windows-x64-portable.zip" --title "TakVPN Windows v1.0.0 Preview" --notes "Windows x64 preview release. Installer and portable ZIP are attached. This build is unsigned; Windows SmartScreen may show a warning." --latest=false
+          }
