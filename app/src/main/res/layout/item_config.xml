@@ -50,6 +50,16 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/endpointText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/ink_soft"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
                 android:id="@+id/pingText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
