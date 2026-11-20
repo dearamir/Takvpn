@@ -748,7 +748,7 @@ class MainActivity : AppCompatActivity() {
                             .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else {
-                        toast("هسته‌ی Xray به‌روزه ($current)")
+                        toast("${tr("هسته‌ی Xray به‌روزه")} ($current)")
                     }
                 }
             } catch (e: Throwable) {
