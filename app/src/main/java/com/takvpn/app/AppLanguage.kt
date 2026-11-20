@@ -777,9 +777,9 @@ object AppLanguage {
             ?: runtimeTranslations[language]?.get(text)
             ?: actionTranslations[language]?.get(text)
             ?: translations[language]?.get(text)
-            ?: englishFallback[text]
+            ?: if (language == "en") englishFallback[text] else null
         if (translated != null) return translated
-        val prefix = englishPrefixes.entries.firstOrNull { text.startsWith(it.key) }
+        val prefix = if (language == "en") englishPrefixes.entries.firstOrNull { text.startsWith(it.key) } else null
         return if (prefix != null) prefix.value + text.removePrefix(prefix.key) else text
     }
 
