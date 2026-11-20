@@ -1555,7 +1555,7 @@ class MainActivity : AppCompatActivity() {
                 if (!isDestroyed) {
                     val prefix = if (smart && name.isNotEmpty()) "هوشمند: $name\n" else ""
                     testText.text = if (result.latencyMs > 0) {
-                        prefix + (if (AppLanguage.code(this) == "en") "Real tunnel latency: ${result.latencyMs} ms\n${result.exitIp}" else "تأخیر واقعی تونل: ${result.latencyMs} میلی‌ثانیه\nIP خروجی: ${result.exitIp}")
+                        prefix + (if (AppLanguage.code(this) == "en") "Real tunnel latency: ${result.latencyMs} ms\n${result.exitIp}" else "تأخیر واقعی تونل: ${result.latencyMs} میلی‌ثانیه\n${result.exitIp}")
                     } else {
                         prefix + (if (AppLanguage.code(this) == "en") "Test failed" else "تست ناموفق") + (if (result.error.isNotEmpty()) ": ${result.error}" else "")
                     }
@@ -1713,7 +1713,7 @@ class MainActivity : AppCompatActivity() {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
                 val country = json.optString("country")
-                val result = listOf((if (AppLanguage.code(this) == "en") exitIp else "IP خروجی: $exitIp"), listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
+                val result = listOf(exitIp, listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
                     if (!isDestroyed && TakVpnService.isRunning && requestId == connectionInfoRequest) {
