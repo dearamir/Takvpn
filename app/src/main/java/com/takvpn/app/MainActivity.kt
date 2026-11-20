@@ -1253,6 +1253,20 @@ class MainActivity : AppCompatActivity() {
         d.text = AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", AppLanguage.code(this))
         d.setTextColor(smartTitle.currentTextColor)
         d.setTypeface(null, Typeface.BOLD)
+        d.textSize = 11f
+        d.maxLines = 2
+        d.layoutParams = d.layoutParams.apply {
+            width = ViewGroup.LayoutParams.MATCH_PARENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        }
+        v.findViewById<View>(R.id.endpointRow).apply {
+            visibility = View.VISIBLE
+            (this as? LinearLayout)?.orientation = LinearLayout.VERTICAL
+        }
+        (v.getChildAt(0) as? LinearLayout)?.let { content ->
+            content.setPadding(content.paddingLeft, dp(10), content.paddingRight, dp(10))
+        }
+        card.minimumHeight = dp(76)
         v.findViewById<View>(R.id.subText).visibility = View.GONE
         v.findViewById<View>(R.id.editBtn).visibility = View.GONE
         v.findViewById<View>(R.id.deleteBtn).visibility = View.GONE
