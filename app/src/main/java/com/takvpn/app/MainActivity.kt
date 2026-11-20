@@ -779,7 +779,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingInstallFile: java.io.File? = null
 
     private fun checkUpdate(silent: Boolean = false) {
-        if (!silent) toast("در حال بررسی نسخه...")
+        if (!silent) toast(tr("در حال بررسی نسخه..."))
         pool.execute {
             try {
                 val latest = UpdateChecker.latest()
@@ -789,7 +789,7 @@ class MainActivity : AppCompatActivity() {
                     if (compareCoreVersions(latest.tag, verName()) > 0) {
                         val notes = latest.notes.trim().take(1800)
                         AlertDialog.Builder(this)
-                            .setTitle("نسخه‌ی جدید ${latest.tag} موجود است")
+                            .setTitle("${tr("نسخه‌ی جدید موجود است")} ${latest.tag}")
                             .setMessage(
                                 "نسخه‌ی فعلی: ${verName()}\nنسخه‌ی جدید: ${latest.tag}" +
                                     (if (notes.isNotBlank()) "\n\nتغییرات:\n$notes" else "")
@@ -798,14 +798,14 @@ class MainActivity : AppCompatActivity() {
                             .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else if (!silent) {
-                        toast("نسخه‌ی شما به‌روزه (${verName()})")
+                        toast("${tr("نسخه‌ی شما به‌روزه")} (${verName()})")
                     }
                 }
             } catch (e: Throwable) {
                 val message = (e.message ?: e.toString()).replace("\n", " ").take(100)
-                AppLog.add("بررسی نسخه ناموفق: $message")
+                AppLog.add("${tr("بررسی نسخه ناموفق: ")}$message")
                 if (!silent) runOnUiThread {
-                    if (!isDestroyed) toast("بررسی نسخه ناموفق: $message")
+                    if (!isDestroyed) toast("${tr("بررسی نسخه ناموفق: ")}$message")
                 }
             }
         }
