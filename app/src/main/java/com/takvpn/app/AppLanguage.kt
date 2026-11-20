@@ -702,6 +702,7 @@ object AppLanguage {
         "همه‌ی اشتراک‌ها" to "All subscriptions",
         "تست همه‌ی کانفیگ‌ها" to "Test all configs",
         "کانفیگ‌های بدون پینگ" to "Configs without ping",
+        "همه‌ی اپ‌ها با VPN" to "All apps use VPN",
         "همه‌ی اپ‌ها با VPN (خاموش)" to "All apps use VPN (off)",
         "فقط اپ‌های انتخاب‌شده با VPN" to "Only selected apps use VPN",
         "اپ‌های انتخاب‌شده بدون VPN" to "Selected apps bypass VPN",
