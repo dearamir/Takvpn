@@ -1244,9 +1244,10 @@ class MainActivity : AppCompatActivity() {
         val card = v as MaterialCardView
         card.radius = dp(13).toFloat()
         val smartTitle = v.findViewById<TextView>(R.id.nameText)
-        smartTitle.text = AppLanguage.translate("⚡ سوییچ هوشمند", AppLanguage.code(this))
+        val language = AppLanguage.code(this)
+        smartTitle.text = if (language == "en") "⚡ Smart switch" else AppLanguage.translate("⚡ سوییچ هوشمند", language)
         val d = v.findViewById<TextView>(R.id.pingText)
-        d.text = AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", AppLanguage.code(this))
+        d.text = if (language == "en") "Automatically finds and connects to the best config" else AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", language)
         d.setTextColor(smartTitle.currentTextColor)
         d.setTypeface(null, Typeface.BOLD)
         d.textSize = 11f
