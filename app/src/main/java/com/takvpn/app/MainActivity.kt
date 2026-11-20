@@ -798,7 +798,13 @@ class MainActivity : AppCompatActivity() {
                             .setNegativeButton(tr("بعداً"), null)
                             .show()
                     } else if (!silent) {
-                        toast("${tr("نسخه‌ی شما به‌روزه")} (${verName()})")
+                        val updateLanguage = AppLanguage.code(this)
+                        val upToDateText = if (updateLanguage == "en") {
+                            "Your app is up to date"
+                        } else {
+                            AppLanguage.translate("نسخه‌ی شما به‌روزه", updateLanguage)
+                        }
+                        toast("$upToDateText (${verName()})")
                     }
                 }
             } catch (e: Throwable) {
