@@ -1255,10 +1255,18 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(c(R.color.ink_soft))
                 setTypeface(null, Typeface.BOLD)
             }
+            val endpointRow = v.findViewById<View>(R.id.endpointRow)
             val endpointText = v.findViewById<TextView>(R.id.endpointText)
+            val portText = v.findViewById<TextView>(R.id.portText)
             val endpoint = ServerEndpoint.addressPortFromLink(cfg.link)
-            endpointText.text = endpoint.orEmpty()
-            endpointText.visibility = if (endpoint.isNullOrBlank()) View.GONE else View.VISIBLE
+            val portSeparator = endpoint?.lastIndexOf(" : ") ?: -1
+            if (endpoint.isNullOrBlank()) {
+                endpointRow.visibility = View.GONE
+            } else {
+                endpointText.text = if (portSeparator > 0) endpoint.substring(0, portSeparator) else endpoint
+                portText.text = if (portSeparator > 0) endpoint.substring(portSeparator + 3) else "—"
+                endpointRow.visibility = View.VISIBLE
+            }
             val ping = v.findViewById<TextView>(R.id.pingText)
             val (label, color) = pingLabel(cfg.id)
             ping.text = label
