@@ -10,13 +10,14 @@ on:
       - ".github/workflows/windows-build.yml"
   push:
     branches:
+      - main
       - feature/windows-client-foundation
     paths:
       - "windows/**"
       - ".github/workflows/windows-build.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-windows:
@@ -104,3 +105,11 @@ jobs:
             TakVPN-Windows-x64-preview.exe
             TakVPN-Windows-x64-portable.zip
           if-no-files-found: error
+
+      - name: Publish Windows preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "windows-v1.0.0-preview"
+          gh release create $tag "TakVPN-Windows-x64-preview.exe" "TakVPN-Windows-x64-portable.zip" --title "TakVPN Windows v1.0.0 Preview" --notes "Initial Windows x64 preview release. Installer and portable ZIP are attached. This build is unsigned; Windows SmartScreen may show a warning." --latest=false
