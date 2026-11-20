@@ -738,6 +738,11 @@ object AppLanguage {
         "نامحدود" to "Unlimited",
         "تمام شده" to "Used up",
         "مصرف: روی این گوشی در دسترس نیست" to "Usage is unavailable on this device",
+        "اسکن QR" to "Scan QR",
+        "با دوربین" to "With camera",
+        "افزودن اشتراک" to "Add subscription",
+        "خروجی:" to "Exit:",
+        "IP خروجی:" to "Exit IP:",
         "بدون" to "None"
     )
 
