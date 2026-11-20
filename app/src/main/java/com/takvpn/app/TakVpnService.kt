@@ -136,12 +136,10 @@ class TakVpnService : VpnService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val elapsed = SystemClock.elapsedRealtime() - startedAt
-        val label = if (smartMode) tr("هوشمند: $cfgName") else cfgName
-        val text = listOf(label, pingText).filter { it.isNotBlank() }.joinToString("  •  ")
         return NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_t)
             .setContentTitle(tr("Takvpn متصل است"))
-            .setContentText(text.ifEmpty { tr("در حال اتصال...") })
+            .setContentText(tr("اتصال برقرار است"))
             .setColor(0xFF00C853.toInt())
             .setOngoing(true)
             .setOnlyAlertOnce(true)
