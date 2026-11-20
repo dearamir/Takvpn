@@ -187,6 +187,7 @@ object AppLanguage {
             "صفر کردن مصرف" to "Reset usage", "مصرف کل داده" to "Total data usage", "انتخاب پوسته" to "Choose theme",
             "تغییر رنگ پس‌زمینه و کارت‌ها" to "Change background and card colors", "رنگ نوشته‌ها" to "Text colors",
             "تغییر مستقل رنگ متن‌ها" to "Change text colors separately", "بررسی نسخه" to "Check version", "نسخه‌ی جدید؟" to "New version?",
+            "اسکن QR" to "Scan QR", "با دوربین" to "With camera", "افزودن اشتراک" to "Add subscription", "اتصال در" to "Connected in", "تست ناموفق" to "Test failed",
             "درباره" to "About", "نسخه و دانلود" to "Version and download"
         ),
         "fr" to mapOf(
