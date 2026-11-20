@@ -1247,10 +1247,11 @@ class MainActivity : AppCompatActivity() {
         v.layoutParams = smartParams
         val card = v as MaterialCardView
         card.radius = dp(13).toFloat()
-        v.findViewById<TextView>(R.id.nameText).text = AppLanguage.translate("⚡ سوییچ هوشمند", AppLanguage.code(this))
+        val smartTitle = v.findViewById<TextView>(R.id.nameText)
+        smartTitle.text = AppLanguage.translate("⚡ سوییچ هوشمند", AppLanguage.code(this))
         val d = v.findViewById<TextView>(R.id.pingText)
         d.text = AppLanguage.translate("هر بار وصل بشید، بهترین کانفیگ رو خودش پیدا و وصل می‌کنه", AppLanguage.code(this))
-        d.setTextColor(c(R.color.ink_soft))
+        d.setTextColor(smartTitle.currentTextColor)
         d.setTypeface(null, Typeface.BOLD)
         v.findViewById<View>(R.id.subText).visibility = View.GONE
         v.findViewById<View>(R.id.editBtn).visibility = View.GONE
