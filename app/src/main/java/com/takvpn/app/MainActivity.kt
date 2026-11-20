@@ -791,8 +791,9 @@ class MainActivity : AppCompatActivity() {
                         AlertDialog.Builder(this)
                             .setTitle("${tr("نسخه‌ی جدید موجود است")} ${latest.tag}")
                             .setMessage(
-                                "نسخه‌ی فعلی: ${verName()}\nنسخه‌ی جدید: ${latest.tag}" +
-                                    (if (notes.isNotBlank()) "\n\nتغییرات:\n$notes" else "")
+                                "${tr("نسخه‌ی فعلی:")} ${verName()}\n" +
+                                    "${tr("نسخه‌ی جدید:")} ${latest.tag}" +
+                                    (if (notes.isNotBlank()) "\n\n${tr("تغییرات:")}\n$notes" else "")
                             )
                             .setPositiveButton(tr("دانلود و نصب")) { _, _ -> downloadAndInstallUpdate(latest) }
                             .setNegativeButton(tr("بعداً"), null)
