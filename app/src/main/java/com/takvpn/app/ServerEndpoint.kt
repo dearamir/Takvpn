@@ -31,23 +31,43 @@ internal object ServerEndpoint {
     
     fun addressPortFromLink(link: String): String? {
         val value = link.trim()
+        if (value.isEmpty()) return null
         return try {
             if (value.startsWith("vmess://", ignoreCase = true)) {
                 val payload = value.substringAfter("://").substringBefore('#').trim()
                 val decoded = decode(payload) ?: return null
                 val json = JSONObject(decoded)
                 val host = json.optString("add").trim().takeIf { it.isNotEmpty() } ?: return null
-                val portValue = json.opt("port")
-                val port = when (portValue) {
-                    is Number -> portValue.toInt()
-                    else -> portValue?.toString()?.toIntOrNull()
-                } ?: return host
-                formatAddressPort(host, port)
+                val port = json.opt("port")?.toString()?.toIntOrNull()
+                if (port != null && port in 1..65535) formatAddressPort(host, port) else host
             } else {
-                val uri = Uri.parse(value)
-                val host = uri.host?.trim()?.trim('[', ']')?.takeIf { it.isNotEmpty() } ?: return null
-                val port = uri.port
-                if (port > 0) formatAddressPort(host, port) else host
+                // Parse the authority ourselves as Android Uri.host can be null for
+                // imported links containing unusual but valid user-info/encoding.
+                val afterScheme = value.substringAfter("://", "")
+                if (afterScheme.isEmpty()) return null
+                val authority = afterScheme.substringBefore('/').substringBefore('?').substringBefore('#')
+                val hostPort = authority.substringAfterLast('@', authority).trim()
+                if (hostPort.isEmpty()) return null
+
+                val host: String
+                val port: Int?
+                if (hostPort.startsWith("[")) {
+                    val close = hostPort.indexOf(']')
+                    if (close <= 1) return null
+                    host = hostPort.substring(1, close)
+                    port = hostPort.substring(close + 1).removePrefix(":").toIntOrNull()
+                } else {
+                    val colon = hostPort.lastIndexOf(':')
+                    if (colon > 0 && hostPort.indexOf(':') == colon) {
+                        host = hostPort.substring(0, colon)
+                        port = hostPort.substring(colon + 1).toIntOrNull()
+                    } else {
+                        host = hostPort
+                        port = null
+                    }
+                }
+                if (host.isBlank()) return null
+                if (port != null && port in 1..65535) formatAddressPort(host, port) else host
             }
         } catch (_: Throwable) {
             null
