@@ -367,6 +367,10 @@ object AppLanguage {
             "هسته‌ی جدید موجود است" to "New core version available",
             "بعداً" to "Later",
             "هسته‌ی Xray به‌روزه" to "Xray core is up to date",
+        "نسخه‌ی شما به‌روزه" to "Your app is up to date",
+        "نسخه‌ی جدید موجود است" to "A new version is available",
+        "نسخه‌ی فعلی:" to "Current version:",
+        "نسخه‌ی جدید:" to "New version:",
             "QR کانفیگ رو جلوی دوربین بگیرید" to "Point the camera at the config QR code"
         ),
         "fr" to mapOf(
