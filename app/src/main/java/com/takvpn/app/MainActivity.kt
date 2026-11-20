@@ -710,7 +710,7 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Takvpn")
             .setMessage(
-                "${tr(\"نسخه‌ی برنامه:\")} ${verName()}\n${tr(\"نسخه‌ی هسته Xray:\")} ${BuildConfig.XRAY_CORE_VERSION}\n${tr(\"بروزرسانی مستقیم از داخل برنامه\")}"
+                "${tr("نسخه‌ی برنامه:")} ${verName()}\n${tr("نسخه‌ی هسته Xray:")} ${BuildConfig.XRAY_CORE_VERSION}\n${tr("بروزرسانی مستقیم از داخل برنامه")}"
             )
             .setPositiveButton(tr("بررسی بروزرسانی برنامه")) { _, _ -> checkUpdate() }
             .setNeutralButton(tr("بررسی بروزرسانی هسته")) { _, _ -> checkCoreUpdate() }
