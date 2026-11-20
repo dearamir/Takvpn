@@ -1713,6 +1713,7 @@ class MainActivity : AppCompatActivity() {
                     code.map { String(Character.toChars(0x1F1E6 + it.code - 'A'.code)) }.joinToString("")
                 } else ""
                 val country = json.optString("country")
+                // Keep Persian exit details label-free; retain the English UI wording elsewhere.
                 val result = listOf(exitIp, listOf(flag, code, country).filter { it.isNotBlank() }.joinToString(" "))
                     .filter { it.isNotBlank() }.joinToString("  ·  ")
                 runOnUiThread {
