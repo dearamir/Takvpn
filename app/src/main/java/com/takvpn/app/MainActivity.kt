@@ -252,30 +252,37 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAppearanceDialog() {
         val names = uiPalettes.map { it.name }.toTypedArray()
-        val original = prefs.getString("ui_palette", null)
         val initialIndex = uiPalettes.indexOf(activePalette()).coerceAtLeast(0)
         var selectedIndex = initialIndex
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(12), dp(18), dp(8))
+        }
         val previewHolder = FrameLayout(this)
         root.addView(previewHolder, LinearLayout.LayoutParams(-1, -2))
-        val choices = android.widget.RadioGroup(this).apply { orientation = android.widget.RadioGroup.VERTICAL }
+        val choices = android.widget.RadioGroup(this).apply {
+            orientation = android.widget.RadioGroup.VERTICAL
+        }
         names.forEachIndexed { index, name ->
             val rb = android.widget.RadioButton(this).apply {
                 text = name
-                textSize = 14f
+                textSize = 15f
                 setTextColor(Color.WHITE)
-                setPadding(dp(4), dp(6), dp(4), dp(6))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                minHeight = dp(48)
+                buttonTintList = ColorStateList.valueOf(activePalette().accent)
                 id = View.generateViewId()
             }
             choices.addView(rb)
             if (index == initialIndex) rb.isChecked = true
         }
-        root.addView(choices)
+        root.addView(styleAppearanceChoices(choices, activePalette().accent), LinearLayout.LayoutParams(-1, dp(250)))
         fun updatePreview(index: Int) {
             selectedIndex = index
             previewHolder.removeAllViews()
             val selected = uiPalettes[index]
-            previewHolder.addView(buildThemePreview(displayPalette(selected), displayPalette(selected).text))
+            val previewPalette = displayPalette(selected)
+            previewHolder.addView(buildThemePreview(previewPalette, previewPalette.text))
         }
         updatePreview(initialIndex)
         choices.setOnCheckedChangeListener { group, checkedId ->
@@ -304,36 +311,42 @@ class MainActivity : AppCompatActivity() {
         }
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setDimAmount(0.12f)
+        dialog.window?.setDimAmount(0.28f)
     }
 
     private fun showTextColorDialog() {
         val names = textColors.map { it.first }.toTypedArray()
-        val original = prefs.getString("ui_text_color", null)
-        val initialIndex = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
+        val initialIndex = names.indexOf(prefs.getString("ui_text_color", null) ?: "پیش‌فرض پوسته").coerceAtLeast(0)
         var selectedIndex = initialIndex
-        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(12), dp(18), dp(8))
+        }
         val previewHolder = FrameLayout(this)
         root.addView(previewHolder, LinearLayout.LayoutParams(-1, -2))
-        val choices = android.widget.RadioGroup(this).apply { orientation = android.widget.RadioGroup.VERTICAL }
+        val choices = android.widget.RadioGroup(this).apply {
+            orientation = android.widget.RadioGroup.VERTICAL
+        }
         names.forEachIndexed { index, name ->
             val rb = android.widget.RadioButton(this).apply {
                 text = name
-                textSize = 14f
+                textSize = 15f
                 setTextColor(Color.WHITE)
-                setPadding(dp(4), dp(6), dp(4), dp(6))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                minHeight = dp(48)
+                buttonTintList = ColorStateList.valueOf(displayPalette().accent)
                 id = View.generateViewId()
             }
             choices.addView(rb)
             if (index == initialIndex) rb.isChecked = true
         }
-        root.addView(choices)
+        root.addView(styleAppearanceChoices(choices, displayPalette().accent), LinearLayout.LayoutParams(-1, dp(280)))
         fun updatePreview(index: Int) {
             selectedIndex = index
             previewHolder.removeAllViews()
-            val p = displayPalette()
-            val chosen = textColors[index].second.takeIf { it != Color.TRANSPARENT } ?: p.text
-            previewHolder.addView(buildThemePreview(p, chosen))
+            val palette = displayPalette()
+            val chosen = textColors[index].second.takeIf { it != Color.TRANSPARENT } ?: palette.text
+            previewHolder.addView(buildThemePreview(palette, chosen))
         }
         updatePreview(initialIndex)
         choices.setOnCheckedChangeListener { group, checkedId ->
@@ -364,7 +377,37 @@ class MainActivity : AppCompatActivity() {
         }
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setDimAmount(0.12f)
+        dialog.window?.setDimAmount(0.28f)
+    }
+
+    private fun styleAppearanceChoices(choices: android.widget.RadioGroup, accent: Int): ScrollView {
+        choices.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = dp(18).toFloat()
+            setColor(Color.rgb(22, 30, 44))
+            setStroke(dp(1), androidx.core.graphics.ColorUtils.blendARGB(accent, Color.WHITE, 0.18f))
+        }
+        choices.setPadding(dp(10), dp(10), dp(10), dp(10))
+        choices.clipToPadding = false
+        for (index in 0 until choices.childCount) {
+            val option = choices.getChildAt(index) as? android.widget.RadioButton ?: continue
+            option.background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(11).toFloat()
+                setColor(Color.rgb(37, 47, 64))
+                setStroke(dp(1), Color.rgb(57, 71, 91))
+            }
+            option.setTextColor(Color.rgb(246, 249, 255))
+            option.setShadowLayer(dp(1).toFloat(), 0f, 0f, Color.BLACK)
+            val params = android.widget.RadioGroup.LayoutParams(-1, -2).apply {
+                bottomMargin = dp(7)
+            }
+            option.layoutParams = params
+        }
+        return ScrollView(this).apply {
+            isFillViewport = false
+            isVerticalScrollBarEnabled = true
+            clipToPadding = false
+            addView(choices, ScrollView.LayoutParams(-1, -2))
+        }
     }
 
     private fun styleAppearanceDialogText(dialog: AlertDialog) {
