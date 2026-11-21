@@ -41,6 +41,10 @@ class TakVpnService : VpnService() {
 
     @Volatile
     private var wdGen = 0
+
+    // Invalidates queued connection attempts when a newer action arrives.
+    @Volatile
+    private var connectGen = 0
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -52,9 +56,10 @@ class TakVpnService : VpnService() {
             ACTION_RESTART -> {
                 val cfg = currentConfig
                 if (cfg != null) {
+                    val gen = ++connectGen
                     pingText = tr("راه‌اندازی مجدد...")
                     notifyNow()
-                    Thread { startVpn(cfg) }.start()
+                    Thread { if (gen == connectGen) startVpn(cfg, gen) }.start()
                 }
                 return START_NOT_STICKY
             }
@@ -63,18 +68,20 @@ class TakVpnService : VpnService() {
                 return START_NOT_STICKY
             }
             ACTION_SMART -> {
+                val gen = ++connectGen
                 smartMode = true
                 cfgName = tr("در حال پیدا کردن بهترین...")
                 activeName = ""
                 activeLink = ""
                 pingText = ""
                 showForeground()
-                Thread { smartStart() }.start()
+                Thread { if (gen == connectGen) smartStart(gen) }.start()
                 return START_NOT_STICKY
             }
         }
         val config = intent?.getStringExtra(EXTRA_CONFIG)
         if (config != null) {
+            val gen = ++connectGen
             val wasRunning = isRunning
             currentConfig = config
             smartMode = intent.getBooleanExtra(EXTRA_SMART, false)
@@ -84,7 +91,8 @@ class TakVpnService : VpnService() {
             pingText = if (wasRunning) tr("در حال تعویض کانفیگ...") else ""
             showForeground()
             Thread {
-                if (wasRunning) switchVpn(config) else startVpn(config)
+                if (gen != connectGen) return@Thread
+                if (wasRunning) switchVpn(config, gen) else startVpn(config, gen)
             }.start()
             startWatchdog()
         }
@@ -221,8 +229,9 @@ class TakVpnService : VpnService() {
         }
     }
 
-    private fun smartStart() {
+    private fun smartStart(gen: Int) {
         val best = bestOf(ConfigStore(this).items.toList())
+        if (gen != connectGen) return
         if (best == null) {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
             handler.post {
@@ -237,12 +246,13 @@ class TakVpnService : VpnService() {
             handler.post { shutdownForeground() }
             return
         }
+        if (gen != connectGen) return
         currentConfig = json
         cfgName = best.name
         activeName = best.name
         activeLink = best.link
         AppLog.add("سوییچ هوشمند: ${best.name}")
-        startVpn(json)
+        startVpn(json, gen)
         startWatchdog()
     }
 
@@ -397,7 +407,8 @@ class TakVpnService : VpnService() {
     // establishing the selected profile. This makes manual profile changes a
     // real VPN replacement instead of only changing the selected card.
     @Synchronized
-    private fun switchVpn(config: String) {
+    private fun switchVpn(config: String, gen: Int) {
+        if (gen != connectGen) return
         AppLog.add("تعویض کانفیگ: قطع تونل قبلی")
         updateState(false)
         handler.post {
@@ -411,11 +422,12 @@ class TakVpnService : VpnService() {
             Thread.currentThread().interrupt()
             return
         }
-        startVpn(config)
+        if (gen == connectGen) startVpn(config, gen)
     }
 
     @Synchronized
-    private fun startVpn(config: String) {
+    private fun startVpn(config: String, gen: Int? = null) {
+        if (gen != null && gen != connectGen) return
         stopCore()
         try {
             CoreEnv.init(this)
@@ -433,6 +445,7 @@ class TakVpnService : VpnService() {
                 } catch (e: Exception) {
                 }
             }
+            if (gen != null && gen != connectGen) return
             val pfd = b.establish() ?: throw IllegalStateException("ساخت تونل VPN ناموفق بود")
             tun = pfd
 
@@ -442,6 +455,12 @@ class TakVpnService : VpnService() {
                 override fun onEmitStatus(code: Long, msg: String?): Long = 0
             })
             controller.startLoop(finalConfig(config), pfd.fd)
+            if (gen != null && gen != connectGen) {
+                try { controller.stopLoop() } catch (_: Throwable) {}
+                try { pfd.close() } catch (_: Throwable) {}
+                tun = null
+                return
+            }
             core = controller
             startedAt = SystemClock.elapsedRealtime()
             updateState(true)
@@ -464,6 +483,7 @@ class TakVpnService : VpnService() {
 
     @Synchronized
     private fun stopVpn() {
+        connectGen++
         wdGen++
         stopCore()
         updateState(false)
