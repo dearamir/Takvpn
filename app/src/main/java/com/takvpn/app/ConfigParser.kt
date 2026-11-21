@@ -42,6 +42,9 @@ object ConfigParser {
         link.startsWith("vmess://") -> vmess(link)
         link.startsWith("trojan://") -> trojan(link)
         link.startsWith("hysteria2://") || link.startsWith("hy2://") -> hysteria2(link)
+        link.startsWith("hysteria://") -> throw IllegalArgumentException(
+            "این لینک Hysteria نسخه ۱ است؛ هسته فعلی TakVPN فقط Hysteria 2 را پشتیبانی می‌کند. لینک Hysteria 2 لازم است."
+        )
         else -> throw IllegalArgumentException("این پروتکل پشتیبانی نمی‌شه")
     }
 
@@ -143,9 +146,10 @@ object ConfigParser {
         var finalmask = JSONObject()
         val fm = q["fm"].orEmpty()
         if (fm.isNotBlank()) {
-            try {
-                finalmask = JSONObject(fm)
+            finalmask = try {
+                JSONObject(fm)
             } catch (e: Exception) {
+                throw IllegalArgumentException("پارامتر fm در کانفیگ Hysteria 2 معتبر نیست: ${e.message}")
             }
         }
         val obfsPass = q["obfs-password"].orEmpty()
@@ -224,10 +228,12 @@ object ConfigParser {
                     .put("mode", q["mode"] ?: "auto")
                 val extra = q["extra"].orEmpty()
                 if (extra.isNotBlank()) {
-                    try {
-                        xs.put("extra", JSONObject(extra))
+                    val extraObject = try {
+                        JSONObject(extra)
                     } catch (e: Exception) {
+                        throw IllegalArgumentException("پارامتر extra در کانفیگ XHTTP باید یک JSON object معتبر باشد: ${e.message}")
                     }
+                    xs.put("extra", extraObject)
                 }
                 s.put("xhttpSettings", xs)
             }
