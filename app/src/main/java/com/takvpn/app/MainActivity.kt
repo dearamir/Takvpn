@@ -381,14 +381,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         val decor = dialog.window?.decorView
+        // Custom-view dialogs have no ListView; styling it caused a crash on Text Color.
         applyWhiteText(decor)
-        dialog.listView.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
-            override fun onChildViewAdded(parent: View?, child: View?) {
-                applyWhiteText(child)
-            }
-            override fun onChildViewRemoved(parent: View?, child: View?) = Unit
-        })
-        dialog.listView.post { applyWhiteText(decor) }
     }
 
     private lateinit var store: ConfigStore
