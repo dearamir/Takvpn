@@ -406,7 +406,7 @@ class MainActivity : AppCompatActivity() {
             isFillViewport = false
             isVerticalScrollBarEnabled = true
             clipToPadding = false
-            addView(choices, ScrollView.LayoutParams(-1, -2))
+            addView(choices, ViewGroup.LayoutParams(-1, -2))
         }
     }
 
