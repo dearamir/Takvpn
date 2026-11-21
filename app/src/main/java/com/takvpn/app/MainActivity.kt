@@ -301,7 +301,6 @@ class MainActivity : AppCompatActivity() {
                 applyAppPalette()
                 dialog.dismiss()
             }
-            styleAppearanceDialogText(dialog)
         }
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
