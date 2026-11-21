@@ -69,7 +69,7 @@ class ConfigStore(context: Context) {
             var protocol = when (scheme) {
                 "vless" -> "VLESS"
                 "vmess" -> "VMess"
-                "hysteria" -> "Hysteria"
+                "hysteria" -> "Hysteria v1 (پشتیبانی نمی‌شود)"
                 "hysteria2", "hy2" -> "Hysteria 2"
                 "trojan" -> "Trojan"
                 "ss" -> "Shadowsocks"
