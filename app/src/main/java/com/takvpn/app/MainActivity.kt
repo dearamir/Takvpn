@@ -195,89 +195,177 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun buildThemePreview(p: UiPalette, textColor: Int = p.text): View {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(18).toFloat()
+                setColor(p.card)
+                setStroke(dp(1), p.accent)
+            }
+        }
+        val heading = TextView(this).apply {
+            text = "TakVPN  •  پیش‌نمایش"
+            textSize = 17f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(p.accent)
+        }
+        val mainText = TextView(this).apply {
+            text = "اتصال امن و سریع"
+            textSize = 15f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(textColor)
+            setPadding(0, dp(8), 0, dp(3))
+        }
+        val subText = TextView(this).apply {
+            text = "این نوشته نمونه است تا خوانایی رنگ را بررسی کنید"
+            textSize = 12f
+            setTextColor(p.soft)
+        }
+        val status = TextView(this).apply {
+            text = "●  متصل"
+            textSize = 13f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.rgb(70, 220, 145))
+            setPadding(0, dp(10), 0, dp(10))
+        }
+        val button = TextView(this).apply {
+            text = "دکمه نمونه"
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(12).toFloat()
+                setColor(p.accent)
+            }
+        }
+        card.addView(heading)
+        card.addView(mainText)
+        card.addView(subText)
+        card.addView(status)
+        card.addView(button, LinearLayout.LayoutParams(-1, -2))
+        return card
+    }
+
     private fun showAppearanceDialog() {
         val names = uiPalettes.map { it.name }.toTypedArray()
         val original = prefs.getString("ui_palette", null)
-        var confirmed = false
+        val initialIndex = uiPalettes.indexOf(activePalette()).coerceAtLeast(0)
+        var selectedIndex = initialIndex
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        val previewHolder = FrameLayout(this)
+        root.addView(previewHolder, LinearLayout.LayoutParams(-1, -2))
+        val choices = android.widget.RadioGroup(this).apply { orientation = android.widget.RadioGroup.VERTICAL }
+        names.forEachIndexed { index, name ->
+            val rb = android.widget.RadioButton(this).apply {
+                text = name
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                setPadding(dp(4), dp(6), dp(4), dp(6))
+                id = View.generateViewId()
+            }
+            choices.addView(rb)
+            if (index == initialIndex) rb.isChecked = true
+        }
+        root.addView(choices)
+        fun updatePreview(index: Int) {
+            selectedIndex = index
+            previewHolder.removeAllViews()
+            val selected = uiPalettes[index]
+            previewHolder.addView(buildThemePreview(displayPalette(selected), displayPalette(selected).text))
+        }
+        updatePreview(initialIndex)
+        choices.setOnCheckedChangeListener { group, checkedId ->
+            val index = group.indexOfChild(group.findViewById(checkedId))
+            if (index >= 0) updatePreview(index)
+        }
         val dialog = AlertDialog.Builder(this)
             .setTitle(tr("انتخاب پوسته"))
-            .setSingleChoiceItems(names, uiPalettes.indexOf(activePalette())) { _, which ->
-                prefs.edit().putString("ui_palette", names[which]).apply()
-                applyAppPalette()
-            }
+            .setView(root)
             .setPositiveButton(tr("تأیید"), null)
             .setNeutralButton(tr("پیش‌فرض"), null)
             .setNegativeButton(tr("لغو"), null)
             .create()
-
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                confirmed = true
+                prefs.edit().putString("ui_palette", names[selectedIndex]).apply()
+                applyAppPalette()
                 dialog.dismiss()
                 toast("پوسته ذخیره شد")
             }
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 prefs.edit().remove("ui_palette").apply()
                 applyAppPalette()
+                dialog.dismiss()
             }
             styleAppearanceDialogText(dialog)
         }
-        dialog.setOnDismissListener {
-            if (!confirmed) {
-                if (original == null) prefs.edit().remove("ui_palette").apply()
-                else prefs.edit().putString("ui_palette", original).apply()
-                applyAppPalette()
-            }
-        }
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setDimAmount(0.04f)
-        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
+        dialog.window?.setDimAmount(0.12f)
     }
 
     private fun showTextColorDialog() {
         val names = textColors.map { it.first }.toTypedArray()
         val original = prefs.getString("ui_text_color", null)
-        val selected = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
-        var confirmed = false
+        val initialIndex = names.indexOf(original ?: "پیش‌فرض پوسته").coerceAtLeast(0)
+        var selectedIndex = initialIndex
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(8), dp(20), dp(4)) }
+        val previewHolder = FrameLayout(this)
+        root.addView(previewHolder, LinearLayout.LayoutParams(-1, -2))
+        val choices = android.widget.RadioGroup(this).apply { orientation = android.widget.RadioGroup.VERTICAL }
+        names.forEachIndexed { index, name ->
+            val rb = android.widget.RadioButton(this).apply {
+                text = name
+                textSize = 14f
+                setTextColor(Color.WHITE)
+                setPadding(dp(4), dp(6), dp(4), dp(6))
+                id = View.generateViewId()
+            }
+            choices.addView(rb)
+            if (index == initialIndex) rb.isChecked = true
+        }
+        root.addView(choices)
+        fun updatePreview(index: Int) {
+            selectedIndex = index
+            previewHolder.removeAllViews()
+            val p = displayPalette()
+            val chosen = textColors[index].second.takeIf { it != Color.TRANSPARENT } ?: p.text
+            previewHolder.addView(buildThemePreview(p, chosen))
+        }
+        updatePreview(initialIndex)
+        choices.setOnCheckedChangeListener { group, checkedId ->
+            val index = group.indexOfChild(group.findViewById(checkedId))
+            if (index >= 0) updatePreview(index)
+        }
         val dialog = AlertDialog.Builder(this)
             .setTitle(tr("رنگ نوشته‌ها"))
-            .setSingleChoiceItems(names, selected) { _, which ->
-                if (names[which] == "پیش‌فرض پوسته") {
-                    prefs.edit().remove("ui_text_color").apply()
-                } else {
-                    prefs.edit().putString("ui_text_color", names[which]).apply()
-                }
-                applyAppPalette()
-            }
+            .setView(root)
             .setPositiveButton(tr("تأیید"), null)
             .setNeutralButton(tr("پیش‌فرض نوشته"), null)
             .setNegativeButton(tr("لغو"), null)
             .create()
-
         dialog.setOnShowListener {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                confirmed = true
+                if (names[selectedIndex] == "پیش‌فرض پوسته") prefs.edit().remove("ui_text_color").apply()
+                else prefs.edit().putString("ui_text_color", names[selectedIndex]).apply()
+                applyAppPalette()
                 dialog.dismiss()
                 toast("رنگ نوشته‌ها ذخیره شد")
             }
             dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
                 prefs.edit().remove("ui_text_color").apply()
                 applyAppPalette()
+                dialog.dismiss()
             }
             styleAppearanceDialogText(dialog)
         }
-        dialog.setOnDismissListener {
-            if (!confirmed) {
-                if (original == null) prefs.edit().remove("ui_text_color").apply()
-                else prefs.edit().putString("ui_text_color", original).apply()
-                applyAppPalette()
-            }
-        }
         dialog.show()
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.setDimAmount(0.04f)
-        dialog.window?.decorView?.findViewById<View>(androidx.appcompat.R.id.parentPanel)?.setBackgroundColor(Color.TRANSPARENT)
+        dialog.window?.setDimAmount(0.12f)
     }
 
     private fun styleAppearanceDialogText(dialog: AlertDialog) {
