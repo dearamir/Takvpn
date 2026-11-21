@@ -284,8 +284,11 @@ class TakVpnService : VpnService() {
     }
 
     private fun switchBest(gen: Int) {
+        // Capture the user's current connection request; a later manual action
+        // must cancel this background smart-switch attempt.
+        val connectRequest = connectGen
         val best = bestOf(ConfigStore(this).items.toList())
-        if (gen != wdGen || !isRunning) return
+        if (gen != wdGen || connectRequest != connectGen || !isRunning) return
         if (best == null) {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
             return
@@ -299,13 +302,14 @@ class TakVpnService : VpnService() {
         } catch (e: Throwable) {
             return
         }
+        if (gen != wdGen || connectRequest != connectGen || !isRunning) return
         currentConfig = json
         cfgName = best.name
         activeName = best.name
         activeLink = best.link
         pingText = tr("جابه‌جا شد")
         AppLog.add("سوییچ هوشمند: جابه‌جایی به ${best.name}")
-        startVpn(json)
+        startVpn(json, connectRequest)
         main.post { onSwitched?.invoke() }
     }
 
