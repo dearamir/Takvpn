@@ -1,5 +1,6 @@
 name: Build APK
 # Push commits containing [release] publish signed APKs as a GitHub Release.
+# The merge commit for PR #33 carries this marker; this workflow-only commit starts the signed release build.
 # The release job signs APKs with the repository encrypted keystore secret.
 
 on:
