@@ -310,7 +310,7 @@ class TakVpnService : VpnService() {
     }
 
     private fun switchBest(gen: Int) {
-        val best = bestOf(ConfigStore(this).items.toList())
+        val best = rankedByPing(ConfigStore(this).items.toList()).firstOrNull()?.first
         if (gen != wdGen || !isRunning) return
         if (best == null) {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
