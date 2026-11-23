@@ -213,6 +213,35 @@ class TakVpnService : VpnService() {
         }
     }
 
+    private fun smartFallback(excludedLink: String) {
+        val candidates = ConfigStore(this).items.toList().filter { it.link != excludedLink }
+        val ranked = rankedByPing(candidates)
+        for ((candidate, latency) in ranked) {
+            val json = try {
+                ConfigExtras.build(candidate.link)
+            } catch (_: Throwable) {
+                continue
+            }
+            currentConfig = json
+            cfgName = candidate.name
+            activeName = candidate.name
+            activeLink = candidate.link
+            pingText = tr("پینگ: ${latency} ms")
+            AppLog.add("سوییچ هوشمند: تلاش جایگزین با ${candidate.name} (${latency} ms)")
+            if (startVpn(json, reportFailure = false)) {
+                AppLog.add("سوییچ هوشمند: اتصال جایگزین با ${candidate.name} برقرار شد")
+                main.post { onSwitched?.invoke() }
+                return
+            }
+        }
+        AppLog.add("سوییچ هوشمند: تمام سرورهای جایگزین ناموفق بودند")
+        handler.post {
+            shutdownForeground()
+            refreshTile()
+            onError?.invoke(tr("اتصال به همه کانفیگ‌های پاسخ‌گو ناموفق بود"))
+        }
+    }
+
     private fun smartStart() {
         // Measure candidates concurrently once, then try them in latency order.
         // A failed first choice must not end the whole Smart Switch attempt.
@@ -462,7 +491,11 @@ class TakVpnService : VpnService() {
             updateState(false)
             val msg = e.message ?: e.toString()
             AppLog.add("اتصال ناموفق: $msg")
-            if (reportFailure) {
+            if (reportFailure && smartMode) {
+                val failedLink = activeLink
+                AppLog.add("سوییچ هوشمند: اتصال فعلی شکست خورد؛ جست‌وجوی جایگزین")
+                Thread { smartFallback(failedLink) }.apply { isDaemon = true }.start()
+            } else if (reportFailure) {
                 handler.post {
                     shutdownForeground()
                     refreshTile()
