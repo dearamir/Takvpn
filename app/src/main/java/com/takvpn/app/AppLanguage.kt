@@ -751,7 +751,19 @@ object AppLanguage {
         "افزودن اشتراک" to "Add subscription",
         "خروجی:" to "Exit:",
         "IP خروجی:" to "Exit IP:",
-        "بدون" to "None"
+        "بدون" to "None",
+        "نمایش IP خروجی فعال شد" to "Outgoing IP display enabled",
+        "نمایش IP خروجی مخفی شد" to "Outgoing IP display hidden",
+        "کانفیگ توی کلیپ‌بورد کپی شد" to "configs copied to clipboard",
+        "کانفیگ از اشتراک اضافه یا به‌روز شد" to "configs added or updated from subscription",
+        "کانفیگی برای مرتب‌سازی وجود نداره" to "No configs available to sort",
+        "مرتب‌سازی پینگ: کم به زیاد" to "Sort by ping: low to high",
+        "مرتب‌سازی پینگ: زیاد به کم" to "Sort by ping: high to low",
+        "📋 کپی لینک" to "📋 Copy link",
+        "📤 ارسال به برنامه‌های دیگه" to "📤 Share with other apps",
+        "🔳 نمایش QR" to "🔳 Show QR code",
+        "ذخیره" to "Save",
+        "لغو" to "Cancel"
     )
 
     private val englishPrefixes = mapOf(
@@ -768,7 +780,9 @@ object AppLanguage {
         "پینگ: " to "Ping: ",
         "مصرف کل: " to "Total usage: ",
         "مصرف: " to "Usage: ",
-        "کانفیگ نامعتبر: " to "Invalid config: "
+        "کانفیگ نامعتبر: " to "Invalid config: ",
+        "پورت‌هاپینگ " to "Port hopping ",
+        "نامعتبر: " to "Invalid: "
     )
 
     fun translate(text: String, language: String): String {
