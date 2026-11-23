@@ -763,7 +763,13 @@ object AppLanguage {
         "📤 ارسال به برنامه‌های دیگه" to "📤 Share with other apps",
         "🔳 نمایش QR" to "🔳 Show QR code",
         "ذخیره" to "Save",
-        "لغو" to "Cancel"
+        "لغو" to "Cancel",
+        "در حال دانلود فایل نصب..." to "Downloading installer...",
+        "دریافت TakVPN " to "Download TakVPN ",
+        "اشتراک " to "Subscription ",
+        "و کانفیگ‌هاش حذف بشه؟" to "and its configs?",
+        "بله" to "Yes",
+        "خیر" to "No"
     )
 
     private val englishPrefixes = mapOf(
