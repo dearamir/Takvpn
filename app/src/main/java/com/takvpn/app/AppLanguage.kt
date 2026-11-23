@@ -883,7 +883,7 @@ object AppLanguage {
     fun translate(text: String, language: String): String {
         // Handle count-based config import messages (for example, "4 کانفیگ اضافه شد").
         if (language == "en") {
-            Regex("^(\\\\d+) کانفیگ اضافه شد$").matchEntire(text)?.let { match ->
+            Regex("^(\\d+) کانفیگ اضافه شد$").matchEntire(text)?.let { match ->
                 val count = match.groupValues[1]
                 return "$count configs added"
             }
