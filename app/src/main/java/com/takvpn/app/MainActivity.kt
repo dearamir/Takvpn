@@ -969,8 +969,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun downloadAndInstallUpdate(info: UpdateChecker.Result) {
         val progress = android.app.ProgressDialog(this).apply {
-            setTitle("دریافت TakVPN ${info.tag}")
-            setMessage("در حال دانلود فایل نصب...")
+            setTitle(tr("دریافت TakVPN ") + info.tag)
+            setMessage(tr("در حال دانلود فایل نصب..."))
             setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
             isIndeterminate = true
             setCancelable(false)
@@ -1196,7 +1196,7 @@ class MainActivity : AppCompatActivity() {
                 val url = urls[i]
                 AlertDialog.Builder(this)
                     .setTitle(tr("حذف اشتراک"))
-                    .setMessage(tr("اشتراک ${hostOf(url)} و کانفیگ‌هاش حذف بشه؟"))
+                    .setMessage(tr("اشتراک ") + hostOf(url) + " " + tr("و کانفیگ‌هاش حذف بشه؟"))
                     .setPositiveButton(tr("حذف")) { _, _ ->
                         if (TakVpnService.isRunning) {
                             toast("اول اتصال رو قطع کنید")
@@ -1705,7 +1705,7 @@ class MainActivity : AppCompatActivity() {
         }
         AlertDialog.Builder(this)
             .setTitle(tr("حذف کانفیگ"))
-            .setMessage(tr("«${cfg.name}» حذف بشه؟"))
+            .setMessage("${tr("Delete config")}: ${cfg.name}?")
             .setPositiveButton(tr("حذف")) { _, _ ->
                 store.remove(cfg.id)
                 pings.remove(cfg.id)
