@@ -420,9 +420,9 @@ object ConfigEditor {
         row.orientation = LinearLayout.HORIZONTAL
         row.setPadding(0, dp(8), 0, 0)
         val cancel = MaterialButton(act)
-        cancel.text = "لغو"
+        cancel.text = tr(act, "لغو")
         val save = MaterialButton(act)
-        save.text = "ذخیره"
+        save.text = tr(act, "ذخیره")
         val lp1 = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
         lp1.setMargins(dp(4), 0, dp(4), 0)
         val lp2 = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
@@ -441,7 +441,7 @@ object ConfigEditor {
                 dialog.dismiss()
                 onSave(link)
             } catch (e: Exception) {
-                Toast.makeText(act, "نامعتبر: " + (e.message ?: ""), Toast.LENGTH_LONG).show()
+                Toast.makeText(act, tr(act, "نامعتبر: ") + (e.message ?: ""), Toast.LENGTH_LONG).show()
             }
         }
 
