@@ -235,6 +235,8 @@ class TakVpnService : VpnService() {
         if (best == null) {
             AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
             handler.post {
+                // A newer manual request may arrive before this callback runs.
+                if (gen != connectGen) return@post
                 shutdownForeground()
                 onError?.invoke(tr("کانفیگ سالمی پیدا نشد"))
             }
@@ -243,7 +245,11 @@ class TakVpnService : VpnService() {
         val json = try {
             ConfigExtras.build(best.link)
         } catch (e: Throwable) {
-            handler.post { shutdownForeground() }
+            handler.post {
+                // Do not tear down a newer connection request because this
+                // older smart-connect attempt failed to build its config.
+                if (gen == connectGen) shutdownForeground()
+            }
             return
         }
         if (gen != connectGen) return
@@ -474,10 +480,19 @@ class TakVpnService : VpnService() {
             }
         } catch (e: Throwable) {
             stopCore()
+            // A newer request can supersede this attempt while startLoop is
+            // running. Its failure must not stop the service for that request.
+            if (gen != null && gen != connectGen) {
+                AppLog.add("خطای اتصال قدیمی نادیده گرفته شد")
+                return
+            }
             updateState(false)
             val msg = e.message ?: e.toString()
             AppLog.add("اتصال ناموفق: $msg")
             handler.post {
+                // Re-check on the main thread: another request may have arrived
+                // after the exception was handled but before this callback runs.
+                if (gen != null && gen != connectGen) return@post
                 shutdownForeground()
                 refreshTile()
                 onError?.invoke(msg)
