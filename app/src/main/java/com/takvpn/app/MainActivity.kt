@@ -450,6 +450,7 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
+    private val tcpLatencies = mutableMapOf<String, Long>()
     private val countryFlags = mutableMapOf<String, String>()
     private val exitIps = mutableMapOf<String, String>()
     private val countryLookups = mutableSetOf<String>()
@@ -1555,22 +1556,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun tcpTestAllThen(done: (List<Cfg>) -> Unit) {
         val list = store.items.toList()
-        list.forEach { pings[it.id] = -2L }
-        render()
+        list.forEach { tcpLatencies[it.id] = -1L }
         val left = AtomicInteger(list.size)
         list.forEach { cfg ->
             pool.execute {
                 val result = measureTcpEndpoint(cfg.link)
                 runOnUiThread {
                     if (isDestroyed) return@runOnUiThread
-                    errors[cfg.id] = result.error
-                    pings[cfg.id] = result.latencyMs
-                    render()
+                    tcpLatencies[cfg.id] = result.latencyMs
                     if (left.decrementAndGet() == 0) done(list)
                 }
             }
         }
     }
+
+    private fun bestOfTcp(list: List<Cfg>): Cfg? =
+        list.filter { (tcpLatencies[it.id] ?: -1L) > 0 }
+            .minByOrNull { tcpLatencies[it.id] ?: Long.MAX_VALUE }
 
     private fun pingOne(cfg: Cfg) {
         pings[cfg.id] = -2L
@@ -1663,7 +1665,7 @@ class MainActivity : AppCompatActivity() {
         fab.isEnabled = false
         tcpTestAllThen { list ->
             fab.isEnabled = true
-            val best = bestOf(list)
+            val best = bestOfTcp(list)
             if (best == null) {
                 testText.text = AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this))
                 toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
