@@ -387,7 +387,7 @@ object ConfigEditor {
                 if (cur.isNotEmpty() && o.none { it.first == cur }) o.add(cur to cur)
                 val sp = Spinner(act)
                 sp.adapter = ArrayAdapter<String>(
-                    act, android.R.layout.simple_spinner_dropdown_item, o.map { it.second }
+                    act, android.R.layout.simple_spinner_dropdown_item, o.map { tr(act, it.second) }
                 )
                 val idx = o.indexOfFirst { it.first == cur }
                 sp.setSelection(if (idx >= 0) idx else 0)
