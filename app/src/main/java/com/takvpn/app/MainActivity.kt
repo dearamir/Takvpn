@@ -1087,10 +1087,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun maybeCheckForUpdates() {
-        val last = prefs.getLong("last_update_check", 0L)
-        if (System.currentTimeMillis() - last >= 24L * 60L * 60L * 1000L) {
-            ui.postDelayed({ if (!isDestroyed) checkUpdate(silent = true) }, 1400L)
-        }
+        // Check for app updates whenever the user opens TakVPN.
+        // Silent means no "checking" toast; an available update still shows a dialog.
+        ui.postDelayed({ if (!isDestroyed) checkUpdate(silent = true) }, 1400L)
     }
 
     // ---------- subscriptions ----------
