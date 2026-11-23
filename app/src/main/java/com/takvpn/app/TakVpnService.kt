@@ -196,54 +196,61 @@ class TakVpnService : VpnService() {
         }.start()
     }
 
-    private fun bestOf(cands: List<Cfg>): Cfg? {
+    private fun rankedByPing(cands: List<Cfg>): List<Pair<Cfg, Long>> {
+        if (cands.isEmpty()) return emptyList()
         val ex = Executors.newFixedThreadPool(4)
         try {
             val fs = cands.map { c ->
                 ex.submit(Callable<Pair<Cfg, Long>> {
-                    val json = try {
-                        ConfigExtras.build(c.link)
-                    } catch (e: Throwable) {
-                        null
-                    }
+                    val json = try { ConfigExtras.build(c.link) } catch (_: Throwable) { null }
                     c to (if (json != null) measureMs(json) else -1L)
                 })
             }
-            return fs.mapNotNull {
-                try {
-                    it.get()
-                } catch (e: Exception) {
-                    null
-                }
-            }.filter { it.second > 0 }.minByOrNull { it.second }?.first
+            return fs.mapNotNull { try { it.get() } catch (_: Exception) { null } }
+                .filter { it.second > 0 }.sortedBy { it.second }
         } finally {
             ex.shutdownNow()
         }
     }
 
     private fun smartStart() {
-        val best = bestOf(ConfigStore(this).items.toList())
-        if (best == null) {
-            AppLog.add("سوییچ هوشمند: کانفیگ سالمی پیدا نشد")
+        // Measure candidates concurrently once, then try them in latency order.
+        // A failed first choice must not end the whole Smart Switch attempt.
+        val ranked = rankedByPing(ConfigStore(this).items.toList())
+        if (ranked.isEmpty()) {
+            AppLog.add("سوییچ هوشمند: هیچ کانفیگ پاسخ‌گویی پیدا نشد")
             handler.post {
                 shutdownForeground()
                 onError?.invoke(tr("کانفیگ سالمی پیدا نشد"))
             }
             return
         }
-        val json = try {
-            ConfigExtras.build(best.link)
-        } catch (e: Throwable) {
-            handler.post { shutdownForeground() }
-            return
+
+        for ((candidate, latency) in ranked) {
+            val json = try {
+                ConfigExtras.build(candidate.link)
+            } catch (_: Throwable) {
+                AppLog.add("سوییچ هوشمند: ساخت کانفیگ ${candidate.name} ناموفق بود")
+                continue
+            }
+            currentConfig = json
+            cfgName = candidate.name
+            activeName = candidate.name
+            activeLink = candidate.link
+            pingText = tr("پینگ: ${latency} ms")
+            AppLog.add("سوییچ هوشمند: تلاش برای ${candidate.name} (${latency} ms)")
+            if (startVpn(json, reportFailure = false)) {
+                AppLog.add("سوییچ هوشمند: اتصال اولیه با ${candidate.name} برقرار شد")
+                startWatchdog()
+                return
+            }
+            AppLog.add("سوییچ هوشمند: اتصال به ${candidate.name} شکست خورد؛ تلاش با سرور بعدی")
         }
-        currentConfig = json
-        cfgName = best.name
-        activeName = best.name
-        activeLink = best.link
-        AppLog.add("سوییچ هوشمند: ${best.name}")
-        startVpn(json)
-        startWatchdog()
+
+        handler.post {
+            shutdownForeground()
+            onError?.invoke(tr("اتصال به همه کانفیگ‌های پاسخ‌گو ناموفق بود"))
+        }
     }
 
     private fun startWatchdog() {
@@ -415,7 +422,7 @@ class TakVpnService : VpnService() {
     }
 
     @Synchronized
-    private fun startVpn(config: String) {
+    private fun startVpn(config: String, reportFailure: Boolean = true): Boolean {
         stopCore()
         try {
             CoreEnv.init(this)
@@ -449,16 +456,27 @@ class TakVpnService : VpnService() {
                 notifyNow()
                 refreshTile()
             }
+            return true
         } catch (e: Throwable) {
             stopCore()
             updateState(false)
             val msg = e.message ?: e.toString()
             AppLog.add("اتصال ناموفق: $msg")
-            handler.post {
-                shutdownForeground()
-                refreshTile()
-                onError?.invoke(msg)
+            if (reportFailure) {
+                handler.post {
+                    shutdownForeground()
+                    refreshTile()
+                    onError?.invoke(msg)
+                }
+            } else {
+                // Keep the foreground service alive while Smart Switch tries
+                // the next measured candidate.
+                handler.post {
+                    notifyNow()
+                    refreshTile()
+                }
             }
+            return false
         }
     }
 
