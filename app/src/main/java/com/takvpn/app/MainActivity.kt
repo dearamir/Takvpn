@@ -857,7 +857,7 @@ class MainActivity : AppCompatActivity() {
         }
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("configs", store.items.joinToString("\n") { it.link }))
-        toast("${store.items.size} کانفیگ توی کلیپ‌بورد کپی شد")
+        toast("${store.items.size} ${tr("کانفیگ توی کلیپ‌بورد کپی شد")}")
     }
 
     private fun showAbout() {
@@ -1142,7 +1142,7 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         subs.apply(url, links)
                         AppLog.add("${links.size} کانفیگ از ${hostOf(url)} اضافه یا به‌روز شد")
-                        toast("${links.size} کانفیگ از اشتراک اضافه یا به‌روز شد")
+                        toast("${links.size} ${tr("کانفیگ از اشتراک اضافه یا به‌روز شد")}")
                     }
                     render()
                 }
@@ -1719,7 +1719,7 @@ class MainActivity : AppCompatActivity() {
     private fun share(cfg: Cfg) {
         AlertDialog.Builder(this)
             .setTitle(cfg.name)
-            .setItems(arrayOf("📋 کپی لینک", "📤 ارسال به برنامه‌های دیگه", "🔳 نمایش QR")) { _, i ->
+            .setItems(arrayOf(tr("📋 کپی لینک"), tr("📤 ارسال به برنامه‌های دیگه"), tr("🔳 نمایش QR"))) { _, i ->
                 when (i) {
                     0 -> {
                         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
