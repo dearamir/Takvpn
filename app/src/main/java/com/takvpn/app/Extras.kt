@@ -292,9 +292,12 @@ object UpdateChecker {
             // Prefer an APK matching the device ABI. If no exact match exists,
             // use the universal APK; only then fall back to the first APK.
             val deviceAbis = Build.SUPPORTED_ABIS.toList()
-            val exact = apks.firstOrNull { asset ->
-                val name = asset.optString("name").lowercase(Locale.ROOT)
-                deviceAbis.any { abi -> name.contains(abi.lowercase(Locale.ROOT)) }
+            // Respect Android's ABI priority order (SUPPORTED_ABIS), not
+            // the order in which release assets happen to be listed.
+            val exact = deviceAbis.firstNotNullOfOrNull { abi ->
+                apks.firstOrNull { asset ->
+                    asset.optString("name").contains(abi, ignoreCase = true)
+                }
             }
             val universal = apks.firstOrNull {
                 it.optString("name").contains("universal", true)
