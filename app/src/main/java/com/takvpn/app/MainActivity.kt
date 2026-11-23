@@ -1669,7 +1669,7 @@ class MainActivity : AppCompatActivity() {
                 testText.text = AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this))
                 toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
-                AppLog.add("سوییچ هوشمند (TCP): ${best.name} (${pings[best.id]} ms)")
+                AppLog.add("سوییچ هوشمند (TCP): ${best.name} (${tcpLatencies[best.id]} ms)")
                 connectWith(best, true)
             }
         }
