@@ -1,0 +1,1 @@
+Trigger signed security-validation release build after Xray AAR SHA-256 verification was added.
