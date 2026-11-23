@@ -769,7 +769,12 @@ object AppLanguage {
         "اشتراک " to "Subscription ",
         "و کانفیگ‌هاش حذف بشه؟" to "and its configs?",
         "بله" to "Yes",
-        "خیر" to "No"
+        "خیر" to "No",
+        "اتصال برقرار است" to "VPN connection is active",
+        "توقف" to "Stop",
+        "راه‌اندازی مجدد" to "Restart",
+        "پینگ" to "Ping",
+        "اتصال به همه کانفیگ‌های پاسخ‌گو ناموفق بود" to "Could not connect to any responsive config"
     )
 
     private val englishPrefixes = mapOf(
