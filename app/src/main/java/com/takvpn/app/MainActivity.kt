@@ -60,6 +60,8 @@ import org.json.JSONObject
 import java.util.Locale
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.Socket
+import java.net.InetSocketAddress
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -448,6 +450,7 @@ class MainActivity : AppCompatActivity() {
     private val prefs by lazy { getSharedPreferences("takvpn", Context.MODE_PRIVATE) }
     private val pings = mutableMapOf<String, Long>()
     private val errors = mutableMapOf<String, String>()
+    private val tcpLatencies = mutableMapOf<String, Long>()
     private val countryFlags = mutableMapOf<String, String>()
     private val exitIps = mutableMapOf<String, String>()
     private val countryLookups = mutableSetOf<String>()
@@ -1578,6 +1581,54 @@ class MainActivity : AppCompatActivity() {
     private fun bestOf(list: List<Cfg>): Cfg? =
         list.filter { (pings[it.id] ?: -1L) > 0 }.minByOrNull { pings[it.id] ?: Long.MAX_VALUE }
 
+    // Smart Switch measures TCP connection latency to each server's host:port.
+    private fun measureTcpEndpoint(link: String): ProfileTest {
+        val endpoint = ServerEndpoint.addressPortFromLink(link) ?: return ProfileTest(-1L, "", "endpoint unavailable")
+        try {
+            val host: String
+            val port: Int
+            if (endpoint.startsWith("[")) {
+                val close = endpoint.indexOf(']')
+                if (close <= 1) return ProfileTest(-1L, "", "invalid endpoint")
+                host = endpoint.substring(1, close)
+                port = endpoint.substring(close + 1).removePrefix(":").toInt()
+            } else {
+                val colon = endpoint.lastIndexOf(':')
+                if (colon <= 0) return ProfileTest(-1L, "", "endpoint port unavailable")
+                host = endpoint.substring(0, colon)
+                port = endpoint.substring(colon + 1).toInt()
+            }
+            if (port !in 1..65535) return ProfileTest(-1L, "", "invalid port")
+            Socket().use { socket ->
+                val started = SystemClock.elapsedRealtime()
+                socket.connect(InetSocketAddress(host, port), 2500)
+                return ProfileTest((SystemClock.elapsedRealtime() - started).coerceAtLeast(1L), "")
+            }
+        } catch (e: Throwable) {
+            return ProfileTest(-1L, "", (e.message ?: e.toString()).replace("\n", " ").take(90))
+        }
+    }
+
+    private fun tcpTestAllThen(done: (List<Cfg>) -> Unit) {
+        val list = store.items.toList()
+        list.forEach { tcpLatencies[it.id] = -1L }
+        val left = AtomicInteger(list.size)
+        list.forEach { cfg ->
+            pool.execute {
+                val result = measureTcpEndpoint(cfg.link)
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    tcpLatencies[cfg.id] = result.latencyMs
+                    if (left.decrementAndGet() == 0) done(list)
+                }
+            }
+        }
+    }
+
+    private fun bestOfTcp(list: List<Cfg>): Cfg? =
+        list.filter { (tcpLatencies[it.id] ?: -1L) > 0 }
+            .minByOrNull { tcpLatencies[it.id] ?: Long.MAX_VALUE }
+
     private fun connectFastest() {
         if (TakVpnService.isRunning) {
             toast("اول اتصال رو قطع کنید")
@@ -1611,14 +1662,14 @@ class MainActivity : AppCompatActivity() {
         startConnectVisual()
         testText.text = AppLanguage.translate("در حال پیدا کردن بهترین کانفیگ...", AppLanguage.code(this))
         fab.isEnabled = false
-        testAllThen { list ->
+        tcpTestAllThen { list ->
             fab.isEnabled = true
-            val best = bestOf(list)
+            val best = bestOfTcp(list)
             if (best == null) {
                 testText.text = AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this))
                 toast(AppLanguage.translate("هیچ کانفیگی پینگ نداد", AppLanguage.code(this)))
             } else {
-                AppLog.add("سوییچ هوشمند: ${best.name} (${pings[best.id]} ms)")
+                AppLog.add("سوییچ هوشمند (TCP): ${best.name} (${pings[best.id]} ms)")
                 connectWith(best, true)
             }
         }
