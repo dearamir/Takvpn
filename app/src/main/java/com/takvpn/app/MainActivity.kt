@@ -971,121 +971,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun downloadAndInstallUpdate(info: UpdateChecker.Result) {
-        val progress = android.app.ProgressDialog(this).apply {
-            setTitle(tr("دریافت TakVPN ") + info.tag)
-            setMessage(tr("در حال دانلود فایل نصب..."))
-            setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
-            isIndeterminate = true
-            setCancelable(false)
-            show()
-        }
-        pool.execute {
-            var connection: HttpURLConnection? = null
-            val target = java.io.File(getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS), "Takvpn-${info.tag}.apk")
-            try {
-                connection = URL(info.downloadUrl).openConnection() as HttpURLConnection
-                connection.connectTimeout = 20000
-                connection.readTimeout = 30000
-                connection.instanceFollowRedirects = true
-                connection.setRequestProperty("User-Agent", "Takvpn")
-                if (connection.responseCode !in 200..299) throw java.io.IOException("HTTP ${connection.responseCode}")
-                val total = connection.contentLengthLong
-                val digest = java.security.MessageDigest.getInstance("SHA-256")
-                target.parentFile?.mkdirs()
-                connection.inputStream.use { input ->
-                    java.io.FileOutputStream(target).use { output ->
-                        val buffer = ByteArray(16 * 1024)
-                        var count: Int
-                        var downloaded = 0L
-                        while (input.read(buffer).also { count = it } != -1) {
-                            output.write(buffer, 0, count)
-                            digest.update(buffer, 0, count)
-                            downloaded += count
-                            if (total > 0) runOnUiThread {
-                                if (!isDestroyed && progress.isShowing) {
-                                    progress.isIndeterminate = false
-                                    progress.max = 100
-                                    progress.progress = ((downloaded * 100) / total).toInt()
-                                }
-                            }
-                        }
-                    }
-                }
-                if (!target.exists() || target.length() == 0L) throw java.io.IOException("فایل دانلودشده خالی است")
-                val actualHash = digest.digest().joinToString("") { "%02x".format(it) }
-                if (info.sha256.isNotBlank() && !actualHash.equals(info.sha256, true)) {
-                    throw java.io.IOException("اعتبارسنجی فایل نصب ناموفق بود")
-                }
-                runOnUiThread {
-                    if (isDestroyed) return@runOnUiThread
-                    if (progress.isShowing) progress.dismiss()
-                    pendingInstallFile = target
-                    installDownloadedApk(target)
-                }
-            } catch (e: Throwable) {
-                target.delete()
-                val message = (e.message ?: e.toString()).take(120)
-                AppLog.add("دانلود بروزرسانی ناموفق: $message")
-                runOnUiThread {
-                    if (!isDestroyed) {
-                        if (progress.isShowing) progress.dismiss()
-                        AlertDialog.Builder(this)
-                            .setTitle(tr("دانلود ناموفق بود"))
-                            .setMessage(message)
-                            .setPositiveButton(tr("باشه"), null)
-                            .show()
-                    }
-                }
-            } finally {
-                connection?.disconnect()
-            }
-        }
-    }
-
-    private fun installDownloadedApk(file: java.io.File) {
-        if (!file.exists()) {
-            toast("فایل نصب پیدا نشد؛ دوباره بروزرسانی را بررسی کنید")
-            return
-        }
-        if (android.os.Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
-            pendingInstallFile = file
-            AlertDialog.Builder(this)
-                .setTitle(tr("اجازه‌ی نصب برنامه"))
-                .setMessage(tr("برای نصب نسخه‌ی جدید، اجازه‌ی نصب برنامه از TakVPN را در تنظیمات فعال کنید."))
-                .setPositiveButton(tr("رفتن به تنظیمات")) { _, _ ->
-                    val intent = Intent(
-                        android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                        Uri.parse("package:$packageName")
-                    )
-                    startActivity(intent)
-                }
-                .setNegativeButton(tr("بعداً"), null)
-                .show()
-            return
-        }
+        // Without REQUEST_INSTALL_PACKAGES, let the browser handle the APK download
+        // and Android's installer flow using the browser as the install source.
         try {
-            val apkUri = androidx.core.content.FileProvider.getUriForFile(
-                this, "$packageName.fileprovider", file
-            )
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(apkUri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(info.downloadUrl))
             startActivity(intent)
         } catch (e: Exception) {
-            toast("باز کردن نصب‌کننده ناموفق بود: ${e.message}")
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (android.os.Build.VERSION.SDK_INT >= 26 &&
-            packageManager.canRequestPackageInstalls()
-        ) {
-            pendingInstallFile?.let {
-                pendingInstallFile = null
-                installDownloadedApk(it)
-            }
+            toast("باز کردن لینک دانلود ناموفق بود: ${e.message}")
         }
     }
 
