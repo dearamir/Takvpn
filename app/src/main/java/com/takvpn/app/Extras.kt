@@ -2,6 +2,7 @@ package com.takvpn.app
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.os.Build
 import android.graphics.LinearGradient
 import android.graphics.Shader
 import android.net.Uri
@@ -282,16 +283,24 @@ object UpdateChecker {
             val o = JSONObject(c.inputStream.bufferedReader().use { it.readText() })
             val tag = o.getString("tag_name")
             val assets = o.optJSONArray("assets") ?: JSONArray()
-            var apk: JSONObject? = null
-            for (i in 0 until assets.length()) {
-                val item = assets.optJSONObject(i) ?: continue
-                val name = item.optString("name")
-                if (name.endsWith(".apk", true) && !name.contains("-debug", true)) {
-                    apk = item
-                    break
+            val apks = (0 until assets.length()).mapNotNull { i ->
+                assets.optJSONObject(i)?.takeIf { asset ->
+                    asset.optString("name").endsWith(".apk", true) &&
+                        !asset.optString("name").contains("-debug", true)
                 }
             }
-            val asset = apk ?: throw IOException("فایل APK نسخه‌ی جدید در انتشار پیدا نشد")
+            // Prefer an APK matching the device ABI. If no exact match exists,
+            // use the universal APK; only then fall back to the first APK.
+            val deviceAbis = Build.SUPPORTED_ABIS.toList()
+            val exact = apks.firstOrNull { asset ->
+                val name = asset.optString("name").lowercase(Locale.ROOT)
+                deviceAbis.any { abi -> name.contains(abi.lowercase(Locale.ROOT)) }
+            }
+            val universal = apks.firstOrNull {
+                it.optString("name").contains("universal", true)
+            }
+            val asset = exact ?: universal ?: apks.firstOrNull()
+                ?: throw IOException("فایل APK نسخه‌ی جدید در انتشار پیدا نشد")
             val digest = asset.optString("digest")
             return Result(
                 tag,
