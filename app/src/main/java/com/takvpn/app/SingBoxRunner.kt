@@ -89,7 +89,7 @@ internal class SingBoxRunner(private val vpn: TakVpnService) {
     }
 
     private fun openTun(options: TunOptions): Int {
-        val builder = VpnService.Builder(vpn)
+        val builder = vpn.Builder()
             .setSession("TakVPN SSH")
             .setMtu(options.mtu.coerceIn(1280, 9000))
 
@@ -131,7 +131,7 @@ internal class SingBoxRunner(private val vpn: TakVpnService) {
         val established = builder.establish()
             ?: throw IllegalStateException("Android could not establish SSH VPN interface")
         tun = established
-        return established.fd
+        return ParcelFileDescriptor.dup(established.fileDescriptor).detachFd()
     }
 
     private fun <T> emptyIterator(type: Class<T>): T {
