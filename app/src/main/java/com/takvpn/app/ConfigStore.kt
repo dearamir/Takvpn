@@ -73,8 +73,13 @@ class ConfigStore(context: Context) {
                 "hysteria2", "hy2" -> "Hysteria 2"
                 "trojan" -> "Trojan"
                 "ss" -> "Shadowsocks"
+                "ssh" -> "SSH"
+                "sn" -> if (uri.host.equals("ssh", ignoreCase = true) ||
+                    uri.path.equals("/ssh", ignoreCase = true)) "SSH" else "نامشخص"
                 else -> "نامشخص"
             }
+            if (protocol == "SSH") return protocol
+
             var transport = uri.getQueryParameter("type").orEmpty()
             var security = uri.getQueryParameter("security").orEmpty()
             var host = uri.getQueryParameter("host").orEmpty()
@@ -133,7 +138,10 @@ class ConfigStore(context: Context) {
             } catch (e: Exception) {
                 ""
             }
-            return name.ifBlank { "کانفیگ بدون نام" }
+            return name.ifBlank {
+                if (l.trim().startsWith("sn://ssh?", ignoreCase = true) ||
+                    l.trim().startsWith("ssh://", ignoreCase = true)) "SSH" else "کانفیگ بدون نام"
+            }
         }
     }
 }
