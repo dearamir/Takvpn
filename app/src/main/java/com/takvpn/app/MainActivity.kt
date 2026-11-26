@@ -1228,13 +1228,13 @@ class MainActivity : AppCompatActivity() {
         var added = 0
         var unsupported = 0
         var invalid = 0
-        text.split(Regex("(?=\\b(?:vless|vmess|trojan|hysteria2|hysteria|hy2|ss|tuic)://)"))
+        text.split(Regex("(?=\\b(?:vless|vmess|trojan|hysteria2|hysteria|hy2|ss|tuic|ssh)://|(?=sn://ssh\\?))"))
             .map { it.trim() }
             .filter { it.contains("://") }
             .forEach { item ->
                 if (ConfigExtras.isSupported(item)) {
                     try {
-                        ConfigParser.buildConfig(item)
+                        if (!item.startsWith("ssh://") && !item.startsWith("sn://ssh?")) ConfigParser.buildConfig(item)
                         store.add(item)
                         added++
                     } catch (e: Exception) {
