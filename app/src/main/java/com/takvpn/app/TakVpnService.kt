@@ -30,6 +30,7 @@ class TakVpnService : VpnService() {
     private fun tr(text: String): String = AppLanguage.translate(text, AppLanguage.code(this))
     private var tun: ParcelFileDescriptor? = null
     private var core: CoreController? = null
+    private val singBoxRunner by lazy { SingBoxRunner(this) }
     private var currentConfig: String? = null
     private var cfgName = ""
     private var smartMode = false
@@ -187,6 +188,11 @@ class TakVpnService : VpnService() {
     private fun doPing() {
         val cfg = currentConfig ?: return
         if (!isRunning) return
+        if (isSingBoxConfig(cfg)) {
+            pingText = if (AppLanguage.code(this) == "en") "SSH tunnel active" else "تونل SSH فعال است"
+            notifyNow()
+            return
+        }
         pingText = if (AppLanguage.code(this) == "en") "Testing ping..." else tr("پینگ: در حال تست...")
         notifyNow()
         Thread {
@@ -337,6 +343,10 @@ class TakVpnService : VpnService() {
 
     // ---------- vpn ----------
 
+    private fun isSingBoxConfig(config: String): Boolean = try {
+        JSONObject(config).optJSONArray("outbounds")?.optJSONObject(0)?.optString("type") == "ssh"
+    } catch (_: Throwable) { false }
+
     private fun finalConfig(config: String): String {
         return try {
             val j = JSONObject(config)
@@ -454,31 +464,32 @@ class TakVpnService : VpnService() {
     private fun startVpn(config: String, reportFailure: Boolean = true): Boolean {
         stopCore()
         try {
-            CoreEnv.init(this)
-            val b = Builder()
-                .setSession("Takvpn")
-                .setMtu(1500)
-                .addAddress("172.19.0.1", 30)
-                .addRoute("0.0.0.0", 0)
-            applySplit(b)
-            val dns = parseDns(prefs.getString("dns", DEFAULT_DNS) ?: DEFAULT_DNS)
-                .ifEmpty { parseDns(DEFAULT_DNS) }
-            dns.forEach {
-                try {
-                    b.addDnsServer(it)
-                } catch (e: Exception) {
+            if (isSingBoxConfig(config)) {
+                AppLog.add("SSH: راه‌اندازی موتور sing-box")
+                singBoxRunner.start(config)
+            } else {
+                CoreEnv.init(this)
+                val b = Builder()
+                    .setSession("Takvpn")
+                    .setMtu(1500)
+                    .addAddress("172.19.0.1", 30)
+                    .addRoute("0.0.0.0", 0)
+                applySplit(b)
+                val dns = parseDns(prefs.getString("dns", DEFAULT_DNS) ?: DEFAULT_DNS)
+                    .ifEmpty { parseDns(DEFAULT_DNS) }
+                dns.forEach {
+                    try { b.addDnsServer(it) } catch (_: Exception) { }
                 }
+                val pfd = b.establish() ?: throw IllegalStateException("ساخت تونل VPN ناموفق بود")
+                tun = pfd
+                val controller = Libv2ray.newCoreController(object : CoreCallbackHandler {
+                    override fun startup(): Long = 0
+                    override fun shutdown(): Long = 0
+                    override fun onEmitStatus(code: Long, msg: String?): Long = 0
+                })
+                controller.startLoop(finalConfig(config), pfd.fd)
+                core = controller
             }
-            val pfd = b.establish() ?: throw IllegalStateException("ساخت تونل VPN ناموفق بود")
-            tun = pfd
-
-            val controller = Libv2ray.newCoreController(object : CoreCallbackHandler {
-                override fun startup(): Long = 0
-                override fun shutdown(): Long = 0
-                override fun onEmitStatus(code: Long, msg: String?): Long = 0
-            })
-            controller.startLoop(finalConfig(config), pfd.fd)
-            core = controller
             startedAt = SystemClock.elapsedRealtime()
             updateState(true)
             handler.post {
@@ -537,6 +548,7 @@ class TakVpnService : VpnService() {
         } catch (_: Throwable) {
         }
         core = null
+        try { singBoxRunner.stop() } catch (_: Throwable) { }
         try {
             tun?.close()
         } catch (_: Throwable) {
