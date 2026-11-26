@@ -30,6 +30,9 @@ object ConfigExtras {
     fun isSupported(s: String) = supported.any { s.startsWith(it) }
 
     fun build(link: String): String {
+        if (link.startsWith("ssh://", true) || link.startsWith("sn://ssh?", true)) {
+            return SSHConfigBuilder.build(link)
+        }
         val root = JSONObject(ConfigParser.buildConfig(link))
         logPath?.let { root.getJSONObject("log").put("error", it) }
         if (hopEnabled && (link.startsWith("hysteria2://") || link.startsWith("hy2://"))) {
