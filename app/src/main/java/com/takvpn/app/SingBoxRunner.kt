@@ -19,6 +19,20 @@ import java.lang.reflect.Proxy
  * existing Xray-compatible protocols.
  */
 internal class SingBoxRunner(private val vpn: TakVpnService) {
+    init {
+        // libbox.aar exposes JNI methods from libbox.so. Load it before any
+        // generated Libbox/SetupOptions class can invoke its native methods.
+        try {
+            System.loadLibrary("box")
+            AppLog.add("SSH: کتابخانه بومی sing-box بارگذاری شد")
+        } catch (e: UnsatisfiedLinkError) {
+            throw IllegalStateException(
+                "بارگذاری libbox.so ناموفق است؛ فایل بومی sing-box در APK موجود نیست یا با معماری گوشی سازگار نیست",
+                e
+            )
+        }
+    }
+
     private var server: CommandServer? = null
     private var tun: ParcelFileDescriptor? = null
 
