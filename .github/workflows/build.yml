@@ -51,6 +51,22 @@ jobs:
           mkdir -p app/libs
           curl -fL --retry 3 "https://github.com/singbox-android/libbox/releases/download/$LIBBOX_VERSION/libbox.aar" -o app/libs/libbox.aar
           echo "d2685924a657705beda44e94c6dc499e781df1ad20d65474e3591ec2f8b96465  app/libs/libbox.aar" | sha256sum --check --strict
+
+          # libbox and libv2ray are both gomobile AARs and bundle the same
+          # go.Seq runtime classes. Keep the copy already supplied by libv2ray
+          # and remove only the duplicate Java runtime package from libbox.
+          TMP_AAR="$(mktemp -d)"
+          unzip -q app/libs/libbox.aar -d "$TMP_AAR"
+          if [ -f "$TMP_AAR/classes.jar" ]; then
+            mkdir "$TMP_AAR/classes"
+            (cd "$TMP_AAR/classes" && jar xf ../classes.jar)
+            rm -rf "$TMP_AAR/classes/go"
+            jar cf "$TMP_AAR/classes.jar" -C "$TMP_AAR/classes" .
+            rm -rf "$TMP_AAR/classes"
+            (cd "$TMP_AAR" && zip -q -r "$GITHUB_WORKSPACE/app/libs/libbox-fixed.aar" .)
+            mv app/libs/libbox-fixed.aar app/libs/libbox.aar
+          fi
+          rm -rf "$TMP_AAR"
           ls -lh app/libs/libbox.aar
 
       - uses: gradle/actions/setup-gradle@v4
