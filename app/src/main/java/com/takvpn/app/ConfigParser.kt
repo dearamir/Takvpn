@@ -38,6 +38,7 @@ object ConfigParser {
     }
 
     private fun parseOutbound(link: String): JSONObject = when {
+        link.startsWith("ssh://") || link.startsWith("sn://ssh?") -> throw IllegalArgumentException("پروفایل SSH شناسایی شد، اما موتور اتصال SSH هنوز در این نسخه نصب نشده است. اتصال SSH فعلاً فعال نیست.")
         link.startsWith("vless://") -> vless(link)
         link.startsWith("vmess://") -> vmess(link)
         link.startsWith("trojan://") -> trojan(link)

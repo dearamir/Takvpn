@@ -25,11 +25,14 @@ object ConfigExtras {
     @Volatile
     var hopEnabled = true
 
-    private val supported = listOf("vless://", "vmess://", "trojan://", "hysteria2://", "hy2://")
+    private val supported = listOf("vless://", "vmess://", "trojan://", "hysteria2://", "hy2://", "ssh://", "sn://ssh?")
 
     fun isSupported(s: String) = supported.any { s.startsWith(it) }
 
     fun build(link: String): String {
+        if (link.startsWith("ssh://", true) || link.startsWith("sn://ssh?", true)) {
+            return SSHConfigBuilder.build(link)
+        }
         val root = JSONObject(ConfigParser.buildConfig(link))
         logPath?.let { root.getJSONObject("log").put("error", it) }
         if (hopEnabled && (link.startsWith("hysteria2://") || link.startsWith("hy2://"))) {
@@ -154,7 +157,7 @@ object SubFetcher {
                 ""
             }
         }
-        return text.split(Regex("(?=\\b(?:vless|vmess|trojan|hysteria2|hysteria|hy2|ss|tuic)://)"))
+        return text.split(Regex("(?=\\b(?:vless|vmess|trojan|hysteria2|hysteria|hy2|ss|tuic|ssh)://|(?=sn://ssh\\?))"))
             .map { it.trim() }
             .filter { ConfigExtras.isSupported(it) }
             .distinct()

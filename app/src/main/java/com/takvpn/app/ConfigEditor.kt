@@ -129,6 +129,13 @@ object ConfigEditor {
                 )
             ) + transport(false)
             "trojan" -> head + listOf(F("_pass", "رمز عبور")) + transport(false)
+            "ssh" -> head + listOf(
+                F("_user", "نام کاربری SSH"),
+                F("auth", "روش احراز هویت", listOf("password" to "Password", "private_key" to "Private key")),
+                F("_pass", "رمز عبور") { it["auth"] != "private_key" },
+                F("privateKey", "کلید خصوصی", multi = true) { it["auth"] == "private_key" },
+                F("privateKeyPassphrase", "رمز کلید خصوصی") { it["auth"] == "private_key" }
+            )
             "vmess" -> head + listOf(
                 F("_id", "شناسه (UUID)"),
                 F("aid", "alterId", numeric = true),
@@ -155,6 +162,10 @@ object ConfigEditor {
             "_name" to "کانفیگ جدید", "_port" to "443", "type" to "tcp",
             "security" to "tls", "fp" to "chrome"
         )
+        "ssh" -> linkedMapOf(
+            "_name" to "SSH", "_port" to "22", "_user" to "root",
+            "auth" to "password"
+        )
         "vmess" -> linkedMapOf(
             "_name" to "کانفیگ جدید", "_port" to "443", "aid" to "0", "scy" to "auto",
             "type" to "tcp", "security" to "none"
@@ -171,6 +182,7 @@ object ConfigEditor {
                 l.startsWith("vmess://") -> parseVmess(l)
                 l.startsWith("vless://") -> parseUri(l, "vless")
                 l.startsWith("trojan://") -> parseUri(l, "trojan")
+                l.startsWith("ssh://") -> parseUri(l, "ssh")
                 l.startsWith("hysteria2://") || l.startsWith("hy2://") ->
                     parseUri(l.replaceFirst("hy2://", "hysteria2://"), "hysteria2")
                 else -> null
@@ -185,10 +197,18 @@ object ConfigEditor {
         val m = LinkedHashMap<String, String>()
         m["_name"] = u.fragment.orEmpty()
         m["_addr"] = (u.host ?: "").trim('[', ']')
-        m["_port"] = if (u.port > 0) u.port.toString() else "443"
+        m["_port"] = if (u.port > 0) u.port.toString() else if (proto == "ssh") "22" else "443"
         val ui = u.userInfo.orEmpty()
-        if (proto == "vless" || proto == "vmess") m["_id"] = ui else m["_pass"] = ui
+        if (proto == "vless" || proto == "vmess") m["_id"] = ui
+        else if (proto == "ssh") {
+            val pieces = ui.split(":", limit = 2)
+            m["_user"] = Uri.decode(pieces.firstOrNull().orEmpty())
+            if (pieces.size > 1) m["_pass"] = Uri.decode(pieces[1])
+        } else m["_pass"] = ui
         for (k in u.queryParameterNames) m[k] = u.getQueryParameter(k) ?: ""
+        if (proto == "ssh" && m["auth"].isNullOrBlank()) {
+            m["auth"] = if (m["privateKey"].isNullOrBlank()) "password" else "private_key"
+        }
         if (proto == "trojan" && !m.containsKey("security")) m["security"] = "tls"
         if (proto == "vmess") {
             m["scy"] = m["encryption"] ?: m["scy"] ?: "auto"
@@ -239,7 +259,11 @@ object ConfigEditor {
         val port = m["_port"].orEmpty().trim().toIntOrNull()
             ?: throw IllegalArgumentException("پورت نامعتبره")
         if (port !in 1..65535) throw IllegalArgumentException("پورت باید بین ۱ تا ۶۵۵۳۵ باشه")
-        return if (proto == "vmess") buildVmess(name, addr, port, m) else buildUri(proto, name, addr, port, m)
+        return when (proto) {
+            "vmess" -> buildVmess(name, addr, port, m)
+            "ssh" -> buildSshUri(name, addr, port, m)
+            else -> buildUri(proto, name, addr, port, m)
+        }
     }
 
     private fun buildUri(proto: String, name: String, addr: String, port: Int, m: Map<String, String>): String {
@@ -263,6 +287,29 @@ object ConfigEditor {
                 .append(Uri.encode(k)).append("=").append(Uri.encode(v))
         }
         return "$proto://$user@$host:$port$q" + (if (name.isNotEmpty()) "#" + Uri.encode(name) else "")
+    }
+
+    private fun buildSshUri(name: String, addr: String, port: Int, m: Map<String, String>): String {
+        val username = m["_user"].orEmpty().trim()
+        if (username.isEmpty()) throw IllegalArgumentException("نام کاربری SSH خالیه")
+        val host = if (addr.contains(":") && !addr.startsWith("[")) "[$addr]" else addr
+        val auth = m["auth"] ?: "password"
+        val query = mutableListOf("auth=" + Uri.encode(auth))
+        val userInfo = if (auth == "private_key") {
+            val key = m["privateKey"].orEmpty()
+            if (key.isBlank()) throw IllegalArgumentException("کلید خصوصی خالیه")
+            query += "privateKey=" + Uri.encode(key)
+            m["privateKeyPassphrase"]?.takeIf { it.isNotBlank() }?.let {
+                query += "privateKeyPassphrase=" + Uri.encode(it)
+            }
+            Uri.encode(username)
+        } else {
+            val password = m["_pass"].orEmpty()
+            if (password.isEmpty()) throw IllegalArgumentException("رمز عبور SSH خالیه")
+            Uri.encode(username) + ":" + Uri.encode(password)
+        }
+        return "ssh://$userInfo@$host:$port?" + query.joinToString("&") +
+            (if (name.isNotEmpty()) "#" + Uri.encode(name) else "")
     }
 
     private fun buildVmess(name: String, addr: String, port: Int, m: Map<String, String>): String {
@@ -311,8 +358,8 @@ object ConfigEditor {
     }
 
     fun createConfig(act: AppCompatActivity, store: ConfigStore, onDone: () -> Unit) {
-        val names = arrayOf("VLESS", "VMESS", "TROJAN", "HYSTERIA2")
-        val protos = arrayOf("vless", "vmess", "trojan", "hysteria2")
+        val names = arrayOf("VLESS", "VMESS", "TROJAN", "HYSTERIA2", "SSH")
+        val protos = arrayOf("vless", "vmess", "trojan", "hysteria2", "ssh")
         AlertDialog.Builder(act)
             .setTitle(tr(act, "نوع کانفیگ"))
             .setItems(names) { _, i ->
@@ -437,7 +484,7 @@ object ConfigEditor {
             fields.forEach { if (!it.show(v)) v.remove(it.key) }
             try {
                 val link = build(proto, v)
-                ConfigParser.buildConfig(link)
+                if (proto != "ssh") ConfigParser.buildConfig(link)
                 dialog.dismiss()
                 onSave(link)
             } catch (e: Exception) {
