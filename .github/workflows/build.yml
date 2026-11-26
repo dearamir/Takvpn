@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       XRAY_CORE_VERSION: "26.11.9"
+      LIBBOX_VERSION: "1.14.4"
       KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +44,14 @@ jobs:
           gh release download "v$XRAY_CORE_VERSION" --repo 2dust/AndroidLibXrayLite --pattern "libv2ray.aar" --dir app/libs
           echo "cdfef146218233a31a8b52c8b1016557730d3b63fc121d4c84cacea50e669155  app/libs/libv2ray.aar" | sha256sum --check --strict
           ls -la app/libs
+
+      - name: Download sing-box libbox engine
+        run: |
+          set -euo pipefail
+          mkdir -p app/libs
+          curl -fL --retry 3 "https://github.com/singbox-android/libbox/releases/download/$LIBBOX_VERSION/libbox.aar" -o app/libs/libbox.aar
+          echo "d2685924a657705beda44e94c6dc499e781df1ad20d65474e3591ec2f8b96465  app/libs/libbox.aar" | sha256sum --check --strict
+          ls -lh app/libs/libbox.aar
 
       - uses: gradle/actions/setup-gradle@v4
         with:
