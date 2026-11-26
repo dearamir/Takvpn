@@ -48,7 +48,7 @@ object SSHConfigBuilder {
             .put("tag", "tun-in")
             .put("address", JSONArray(listOf("172.19.0.1/30", "fdfe:dcba:9876::1/126")))
             .put("mtu", 1500)
-            .put("auto_route", true)
+            .put("auto_route", false)
             .put("stack", "gvisor")
 
         val routeRules = JSONArray()
@@ -71,7 +71,7 @@ object SSHConfigBuilder {
                 .put(JSONObject().put("type", "direct").put("tag", "direct"))
                 .put(JSONObject().put("type", "block").put("tag", "block")))
             .put("route", JSONObject()
-                .put("auto_detect_interface", true)
+                .put("auto_detect_interface", false)
                 .put("rules", routeRules)
                 .put("final", "proxy"))
 
