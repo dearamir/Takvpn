@@ -38,9 +38,12 @@ object SSHConfigBuilder {
             outbound.put("host_key", JSONArray(profile.hostKeys))
         }
 
+        // sing-box 1.14 removed the legacy DNS server "address" format.
+        // Use the typed UDP server schema: type + server.
         val dnsServer = JSONObject()
+            .put("type", "udp")
             .put("tag", "dns-remote")
-            .put("address", "1.1.1.1")
+            .put("server", "1.1.1.1")
             .put("detour", "proxy")
 
         val tun = JSONObject()
